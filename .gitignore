@@ -1,0 +1,26 @@
+# Claude Code
+.claude/
+tmpclaude-*
+NUL
+nul
+
+# Backups
+BackUps/
+
+# Environment files
+.env
+*.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Node modules (if any at root)
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
