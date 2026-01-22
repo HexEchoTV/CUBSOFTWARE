@@ -115,6 +115,22 @@ def image_editor():
     """Image Editor - Edit, crop, resize, and enhance images"""
     return render_template('image-editor.html')
 
+# ==================== FILE CONVERTER ====================
+
+@app.route('/apps/file-converter')
+@app.route('/apps/file-converter/')
+def file_converter():
+    """File Converter - Convert images between PNG, JPG, WebP, GIF, BMP formats"""
+    return render_template('file-converter.html')
+
+# ==================== PDF TOOLS ====================
+
+@app.route('/apps/pdf-tools')
+@app.route('/apps/pdf-tools/')
+def pdf_tools():
+    """PDF Tools - Merge, split, compress PDFs and convert images to PDF"""
+    return render_template('pdf-tools.html')
+
 # ==================== SOCIAL MEDIA SAVER APP INTEGRATION ====================
 
 # Load Social Media Saver blueprint using importlib

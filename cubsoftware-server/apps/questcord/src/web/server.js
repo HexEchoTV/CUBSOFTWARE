@@ -155,16 +155,18 @@ async function startWebServer(client) {
     const host = '0.0.0.0'; // Bind to all network interfaces
 
     server.listen(port, host, async () => {
+        const publicUrl = process.env.DISCORD_BASE_URL || `http://localhost:${port}`;
+
         console.log(`[WEB SERVER] Successfully started`);
         console.log(`[WEB SERVER] Listening on ${host}:${port}`);
         console.log(`[WEB SERVER] Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`[WEB SERVER] Access at: http://localhost:${port}`);
+        console.log(`[WEB SERVER] Access at: ${publicUrl}`);
 
         await debugLogger.success('WEB SERVER', `Web server started on ${host}:${port}`, {
             host: host,
             port: port,
             environment: process.env.NODE_ENV || 'development',
-            url: `http://localhost:${port}`
+            url: publicUrl
         });
     });
 

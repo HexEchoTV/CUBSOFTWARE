@@ -64,6 +64,27 @@
     line-height: 1.7;
 }
 
+/* Category Sections */
+.category-section {
+    margin-bottom: 50px;
+}
+
+.category-section:last-child {
+    margin-bottom: 0;
+}
+
+.category-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
 /* Features Grid */
 .features-grid {
     display: grid;
