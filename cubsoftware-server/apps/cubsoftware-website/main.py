@@ -1,9 +1,12 @@
-from flask import Flask, send_from_directory, render_template, redirect
+from flask import Flask, send_from_directory, render_template, redirect, request, jsonify
 from waitress import serve
 import socket
 import os
 import sys
 import importlib.util
+import json
+import hashlib
+import time
 from jinja2 import ChoiceLoader, FileSystemLoader
 
 # Create the main Flask app with multiple template folders
@@ -130,6 +133,143 @@ def file_converter():
 def pdf_tools():
     """PDF Tools - Merge, split, compress PDFs and convert images to PDF"""
     return render_template('pdf-tools.html')
+
+# ==================== UNIT CONVERTER ====================
+
+@app.route('/apps/unit-converter')
+@app.route('/apps/unit-converter/')
+def unit_converter():
+    """Unit Converter - Convert between different units of measurement"""
+    return render_template('unit-converter.html')
+
+# ==================== TIMESTAMP CONVERTER ====================
+
+@app.route('/apps/timestamp-converter')
+@app.route('/apps/timestamp-converter/')
+def timestamp_converter():
+    """Timestamp Converter - Convert Unix timestamps to human readable dates"""
+    return render_template('timestamp-converter.html')
+
+# ==================== COUNTDOWN MAKER ====================
+
+@app.route('/apps/countdown-maker')
+@app.route('/apps/countdown-maker/')
+def countdown_maker():
+    """Countdown Maker - Create and share countdown timers"""
+    return render_template('countdown-maker.html')
+
+# ==================== LINK SHORTENER ====================
+
+# Storage for shortened links (in production, use a database)
+LINKS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'shortened_links.json')
+
+def load_links():
+    """Load shortened links from file"""
+    if os.path.exists(LINKS_FILE):
+        with open(LINKS_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_links(links):
+    """Save shortened links to file"""
+    os.makedirs(os.path.dirname(LINKS_FILE), exist_ok=True)
+    with open(LINKS_FILE, 'w') as f:
+        json.dump(links, f, indent=2)
+
+def generate_short_code(url):
+    """Generate a short code for a URL"""
+    hash_input = f"{url}{time.time()}"
+    return hashlib.md5(hash_input.encode()).hexdigest()[:6]
+
+@app.route('/apps/link-shortener')
+@app.route('/apps/link-shortener/')
+def link_shortener():
+    """Link Shortener - Create short URLs"""
+    return render_template('link-shortener.html')
+
+@app.route('/api/shorten', methods=['POST'])
+def shorten_url():
+    """API endpoint to shorten a URL"""
+    data = request.get_json()
+    if not data or 'url' not in data:
+        return jsonify({'error': 'URL is required'}), 400
+
+    original_url = data['url']
+    custom_code = data.get('customCode', '').strip()
+
+    # Validate URL
+    if not original_url.startswith(('http://', 'https://')):
+        original_url = 'https://' + original_url
+
+    links = load_links()
+
+    # Check if custom code is provided and available
+    if custom_code:
+        if len(custom_code) < 3 or len(custom_code) > 20:
+            return jsonify({'error': 'Custom code must be 3-20 characters'}), 400
+        if not custom_code.isalnum():
+            return jsonify({'error': 'Custom code must be alphanumeric'}), 400
+        if custom_code in links:
+            return jsonify({'error': 'Custom code already taken'}), 400
+        short_code = custom_code
+    else:
+        # Generate unique short code
+        short_code = generate_short_code(original_url)
+        while short_code in links:
+            short_code = generate_short_code(original_url + str(time.time()))
+
+    # Save the link
+    links[short_code] = {
+        'url': original_url,
+        'created': time.time(),
+        'clicks': 0
+    }
+    save_links(links)
+
+    # Return the shortened URL
+    short_url = f"{request.host_url}s/{short_code}"
+    return jsonify({
+        'shortUrl': short_url,
+        'shortCode': short_code,
+        'originalUrl': original_url
+    })
+
+@app.route('/s/<code>')
+def redirect_short_url(code):
+    """Redirect from short URL to original URL"""
+    links = load_links()
+    if code not in links:
+        return render_template('404.html'), 404
+
+    # Increment click count
+    links[code]['clicks'] = links[code].get('clicks', 0) + 1
+    save_links(links)
+
+    return redirect(links[code]['url'])
+
+# ==================== VIDEO COMPRESSOR ====================
+
+@app.route('/apps/video-compressor')
+@app.route('/apps/video-compressor/')
+def video_compressor():
+    """Video Compressor - Compress videos in browser"""
+    return render_template('video-compressor.html')
+
+# ==================== RESUME BUILDER ====================
+
+@app.route('/apps/resume-builder')
+@app.route('/apps/resume-builder/')
+def resume_builder():
+    """Resume Builder - Create professional resumes and cover letters"""
+    return render_template('resume-builder.html')
+
+# ==================== JSON FORMATTER ====================
+
+@app.route('/apps/json-formatter')
+@app.route('/apps/json-formatter/')
+def json_formatter():
+    """JSON Formatter - Beautify, minify, and validate JSON"""
+    return render_template('json-formatter.html')
 
 # ==================== SOCIAL MEDIA SAVER APP INTEGRATION ====================
 
