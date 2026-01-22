@@ -12,7 +12,7 @@ const nextReward = ref(null)
 const claimStatus = ref(null)
 const error = ref(null)
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://cubsoftware.site'
 
 onMounted(async () => {
   await Promise.all([
@@ -290,9 +290,9 @@ const formatNumber = (num) => num?.toLocaleString() || '0'
             and Scarlett
           </div>
           <div class="footer-legal-links">
-            <a href="http://localhost:3000/terms" class="footer-legal-link">Terms of Service</a>
+            <a href="https://cubsoftware.site/terms" class="footer-legal-link">Terms of Service</a>
             <span class="footer-separator">|</span>
-            <a href="http://localhost:3000/privacy" class="footer-legal-link">Privacy Policy</a>
+            <a href="https://cubsoftware.site/privacy" class="footer-legal-link">Privacy Policy</a>
           </div>
         </div>
       </div>

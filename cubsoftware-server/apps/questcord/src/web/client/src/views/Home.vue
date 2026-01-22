@@ -15,7 +15,7 @@
           <a href="/" class="active">Home</a>
           <a href="#about">About</a>
           <router-link to="/dashboard">Dashboard</router-link>
-          <a href="http://localhost:3000" target="_blank">CubSoftware</a>
+          <a href="https://cubsoftware.site" target="_blank">CubSoftware</a>
         </nav>
       </div>
     </header>
@@ -23,7 +23,7 @@
     <div class="hero">
       <div class="container">
         <div class="hero-title-container">
-          <img src="http://localhost:3000/images/compass.png" alt="Compass" class="hero-icon" onerror="this.style.display='none'">
+          <img src="https://cubsoftware.site/images/compass.png" alt="Compass" class="hero-icon" onerror="this.style.display='none'">
           <h1 class="hero-title">QuestCord</h1>
         </div>
         <p class="hero-subtitle">Quest across the Discord universe</p>
@@ -94,7 +94,7 @@
             </div>
           </div>
           <div class="content-image">
-            <img src="http://localhost:3000/images/compass.png" alt="Quest Example" onerror="this.src='https://via.placeholder.com/500x600/7c3aed/ffffff?text=Quest+System'">
+            <img src="https://cubsoftware.site/images/compass.png" alt="Quest Example" onerror="this.src='https://via.placeholder.com/500x600/7c3aed/ffffff?text=Quest+System'">
           </div>
         </div>
       </div>
@@ -104,7 +104,7 @@
       <div class="container">
         <div class="content-with-image reverse">
           <div class="content-image">
-            <img src="http://localhost:3000/images/notification.png" alt="Live Activity" onerror="this.src='https://via.placeholder.com/500x600/5865f2/ffffff?text=Live+Activity'">
+            <img src="https://cubsoftware.site/images/notification.png" alt="Live Activity" onerror="this.src='https://via.placeholder.com/500x600/5865f2/ffffff?text=Live+Activity'">
           </div>
           <div class="content-text">
             <h2 class="section-title">Live Activity</h2>
@@ -151,7 +151,7 @@
             </div>
           </div>
           <div class="content-image">
-            <img src="http://localhost:3000/images/leaderboard.png" alt="Leaderboard" onerror="this.src='https://via.placeholder.com/500x600/fbbf24/000000?text=Leaderboard'">
+            <img src="https://cubsoftware.site/images/leaderboard.png" alt="Leaderboard" onerror="this.src='https://via.placeholder.com/500x600/fbbf24/000000?text=Leaderboard'">
           </div>
         </div>
       </div>
@@ -197,15 +197,15 @@
             <a href="https://discord.com/users/378501056008683530" target="_blank" rel="noopener noreferrer" class="footer-link">CUB</a>
           </div>
           <div class="footer-legal-links">
-            <a href="http://localhost:3000" class="footer-legal-link">CubSoftware</a>
+            <a href="https://cubsoftware.site" class="footer-legal-link">CubSoftware</a>
             <span class="footer-separator">|</span>
-            <a href="http://localhost:3000/terms" class="footer-legal-link">Terms of Use</a>
+            <a href="https://cubsoftware.site/terms" class="footer-legal-link">Terms of Use</a>
             <span class="footer-separator">|</span>
-            <a href="http://localhost:3000/privacy" class="footer-legal-link">Privacy Policy</a>
+            <a href="https://cubsoftware.site/privacy" class="footer-legal-link">Privacy Policy</a>
             <span class="footer-separator">|</span>
-            <a href="http://localhost:3000/copyright" class="footer-legal-link">Copyright</a>
+            <a href="https://cubsoftware.site/copyright" class="footer-legal-link">Copyright</a>
             <span class="footer-separator">|</span>
-            <a href="http://localhost:3000/contact" class="footer-legal-link">Contact</a>
+            <a href="https://cubsoftware.site/contact" class="footer-legal-link">Contact</a>
           </div>
         </div>
       </div>
@@ -268,5 +268,5 @@ onMounted(async () => {
 
 <style scoped>
 /* Import the existing CSS styles */
-@import url('http://localhost:3000/css/style.css');
+@import url('https://cubsoftware.site/css/style.css');
 </style>

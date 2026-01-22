@@ -23,7 +23,7 @@ const showMinigame = ref(false)
 const activeChallenge = ref(null)
 const selectedQuest = ref(null)
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://cubsoftware.site'
 
 // Auto-refresh
 let refreshInterval = null
@@ -639,9 +639,9 @@ const sortedQuests = computed(() => {
             and Scarlett
           </div>
           <div class="footer-legal-links">
-            <a href="http://localhost:3000/terms" class="footer-legal-link">Terms of Service</a>
+            <a href="https://cubsoftware.site/terms" class="footer-legal-link">Terms of Service</a>
             <span class="footer-separator">|</span>
-            <a href="http://localhost:3000/privacy" class="footer-legal-link">Privacy Policy</a>
+            <a href="https://cubsoftware.site/privacy" class="footer-legal-link">Privacy Policy</a>
           </div>
         </div>
       </div>

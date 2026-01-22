@@ -32,9 +32,9 @@
             and Scarlett
           </div>
           <div class="footer-legal-links">
-            <a href="http://localhost:3000/terms" class="footer-legal-link">Terms of Service</a>
+            <a href="https://cubsoftware.site/terms" class="footer-legal-link">Terms of Service</a>
             <span class="footer-separator">|</span>
-            <a href="http://localhost:3000/privacy" class="footer-legal-link">Privacy Policy</a>
+            <a href="https://cubsoftware.site/privacy" class="footer-legal-link">Privacy Policy</a>
           </div>
         </div>
       </div>
