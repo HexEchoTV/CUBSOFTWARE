@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Downloads
+apps/music-downloader/downloads/*
+!apps/music-downloader/downloads/.gitkeep
+apps/social-media-saver/downloads/*
+!apps/social-media-saver/downloads/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Documentation (keeping README.md)
+*.md
+!README.md
+
+# YouTube cookies (sensitive - never commit)
+youtube_cookies.txt
