@@ -11,9 +11,8 @@ module.exports = {
     {
       name: 'cubsoftware-website',
       cwd: './apps/cubsoftware-website',
-      script: 'gunicorn',
-      args: '-c ../../config/gunicorn_config.py main:app',
-      interpreter: 'none',
+      script: 'main.py',
+      interpreter: 'python3',
       instances: 1,
       autorestart: true,
       watch: false,
