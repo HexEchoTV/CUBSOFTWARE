@@ -3,9 +3,16 @@
 // State
 let currentDocType = 'resume';
 let currentTemplate = 'modern';
+let currentBackground = 'clean';
+let currentFont = 'georgia';
+let currentColor = 'blue';
 let skills = [];
 let experiences = [];
 let education = [];
+let certifications = [];
+let projects = [];
+let languages = [];
+let awards = [];
 let editingId = null;
 
 // Elements
@@ -13,6 +20,9 @@ const docTabs = document.querySelectorAll('.doc-tab');
 const resumeForm = document.getElementById('resumeForm');
 const coverLetterForm = document.getElementById('coverLetterForm');
 const templateSelect = document.getElementById('templateSelect');
+const backgroundSelect = document.getElementById('backgroundSelect');
+const fontSelect = document.getElementById('fontSelect');
+const colorSelect = document.getElementById('colorSelect');
 const resumePreview = document.getElementById('resumePreview');
 const savedList = document.getElementById('savedList');
 
@@ -44,6 +54,30 @@ function setupEventListeners() {
         currentTemplate = templateSelect.value;
         updatePreview();
     });
+
+    // Background select
+    if (backgroundSelect) {
+        backgroundSelect.addEventListener('change', () => {
+            currentBackground = backgroundSelect.value;
+            updatePreview();
+        });
+    }
+
+    // Font select
+    if (fontSelect) {
+        fontSelect.addEventListener('change', () => {
+            currentFont = fontSelect.value;
+            updatePreview();
+        });
+    }
+
+    // Color select
+    if (colorSelect) {
+        colorSelect.addEventListener('change', () => {
+            currentColor = colorSelect.value;
+            updatePreview();
+        });
+    }
 
     // Form inputs - update preview on change
     document.querySelectorAll('#resumeForm input, #resumeForm textarea').forEach(input => {
@@ -96,6 +130,52 @@ function setupEventListeners() {
         renderEducation();
     });
 
+    // Add certification
+    document.getElementById('addCertification').addEventListener('click', () => {
+        certifications.push({
+            id: Date.now(),
+            name: '',
+            issuer: '',
+            date: '',
+            credentialId: ''
+        });
+        renderCertifications();
+    });
+
+    // Add project
+    document.getElementById('addProject').addEventListener('click', () => {
+        projects.push({
+            id: Date.now(),
+            name: '',
+            description: '',
+            technologies: '',
+            link: ''
+        });
+        renderProjects();
+    });
+
+    // Add language
+    document.getElementById('addLanguage').addEventListener('click', () => {
+        languages.push({
+            id: Date.now(),
+            language: '',
+            proficiency: 'Fluent'
+        });
+        renderLanguages();
+    });
+
+    // Add award
+    document.getElementById('addAward').addEventListener('click', () => {
+        awards.push({
+            id: Date.now(),
+            title: '',
+            issuer: '',
+            date: '',
+            description: ''
+        });
+        renderAwards();
+    });
+
     // Save draft
     document.getElementById('saveDraftBtn').addEventListener('click', saveDraft);
 
@@ -109,6 +189,17 @@ function setupEventListeners() {
             loadSavedDocuments();
             showToast('All documents deleted');
         }
+    });
+
+    // Share link button
+    document.getElementById('shareLinkBtn').addEventListener('click', shareResume);
+
+    // Copy share URL button
+    document.getElementById('copyShareBtn').addEventListener('click', () => {
+        const input = document.getElementById('shareUrlInput');
+        input.select();
+        document.execCommand('copy');
+        showToast('Link copied to clipboard!');
     });
 }
 
@@ -231,6 +322,164 @@ window.removeEducation = function(index) {
     updatePreview();
 };
 
+// Render certifications
+function renderCertifications() {
+    const container = document.getElementById('certificationList');
+    container.innerHTML = certifications.map((cert, index) => `
+        <div class="dynamic-item">
+            <button class="remove-btn" onclick="removeCertification(${index})">×</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Certification Name</label>
+                    <input type="text" value="${escapeHtml(cert.name)}" onchange="updateCertification(${index}, 'name', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Issuing Organization</label>
+                    <input type="text" value="${escapeHtml(cert.issuer)}" onchange="updateCertification(${index}, 'issuer', this.value)">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date Obtained</label>
+                    <input type="text" placeholder="Jan 2023" value="${escapeHtml(cert.date)}" onchange="updateCertification(${index}, 'date', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Credential ID (Optional)</label>
+                    <input type="text" value="${escapeHtml(cert.credentialId)}" onchange="updateCertification(${index}, 'credentialId', this.value)">
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.updateCertification = function(index, field, value) {
+    certifications[index][field] = value;
+    updatePreview();
+};
+
+window.removeCertification = function(index) {
+    certifications.splice(index, 1);
+    renderCertifications();
+    updatePreview();
+};
+
+// Render projects
+function renderProjects() {
+    const container = document.getElementById('projectList');
+    container.innerHTML = projects.map((proj, index) => `
+        <div class="dynamic-item">
+            <button class="remove-btn" onclick="removeProject(${index})">×</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Project Name</label>
+                    <input type="text" value="${escapeHtml(proj.name)}" onchange="updateProject(${index}, 'name', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Technologies Used</label>
+                    <input type="text" placeholder="React, Node.js, etc." value="${escapeHtml(proj.technologies)}" onchange="updateProject(${index}, 'technologies', this.value)">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea rows="2" onchange="updateProject(${index}, 'description', this.value)">${escapeHtml(proj.description)}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Project Link (Optional)</label>
+                <input type="url" placeholder="https://..." value="${escapeHtml(proj.link)}" onchange="updateProject(${index}, 'link', this.value)">
+            </div>
+        </div>
+    `).join('');
+}
+
+window.updateProject = function(index, field, value) {
+    projects[index][field] = value;
+    updatePreview();
+};
+
+window.removeProject = function(index) {
+    projects.splice(index, 1);
+    renderProjects();
+    updatePreview();
+};
+
+// Render languages
+function renderLanguages() {
+    const container = document.getElementById('languageList');
+    container.innerHTML = languages.map((lang, index) => `
+        <div class="dynamic-item">
+            <button class="remove-btn" onclick="removeLanguage(${index})">×</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Language</label>
+                    <input type="text" value="${escapeHtml(lang.language)}" onchange="updateLanguage(${index}, 'language', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Proficiency</label>
+                    <select onchange="updateLanguage(${index}, 'proficiency', this.value)">
+                        <option value="Native" ${lang.proficiency === 'Native' ? 'selected' : ''}>Native</option>
+                        <option value="Fluent" ${lang.proficiency === 'Fluent' ? 'selected' : ''}>Fluent</option>
+                        <option value="Advanced" ${lang.proficiency === 'Advanced' ? 'selected' : ''}>Advanced</option>
+                        <option value="Intermediate" ${lang.proficiency === 'Intermediate' ? 'selected' : ''}>Intermediate</option>
+                        <option value="Basic" ${lang.proficiency === 'Basic' ? 'selected' : ''}>Basic</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.updateLanguage = function(index, field, value) {
+    languages[index][field] = value;
+    updatePreview();
+};
+
+window.removeLanguage = function(index) {
+    languages.splice(index, 1);
+    renderLanguages();
+    updatePreview();
+};
+
+// Render awards
+function renderAwards() {
+    const container = document.getElementById('awardList');
+    container.innerHTML = awards.map((award, index) => `
+        <div class="dynamic-item">
+            <button class="remove-btn" onclick="removeAward(${index})">×</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Award/Achievement Title</label>
+                    <input type="text" value="${escapeHtml(award.title)}" onchange="updateAward(${index}, 'title', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Issuer/Organization</label>
+                    <input type="text" value="${escapeHtml(award.issuer)}" onchange="updateAward(${index}, 'issuer', this.value)">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="text" placeholder="2023" value="${escapeHtml(award.date)}" onchange="updateAward(${index}, 'date', this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Description (Optional)</label>
+                    <input type="text" value="${escapeHtml(award.description)}" onchange="updateAward(${index}, 'description', this.value)">
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.updateAward = function(index, field, value) {
+    awards[index][field] = value;
+    updatePreview();
+};
+
+window.removeAward = function(index) {
+    awards.splice(index, 1);
+    renderAwards();
+    updatePreview();
+};
+
 // Update preview
 function updatePreview() {
     if (currentDocType === 'cover-letter') {
@@ -313,8 +562,70 @@ function updateResumePreview() {
         `;
     }
 
+    if (certifications.length > 0) {
+        html += `<div class="section-title">Certifications</div>`;
+        certifications.forEach(cert => {
+            if (cert.name) {
+                html += `
+                    <div class="preview-item">
+                        <div class="preview-item-header">
+                            <span class="preview-item-title">${escapeHtml(cert.name)}</span>
+                            <span class="preview-item-date">${escapeHtml(cert.date)}</span>
+                        </div>
+                        <div class="preview-item-subtitle">${escapeHtml(cert.issuer)}${cert.credentialId ? ' • ID: ' + escapeHtml(cert.credentialId) : ''}</div>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    if (projects.length > 0) {
+        html += `<div class="section-title">Projects</div>`;
+        projects.forEach(proj => {
+            if (proj.name) {
+                html += `
+                    <div class="preview-item">
+                        <div class="preview-item-header">
+                            <span class="preview-item-title">${escapeHtml(proj.name)}</span>
+                            ${proj.technologies ? `<span class="preview-item-date">${escapeHtml(proj.technologies)}</span>` : ''}
+                        </div>
+                        ${proj.description ? `<div class="preview-item-description">${escapeHtml(proj.description)}</div>` : ''}
+                        ${proj.link ? `<div class="preview-item-link">${escapeHtml(proj.link)}</div>` : ''}
+                    </div>
+                `;
+            }
+        });
+    }
+
+    if (languages.length > 0) {
+        html += `
+            <div class="section-title">Languages</div>
+            <div class="preview-languages">
+                ${languages.map(lang => lang.language ? `<span class="preview-language">${escapeHtml(lang.language)} <em>(${escapeHtml(lang.proficiency)})</em></span>` : '').join('')}
+            </div>
+        `;
+    }
+
+    if (awards.length > 0) {
+        html += `<div class="section-title">Awards & Achievements</div>`;
+        awards.forEach(award => {
+            if (award.title) {
+                html += `
+                    <div class="preview-item">
+                        <div class="preview-item-header">
+                            <span class="preview-item-title">${escapeHtml(award.title)}</span>
+                            <span class="preview-item-date">${escapeHtml(award.date)}</span>
+                        </div>
+                        <div class="preview-item-subtitle">${escapeHtml(award.issuer)}</div>
+                        ${award.description ? `<div class="preview-item-description">${escapeHtml(award.description)}</div>` : ''}
+                    </div>
+                `;
+            }
+        });
+    }
+
     resumePreview.innerHTML = html;
-    resumePreview.className = `resume-preview template-${currentTemplate}`;
+    resumePreview.className = `resume-preview template-${currentTemplate} bg-${currentBackground} font-${currentFont} color-${currentColor}`;
 }
 
 // Update cover letter preview
@@ -363,7 +674,7 @@ function updateCoverLetterPreview() {
     `;
 
     resumePreview.innerHTML = html;
-    resumePreview.className = 'resume-preview';
+    resumePreview.className = `resume-preview bg-${currentBackground}`;
 }
 
 // Save draft
@@ -381,6 +692,9 @@ function saveDraft() {
         id: editingId || Date.now(),
         type: currentDocType,
         template: currentTemplate,
+        background: currentBackground,
+        font: currentFont,
+        color: currentColor,
         data: data,
         updatedAt: Date.now()
     };
@@ -427,7 +741,11 @@ function collectFormData() {
             summary: document.getElementById('summary').value,
             experiences: [...experiences],
             education: [...education],
-            skills: [...skills]
+            skills: [...skills],
+            certifications: [...certifications],
+            projects: [...projects],
+            languages: [...languages],
+            awards: [...awards]
         };
     }
 }
@@ -472,12 +790,18 @@ window.loadDocument = function(id) {
     editingId = id;
     currentDocType = doc.type;
     currentTemplate = doc.template || 'modern';
+    currentBackground = doc.background || 'clean';
+    currentFont = doc.font || 'georgia';
+    currentColor = doc.color || 'blue';
 
     // Update UI
     docTabs.forEach(tab => {
         tab.classList.toggle('active', tab.dataset.type === currentDocType);
     });
     templateSelect.value = currentTemplate;
+    if (backgroundSelect) backgroundSelect.value = currentBackground;
+    if (fontSelect) fontSelect.value = currentFont;
+    if (colorSelect) colorSelect.value = currentColor;
     toggleForms();
 
     // Load data into form
@@ -498,10 +822,18 @@ window.loadDocument = function(id) {
         experiences = doc.data.experiences || [];
         education = doc.data.education || [];
         skills = doc.data.skills || [];
+        certifications = doc.data.certifications || [];
+        projects = doc.data.projects || [];
+        languages = doc.data.languages || [];
+        awards = doc.data.awards || [];
 
         renderExperiences();
         renderEducation();
         renderSkills();
+        renderCertifications();
+        renderProjects();
+        renderLanguages();
+        renderAwards();
     }
 
     updatePreview();
@@ -541,6 +873,52 @@ function downloadPdf() {
 
     html2pdf().set(opt).from(element).save();
     showToast('Downloading PDF...');
+}
+
+// Share resume
+async function shareResume() {
+    const formData = collectFormData();
+    const name = formData.fullName || formData.clName;
+
+    if (!name) {
+        showToast('Please enter a name first');
+        return;
+    }
+
+    const shareData = {
+        type: currentDocType,
+        template: currentTemplate,
+        background: currentBackground,
+        font: currentFont,
+        color: currentColor,
+        formData: formData,
+        name: name
+    };
+
+    try {
+        const response = await fetch('/api/resume/share', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(shareData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to share');
+        }
+
+        const result = await response.json();
+
+        // Show the share result
+        document.getElementById('shareResult').style.display = 'block';
+        document.getElementById('shareUrlInput').value = result.shareUrl;
+
+        showToast('Share link created!');
+    } catch (error) {
+        showToast('Failed to create share link');
+        console.error('Share error:', error);
+    }
 }
 
 // Escape HTML

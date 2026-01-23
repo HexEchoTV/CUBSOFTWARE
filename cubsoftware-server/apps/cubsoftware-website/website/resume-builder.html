@@ -121,6 +121,42 @@
                                 <div class="tags-container" id="skillsTags"></div>
                             </div>
                         </div>
+
+                        <!-- Certifications -->
+                        <div class="form-group-section">
+                            <div class="section-header">
+                                <h3>Certifications</h3>
+                                <button class="add-btn" id="addCertification">+ Add</button>
+                            </div>
+                            <div id="certificationList" class="dynamic-list"></div>
+                        </div>
+
+                        <!-- Projects -->
+                        <div class="form-group-section">
+                            <div class="section-header">
+                                <h3>Projects</h3>
+                                <button class="add-btn" id="addProject">+ Add</button>
+                            </div>
+                            <div id="projectList" class="dynamic-list"></div>
+                        </div>
+
+                        <!-- Languages -->
+                        <div class="form-group-section">
+                            <div class="section-header">
+                                <h3>Languages</h3>
+                                <button class="add-btn" id="addLanguage">+ Add</button>
+                            </div>
+                            <div id="languageList" class="dynamic-list"></div>
+                        </div>
+
+                        <!-- Awards & Achievements -->
+                        <div class="form-group-section">
+                            <div class="section-header">
+                                <h3>Awards & Achievements</h3>
+                                <button class="add-btn" id="addAward">+ Add</button>
+                            </div>
+                            <div id="awardList" class="dynamic-list"></div>
+                        </div>
                     </div>
 
                     <!-- Cover Letter Form -->
@@ -207,17 +243,67 @@
                             Download PDF
                         </button>
                     </div>
+                    <div class="editor-actions" style="margin-top: 0.5rem;">
+                        <button class="share-btn" id="shareLinkBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            </svg>
+                            Get Shareable Link
+                        </button>
+                    </div>
+
+                    <!-- Share Link Result -->
+                    <div class="share-result" id="shareResult" style="display: none;">
+                        <div class="share-label">Share this link with employers:</div>
+                        <div class="share-url-wrapper">
+                            <input type="text" id="shareUrlInput" readonly>
+                            <button class="copy-share-btn" id="copyShareBtn">Copy</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Preview Panel -->
                 <div class="preview-panel">
                     <div class="preview-header">
                         <h3>Preview</h3>
-                        <select id="templateSelect">
-                            <option value="modern">Modern</option>
-                            <option value="classic">Classic</option>
-                            <option value="minimal">Minimal</option>
-                        </select>
+                        <div class="preview-options">
+                            <select id="templateSelect" title="Layout Style">
+                                <option value="modern">Modern</option>
+                                <option value="classic">Classic</option>
+                                <option value="minimal">Minimal</option>
+                                <option value="executive">Executive</option>
+                                <option value="professional">Professional</option>
+                            </select>
+                            <select id="backgroundSelect" title="Background">
+                                <option value="clean">Clean White</option>
+                                <option value="ivory">Ivory Paper</option>
+                                <option value="elegant">Elegant Gold</option>
+                                <option value="professional">Professional</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="creative">Creative</option>
+                                <option value="premium">Premium</option>
+                            </select>
+                            <select id="fontSelect" title="Font Style">
+                                <option value="georgia">Georgia (Classic)</option>
+                                <option value="arial">Arial (Clean)</option>
+                                <option value="times">Times New Roman</option>
+                                <option value="calibri">Calibri (Modern)</option>
+                                <option value="garamond">Garamond (Elegant)</option>
+                            </select>
+                            <select id="colorSelect" title="Accent Color">
+                                <option value="blue">Blue</option>
+                                <option value="navy">Navy</option>
+                                <option value="green">Green</option>
+                                <option value="burgundy">Burgundy</option>
+                                <option value="black">Black</option>
+                                <option value="teal">Teal</option>
+                                <option value="purple">Purple</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="preview-container" id="previewContainer">
                         <div class="resume-preview" id="resumePreview">

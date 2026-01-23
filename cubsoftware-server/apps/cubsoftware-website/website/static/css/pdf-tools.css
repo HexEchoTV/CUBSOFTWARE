@@ -656,4 +656,71 @@
     .action-bar button {
         width: 100%;
     }
+
+    .range-inputs,
+    .custom-input {
+        flex-wrap: wrap;
+        padding-left: 0;
+    }
+
+    .custom-input input {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .pdf-container {
+        padding: 0.75rem;
+    }
+
+    .pdf-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .tool-selection {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .tool-tab {
+        padding: 1rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .tool-tab svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .upload-zone {
+        padding: 1.5rem 1rem;
+    }
+
+    .upload-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .files-section,
+    .split-options,
+    .compress-options,
+    .result-section {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+
+    .file-item {
+        padding: 0.75rem;
+    }
+
+    .file-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 0.6rem;
+    }
+
+    .pdf-info {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
 }

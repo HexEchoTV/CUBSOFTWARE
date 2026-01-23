@@ -67,6 +67,9 @@
 /* Category Sections */
 .category-section {
     margin-bottom: 50px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .category-section:last-child {
@@ -74,24 +77,55 @@
 }
 
 .category-title {
-    font-family: 'Poppins', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border-color);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 12px 0;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    color: var(--text-primary);
+    position: relative;
+}
+
+.category-title::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(135deg, #5865f2 0%, #7c3aed 100%);
+    border-radius: 2px;
+}
+
+.category-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 1px;
+    background: var(--border-color);
+    z-index: -1;
 }
 
 /* Features Grid */
 .features-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 25px;
     max-width: 1400px;
     margin: 0 auto;
+}
+
+.features-grid .feature-card {
+    flex: 0 1 280px;
+    max-width: 320px;
 }
 
 .feature-card {
@@ -164,8 +198,9 @@
         font-size: 1.8rem;
     }
 
-    .features-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .features-grid .feature-card {
+        flex: 0 1 calc(50% - 15px);
+        max-width: none;
     }
 
     .feature-card h3 {
@@ -192,8 +227,9 @@
         font-size: 1.5rem;
     }
 
-    .features-grid {
-        grid-template-columns: 1fr;
+    .features-grid .feature-card {
+        flex: 0 1 100%;
+        max-width: none;
     }
 
     .feature-card {

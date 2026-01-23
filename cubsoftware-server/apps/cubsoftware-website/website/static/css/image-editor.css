@@ -3,7 +3,8 @@
 .editor-container {
     max-width: 100%;
     margin: 0 auto;
-    padding: 30px 60px;
+    padding: 30px 20px;
+    overflow-x: hidden;
 }
 
 .editor-header {
@@ -29,9 +30,9 @@
 /* Main Layout */
 .editor-main {
     display: grid;
-    grid-template-columns: 500px 1fr;
+    grid-template-columns: minmax(300px, 450px) 1fr;
     grid-template-rows: 1fr;
-    gap: 40px;
+    gap: 20px;
     margin-bottom: 20px;
     min-height: 800px;
 }
@@ -1090,7 +1091,7 @@
 }
 
 /* Mobile Responsive */
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
     .editor-main {
         grid-template-columns: 1fr;
         min-height: auto;

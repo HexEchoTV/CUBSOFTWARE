@@ -257,11 +257,83 @@ def video_compressor():
 
 # ==================== RESUME BUILDER ====================
 
+# Storage for shared resumes
+RESUMES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'shared_resumes.json')
+
+def load_resumes():
+    """Load shared resumes from file"""
+    if os.path.exists(RESUMES_FILE):
+        with open(RESUMES_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_resumes(resumes):
+    """Save shared resumes to file"""
+    os.makedirs(os.path.dirname(RESUMES_FILE), exist_ok=True)
+    with open(RESUMES_FILE, 'w') as f:
+        json.dump(resumes, f, indent=2)
+
+def generate_resume_id():
+    """Generate a unique resume ID"""
+    import random
+    return ''.join(random.choices('0123456789', k=8))
+
 @app.route('/apps/resume-builder')
 @app.route('/apps/resume-builder/')
 def resume_builder():
     """Resume Builder - Create professional resumes and cover letters"""
     return render_template('resume-builder.html')
+
+@app.route('/apps/resume-builder/cv-<resume_id>')
+def view_shared_resume(resume_id):
+    """View a shared resume"""
+    resumes = load_resumes()
+    if resume_id not in resumes:
+        return render_template('404.html'), 404
+
+    # Increment view count
+    resumes[resume_id]['views'] = resumes[resume_id].get('views', 0) + 1
+    save_resumes(resumes)
+
+    return render_template('resume-view.html', resume_id=resume_id)
+
+@app.route('/api/resume/share', methods=['POST'])
+def share_resume():
+    """API endpoint to share a resume and get a unique link"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Resume data is required'}), 400
+
+    resumes = load_resumes()
+
+    # Generate unique ID
+    resume_id = generate_resume_id()
+    while resume_id in resumes:
+        resume_id = generate_resume_id()
+
+    # Save the resume
+    resumes[resume_id] = {
+        'data': data,
+        'created': time.time(),
+        'views': 0
+    }
+    save_resumes(resumes)
+
+    # Return the share URL
+    share_url = f"{request.host_url}apps/resume-builder/cv-{resume_id}"
+    return jsonify({
+        'shareUrl': share_url,
+        'resumeId': resume_id
+    })
+
+@app.route('/api/resume/<resume_id>')
+def get_resume(resume_id):
+    """API endpoint to get resume data"""
+    resumes = load_resumes()
+    if resume_id not in resumes:
+        return jsonify({'error': 'Resume not found'}), 404
+
+    return jsonify(resumes[resume_id]['data'])
 
 # ==================== JSON FORMATTER ====================
 

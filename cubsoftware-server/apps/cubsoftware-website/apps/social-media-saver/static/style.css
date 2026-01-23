@@ -36,8 +36,8 @@
     border: 1px solid var(--border-color);
     margin: 0 auto 25px;
     animation: fadeInUp 0.6s ease-out;
-    width: 1000px;
-    max-width: calc(100vw - 40px);
+    width: 100%;
+    max-width: min(1000px, calc(100vw - 40px));
 }
 
 .input-group {
@@ -313,8 +313,8 @@
     margin: 25px auto 0;
     animation: fadeInUp 0.6s ease-out 0.2s both;
     text-align: center;
-    width: 1000px;
-    max-width: calc(100vw - 40px);
+    width: 100%;
+    max-width: min(1000px, calc(100vw - 40px));
 }
 
 .info-section h3 {
