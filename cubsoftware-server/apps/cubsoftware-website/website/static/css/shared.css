@@ -23,15 +23,28 @@ input, textarea, select, button {
     max-width: 100%;
 }
 
-/* Global Select/Dropdown Styling Fix */
-select {
-    background-color: #1a1a2e !important;
+/* Global Select/Dropdown Styling Fix - Prevents white backgrounds */
+select,
+.form-group select,
+.input-group select,
+.setting-group select,
+.option-group select {
+    background-color: rgba(26, 26, 46, 0.95) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    padding-right: 30px !important;
 }
 
-select option {
+select option,
+.form-group select option,
+.input-group select option {
     background-color: #1a1a2e !important;
     color: #ffffff !important;
     padding: 10px;
@@ -42,6 +55,11 @@ select option:focus,
 select option:checked {
     background-color: #5865f2 !important;
     color: #ffffff !important;
+}
+
+select:focus {
+    outline: none;
+    border-color: #5865f2 !important;
 }
 
 /* Fix for date/time inputs */
@@ -65,14 +83,32 @@ pre, code {
 }
 
 :root {
+    /* Primary Colors */
     --primary-color: #5865f2;
+    --primary: #5865f2;
     --primary-dark: #4752c4;
     --secondary-color: #7c3aed;
+    --secondary: #7c3aed;
     --accent-color: #00ff88;
+
+    /* Background Colors */
     --bg-dark: #000000;
+    --dark-bg: rgba(0, 0, 0, 0.3);
+    --surface-color: rgba(255, 255, 255, 0.05);
+
+    /* Text Colors */
     --text-primary: #ffffff;
+    --text-light: #ffffff;
     --text-secondary: #b9bbbe;
+    --text-muted: #b9bbbe;
+
+    /* Border */
     --border-color: rgba(255, 255, 255, 0.1);
+
+    /* Status Colors */
+    --success: #22c55e;
+    --error: #ef4444;
+    --warning: #f59e0b;
 }
 
 body {
