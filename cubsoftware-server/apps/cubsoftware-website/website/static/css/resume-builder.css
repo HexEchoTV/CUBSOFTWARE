@@ -1,5 +1,18 @@
 /* Resume Builder Styles */
 
+/* CSS Variables for this page */
+:root {
+    --primary: #5865f2;
+    --secondary: #7c3aed;
+    --success: #22c55e;
+    --error: #ef4444;
+    --surface-color: rgba(255, 255, 255, 0.05);
+    --dark-bg: rgba(0, 0, 0, 0.3);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --text-light: #ffffff;
+    --text-muted: #b9bbbe;
+}
+
 .builder-container {
     max-width: 1400px;
     margin: 0 auto;
@@ -222,12 +235,18 @@
 }
 
 /* Editor Actions */
-.editor-actions {
-    display: flex;
-    gap: 1rem;
+.editor-actions-wrapper {
     margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.editor-actions {
+    display: flex;
+    gap: 0.75rem;
 }
 
 .save-draft-btn,
@@ -408,81 +427,49 @@
     position: relative;
 }
 
-/* Background Themes */
-.resume-preview.bg-clean {
-    background: #ffffff;
+/* Background Themes - Higher specificity to override base */
+.preview-container .resume-preview.bg-clean {
+    background: #ffffff !important;
 }
 
-.resume-preview.bg-ivory {
-    background: linear-gradient(135deg, #fffef5 0%, #faf8f0 100%);
+.preview-container .resume-preview.bg-ivory {
+    background: linear-gradient(135deg, #fffef5 0%, #faf8f0 100%) !important;
 }
 
-.resume-preview.bg-executive {
-    background: linear-gradient(to right, #1e3a5f 0%, #1e3a5f 30%, #ffffff 30%, #ffffff 100%);
-}
-
-.resume-preview.bg-executive .preview-name,
-.resume-preview.bg-executive .preview-title,
-.resume-preview.bg-executive .preview-contact {
-    color: #ffffff;
-    padding-left: 20px;
-    margin-left: -40px;
-    padding-right: 20px;
-    width: calc(30% + 20px);
-}
-
-.resume-preview.bg-executive .section-title {
-    color: #1e3a5f;
-    border-bottom-color: #c9a227;
-}
-
-.resume-preview.bg-creative {
+.preview-container .resume-preview.bg-elegant {
     background:
-        linear-gradient(135deg, rgba(88, 101, 242, 0.03) 25%, transparent 25%),
-        linear-gradient(225deg, rgba(124, 58, 237, 0.03) 25%, transparent 25%),
-        linear-gradient(45deg, rgba(88, 101, 242, 0.03) 25%, transparent 25%),
-        linear-gradient(315deg, rgba(124, 58, 237, 0.03) 25%, transparent 25%),
-        #ffffff;
-    background-size: 40px 40px;
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+        linear-gradient(180deg, #fefdfb 0%, #f9f7f4 100%) !important;
 }
 
-.resume-preview.bg-elegant {
-    background:
-        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
-        linear-gradient(180deg, #fefdfb 0%, #f9f7f4 100%);
-    border: 1px solid #e8e4dc;
+.preview-container .resume-preview.bg-professional {
+    background: linear-gradient(180deg, #f0f4f8 0%, #ffffff 20%, #ffffff 80%, #f0f4f8 100%) !important;
 }
 
-.resume-preview.bg-corporate {
-    background: #ffffff;
-    border-left: 4px solid #2c3e50;
+.preview-container .resume-preview.bg-corporate {
+    background: #ffffff !important;
+    border-left: 5px solid #2c3e50 !important;
 }
 
-.resume-preview.bg-corporate .section-title {
+.preview-container .resume-preview.bg-corporate .section-title {
     color: #2c3e50;
     border-bottom-color: #3498db;
 }
 
-.resume-preview.bg-professional {
-    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 15%, #ffffff 85%, #f8f9fa 100%);
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.02);
-}
-
-.resume-preview.bg-premium {
+.preview-container .resume-preview.bg-creative {
     background:
-        linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%);
-    position: relative;
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(88, 101, 242, 0.02) 10px,
+            rgba(88, 101, 242, 0.02) 20px
+        ),
+        #ffffff !important;
 }
 
-.resume-preview.bg-premium::before {
-    content: '';
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
-    border: 1px solid rgba(180, 150, 100, 0.2);
-    pointer-events: none;
+.preview-container .resume-preview.bg-premium {
+    background: linear-gradient(135deg, #fdfcfb 0%, #e8ddd4 100%) !important;
 }
 
 /* Modern Template */
@@ -992,6 +979,15 @@
         flex-direction: column;
     }
 
+    .editor-actions .save-draft-btn,
+    .editor-actions .download-btn {
+        width: 100%;
+    }
+
+    .share-url-wrapper {
+        flex-direction: column;
+    }
+
     .resume-preview {
         padding: 20px;
     }
@@ -1011,5 +1007,6 @@
 
     .preview-options select {
         flex: 1;
+        min-width: 0;
     }
 }

@@ -225,25 +225,25 @@
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="editor-actions">
-                        <button class="save-draft-btn" id="saveDraftBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                <polyline points="7 3 7 8 15 8"></polyline>
-                            </svg>
-                            Save Draft
-                        </button>
-                        <button class="download-btn" id="downloadPdfBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Download PDF
-                        </button>
-                    </div>
-                    <div class="editor-actions" style="margin-top: 0.5rem;">
+                    <div class="editor-actions-wrapper">
+                        <div class="editor-actions">
+                            <button class="save-draft-btn" id="saveDraftBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                                Save Draft
+                            </button>
+                            <button class="download-btn" id="downloadPdfBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Download PDF
+                            </button>
+                        </div>
                         <button class="share-btn" id="shareLinkBtn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="18" cy="5" r="3"></circle>
@@ -254,14 +254,14 @@
                             </svg>
                             Get Shareable Link
                         </button>
-                    </div>
 
-                    <!-- Share Link Result -->
-                    <div class="share-result" id="shareResult" style="display: none;">
-                        <div class="share-label">Share this link with employers:</div>
-                        <div class="share-url-wrapper">
-                            <input type="text" id="shareUrlInput" readonly>
-                            <button class="copy-share-btn" id="copyShareBtn">Copy</button>
+                        <!-- Share Link Result -->
+                        <div class="share-result" id="shareResult" style="display: none;">
+                            <div class="share-label">Share this link with employers:</div>
+                            <div class="share-url-wrapper">
+                                <input type="text" id="shareUrlInput" readonly>
+                                <button class="copy-share-btn" id="copyShareBtn">Copy</button>
+                            </div>
                         </div>
                     </div>
                 </div>
