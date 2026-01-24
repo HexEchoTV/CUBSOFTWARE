@@ -152,11 +152,83 @@ def timestamp_converter():
 
 # ==================== COUNTDOWN MAKER ====================
 
+# Storage for shared countdowns
+COUNTDOWNS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'countdowns.json')
+
+def load_countdowns():
+    """Load shared countdowns from file"""
+    if os.path.exists(COUNTDOWNS_FILE):
+        with open(COUNTDOWNS_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_countdowns(countdowns):
+    """Save shared countdowns to file"""
+    os.makedirs(os.path.dirname(COUNTDOWNS_FILE), exist_ok=True)
+    with open(COUNTDOWNS_FILE, 'w') as f:
+        json.dump(countdowns, f, indent=2)
+
+def generate_countdown_id():
+    """Generate a unique countdown ID"""
+    import random
+    return ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=8))
+
 @app.route('/apps/countdown-maker')
 @app.route('/apps/countdown-maker/')
 def countdown_maker():
     """Countdown Maker - Create and share countdown timers"""
     return render_template('countdown-maker.html')
+
+@app.route('/apps/countdown-maker/view-<countdown_id>')
+def view_countdown(countdown_id):
+    """View a shared countdown timer"""
+    countdowns = load_countdowns()
+    if countdown_id not in countdowns:
+        return render_template('404.html'), 404
+
+    # Increment view count
+    countdowns[countdown_id]['views'] = countdowns[countdown_id].get('views', 0) + 1
+    save_countdowns(countdowns)
+
+    return render_template('countdown-view.html', countdown_id=countdown_id)
+
+@app.route('/api/countdown/create', methods=['POST'])
+def create_countdown():
+    """API endpoint to create a shareable countdown"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Countdown data is required'}), 400
+
+    countdowns = load_countdowns()
+
+    # Generate unique ID
+    countdown_id = generate_countdown_id()
+    while countdown_id in countdowns:
+        countdown_id = generate_countdown_id()
+
+    # Save the countdown
+    countdowns[countdown_id] = {
+        'data': data,
+        'created': time.time(),
+        'views': 0
+    }
+    save_countdowns(countdowns)
+
+    # Return the share URL
+    share_url = f"{request.host_url}apps/countdown-maker/view-{countdown_id}"
+    return jsonify({
+        'shareUrl': share_url,
+        'countdownId': countdown_id
+    })
+
+@app.route('/api/countdown/<countdown_id>')
+def get_countdown(countdown_id):
+    """API endpoint to get countdown data"""
+    countdowns = load_countdowns()
+    if countdown_id not in countdowns:
+        return jsonify({'error': 'Countdown not found'}), 404
+
+    return jsonify(countdowns[countdown_id]['data'])
 
 # ==================== LINK SHORTENER ====================
 

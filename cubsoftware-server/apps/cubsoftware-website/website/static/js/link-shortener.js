@@ -82,7 +82,7 @@ async function shortenUrl() {
         resultSection.style.display = 'block';
 
         // Save to recent
-        saveToRecent(url, data.code);
+        saveToRecent(url, data.shortCode);
 
     } catch (error) {
         showError(error.message);

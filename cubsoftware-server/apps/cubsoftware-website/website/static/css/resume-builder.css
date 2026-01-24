@@ -267,6 +267,10 @@
     gap: 0.75rem;
 }
 
+.editor-actions.three-col {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
 .save-draft-btn,
 .download-btn {
     display: flex;
@@ -306,33 +310,33 @@
 
 .save-draft-btn svg,
 .download-btn svg,
-.share-btn svg {
+.share-link-btn svg {
     width: 16px;
     height: 16px;
     flex-shrink: 0;
 }
 
-/* Share Button */
-.share-btn {
-    width: 100%;
+/* Share Link Button - styled like save draft */
+.share-link-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1rem;
     border-radius: 10px;
-    font-weight: 500;
-    font-size: 0.85rem;
+    font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: rgba(88, 101, 242, 0.1);
-    border: 1px solid var(--primary);
-    color: var(--primary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
 }
 
-.share-btn:hover {
-    background: var(--primary);
-    color: white;
+.share-link-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(88, 101, 242, 0.1);
 }
 
 /* Share Result */
@@ -700,12 +704,12 @@
     border-bottom: 2px solid #3498db;
 }
 
-/* Font Classes */
-.resume-preview.font-georgia { font-family: 'Georgia', serif; }
-.resume-preview.font-arial { font-family: 'Arial', 'Helvetica', sans-serif; }
-.resume-preview.font-times { font-family: 'Times New Roman', 'Times', serif; }
-.resume-preview.font-calibri { font-family: 'Calibri', 'Segoe UI', sans-serif; }
-.resume-preview.font-garamond { font-family: 'Garamond', 'Georgia', serif; }
+/* Font Classes - Use !important to override template defaults */
+.resume-preview.font-georgia { font-family: 'Georgia', serif !important; }
+.resume-preview.font-arial { font-family: 'Arial', 'Helvetica', sans-serif !important; }
+.resume-preview.font-times { font-family: 'Times New Roman', 'Times', serif !important; }
+.resume-preview.font-calibri { font-family: 'Calibri', 'Segoe UI', sans-serif !important; }
+.resume-preview.font-garamond { font-family: 'Garamond', 'Georgia', serif !important; }
 
 /* Color Classes */
 .resume-preview.color-blue .preview-name,
@@ -1017,7 +1021,8 @@
         grid-template-columns: 1fr;
     }
 
-    .editor-actions {
+    .editor-actions,
+    .editor-actions.three-col {
         grid-template-columns: 1fr;
     }
 

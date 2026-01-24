@@ -195,11 +195,18 @@ function setupEventListeners() {
     document.getElementById('shareLinkBtn').addEventListener('click', shareResume);
 
     // Copy share URL button
-    document.getElementById('copyShareBtn').addEventListener('click', () => {
+    document.getElementById('copyShareBtn').addEventListener('click', async () => {
         const input = document.getElementById('shareUrlInput');
-        input.select();
-        document.execCommand('copy');
-        showToast('Link copied to clipboard!');
+        const url = input.value;
+        try {
+            await navigator.clipboard.writeText(url);
+            showToast('Link copied to clipboard!');
+        } catch (err) {
+            // Fallback for older browsers
+            input.select();
+            document.execCommand('copy');
+            showToast('Link copied to clipboard!');
+        }
     });
 }
 

@@ -21,12 +21,14 @@ const minutesBlock = document.getElementById('minutesBlock');
 const secondsBlock = document.getElementById('secondsBlock');
 const shareLink = document.getElementById('shareLink');
 const copyLinkBtn = document.getElementById('copyLinkBtn');
+const createShareBtn = document.getElementById('createShareBtn');
 const saveCountdownBtn = document.getElementById('saveCountdownBtn');
 const savedList = document.getElementById('savedList');
 const themeBtns = document.querySelectorAll('.theme-btn');
 
 let currentTheme = 'dark';
 let countdownInterval = null;
+let currentShareId = null;
 
 // Initialize
 function init() {
@@ -102,8 +104,59 @@ function setupEventListeners() {
         }
     });
 
+    // Create shareable link
+    if (createShareBtn) {
+        createShareBtn.addEventListener('click', createShareableLink);
+    }
+
     // Save countdown
     saveCountdownBtn.addEventListener('click', saveCountdown);
+}
+
+// Create shareable link via API
+async function createShareableLink() {
+    if (!eventTitle.value || !eventDate.value) {
+        showToast('Please enter a title and date');
+        return;
+    }
+
+    const countdownData = {
+        title: eventTitle.value,
+        date: eventDate.value,
+        endMessage: endMessage.value,
+        theme: currentTheme,
+        showDays: showDays.checked,
+        showHours: showHours.checked,
+        showMinutes: showMinutes.checked,
+        showSeconds: showSeconds.checked
+    };
+
+    try {
+        const response = await fetch('/api/countdown/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(countdownData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to create shareable link');
+        }
+
+        const result = await response.json();
+        currentShareId = result.countdownId;
+        shareLink.value = result.shareUrl;
+
+        // Show the share link container
+        document.getElementById('shareLinkContainer').style.display = 'flex';
+
+        showToast('Shareable link created!');
+
+    } catch (error) {
+        showToast('Failed to create link');
+        console.error('Share error:', error);
+    }
 }
 
 // Update preview
@@ -170,24 +223,15 @@ function updateCountdown() {
     previewSeconds.textContent = String(seconds).padStart(2, '0');
 }
 
-// Update share link
+// Clear share link when settings change (user needs to regenerate)
 function updateShareLink() {
-    const params = new URLSearchParams();
-
-    if (eventTitle.value) params.set('title', eventTitle.value);
-    if (eventDate.value) params.set('date', eventDate.value);
-    if (endMessage.value) params.set('msg', endMessage.value);
-    params.set('theme', currentTheme);
-
-    const display = [];
-    if (showDays.checked) display.push('d');
-    if (showHours.checked) display.push('h');
-    if (showMinutes.checked) display.push('m');
-    if (showSeconds.checked) display.push('s');
-    params.set('show', display.join(''));
-
-    const baseUrl = window.location.origin + window.location.pathname;
-    shareLink.value = baseUrl + '?' + params.toString();
+    // Hide the share link container when settings change
+    // User will need to click "Create Shareable Link" again
+    if (currentShareId) {
+        document.getElementById('shareLinkContainer').style.display = 'none';
+        currentShareId = null;
+        shareLink.value = '';
+    }
 }
 
 // Load from URL

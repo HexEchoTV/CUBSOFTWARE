@@ -11,6 +11,11 @@
 html {
     scroll-behavior: smooth;
     overflow-x: hidden;
+    max-width: 100vw;
+}
+
+html, body {
+    overflow-x: hidden;
 }
 
 /* Prevent any element from exceeding viewport width */
@@ -28,7 +33,9 @@ select,
 .form-group select,
 .input-group select,
 .setting-group select,
-.option-group select {
+.option-group select,
+.preview-options select,
+.preview-header select {
     background-color: rgba(26, 26, 46, 0.95) !important;
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -40,11 +47,14 @@ select,
     background-repeat: no-repeat !important;
     background-position: right 12px center !important;
     padding-right: 30px !important;
+    color-scheme: dark;
 }
 
 select option,
 .form-group select option,
-.input-group select option {
+.input-group select option,
+.preview-options select option,
+.preview-header select option {
     background-color: #1a1a2e !important;
     color: #ffffff !important;
     padding: 10px;
@@ -52,8 +62,10 @@ select option,
 
 select option:hover,
 select option:focus,
-select option:checked {
+select option:checked,
+select option:active {
     background-color: #5865f2 !important;
+    background: linear-gradient(#5865f2, #5865f2) !important;
     color: #ffffff !important;
 }
 
@@ -217,6 +229,8 @@ a:hover {
     flex-direction: column;
     min-height: 100vh;
     flex: 1;
+    max-width: 100vw;
+    overflow-x: hidden;
 }
 
 /* ==================== NAVIGATION HEADER ==================== */

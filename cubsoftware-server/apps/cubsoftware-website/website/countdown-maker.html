@@ -144,9 +144,18 @@
                 <h3>Share Your Countdown</h3>
                 <div class="share-options">
                     <div class="share-input-group">
-                        <label>Shareable Link</label>
-                        <div class="copy-input">
-                            <input type="text" id="shareLink" readonly placeholder="Configure your countdown to generate a link">
+                        <label>Create a unique shareable link that viewers can only see the timer (not edit)</label>
+                        <div class="share-actions">
+                            <button class="create-link-btn" id="createShareBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                </svg>
+                                Create Shareable Link
+                            </button>
+                        </div>
+                        <div class="copy-input" id="shareLinkContainer" style="display: none;">
+                            <input type="text" id="shareLink" readonly placeholder="Your shareable link will appear here">
                             <button class="copy-btn" id="copyLinkBtn">Copy</button>
                         </div>
                     </div>
