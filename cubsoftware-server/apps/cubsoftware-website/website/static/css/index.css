@@ -41,6 +41,13 @@
 /* Sections */
 .about-section {
     padding: 60px 20px;
+    width: 100%;
+}
+
+.about-section > .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
 .section-title {
