@@ -29,11 +29,83 @@ const savedList = document.getElementById('savedList');
 // Initialize
 function init() {
     setupEventListeners();
+    setupCustomDropdowns();
     loadSavedDocuments();
     updatePreview();
 
     // Set default date for cover letter
     document.getElementById('clDate').value = new Date().toISOString().split('T')[0];
+}
+
+// Setup custom dropdowns
+function setupCustomDropdowns() {
+    const dropdowns = document.querySelectorAll('.custom-dropdown');
+
+    dropdowns.forEach(dropdown => {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        const menu = dropdown.querySelector('.dropdown-menu');
+        const items = dropdown.querySelectorAll('.dropdown-item');
+        const label = dropdown.querySelector('.dropdown-label');
+        const colorIndicator = dropdown.querySelector('.color-indicator');
+        const targetId = dropdown.dataset.target;
+        const hiddenSelect = document.getElementById(targetId);
+
+        // Toggle dropdown on click
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close other dropdowns
+            dropdowns.forEach(d => {
+                if (d !== dropdown) d.classList.remove('open');
+            });
+            dropdown.classList.toggle('open');
+        });
+
+        // Handle item selection
+        items.forEach(item => {
+            item.addEventListener('click', () => {
+                const value = item.dataset.value;
+                const text = item.textContent.trim();
+
+                // Update label
+                if (targetId === 'colorSelect') {
+                    // For color, show just the color name
+                    label.textContent = text;
+                    // Update color indicator
+                    const colorDot = item.querySelector('.color-dot');
+                    if (colorIndicator && colorDot) {
+                        colorIndicator.style.background = colorDot.style.background;
+                    }
+                } else {
+                    label.textContent = text;
+                }
+
+                // Update active state
+                items.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                // Update hidden select and trigger change
+                if (hiddenSelect) {
+                    hiddenSelect.value = value;
+                    hiddenSelect.dispatchEvent(new Event('change'));
+                }
+
+                // Close dropdown
+                dropdown.classList.remove('open');
+            });
+        });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+        dropdowns.forEach(d => d.classList.remove('open'));
+    });
+
+    // Close dropdowns on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            dropdowns.forEach(d => d.classList.remove('open'));
+        }
+    });
 }
 
 // Setup event listeners

@@ -298,8 +298,8 @@ def shorten_url():
     }
     save_links(links)
 
-    # Return the shortened URL
-    short_url = f"{request.host_url}s/{short_code}"
+    # Return the shortened URL using the short domain
+    short_url = f"https://cubsw.link/{short_code}"
     return jsonify({
         'shortUrl': short_url,
         'shortCode': short_code,
@@ -308,7 +308,26 @@ def shorten_url():
 
 @app.route('/s/<code>')
 def redirect_short_url(code):
-    """Redirect from short URL to original URL"""
+    """Redirect from short URL to original URL (legacy route)"""
+    links = load_links()
+    if code not in links:
+        return render_template('404.html'), 404
+
+    # Increment click count
+    links[code]['clicks'] = links[code].get('clicks', 0) + 1
+    save_links(links)
+
+    return redirect(links[code]['url'])
+
+@app.route('/<code>')
+def redirect_short_code(code):
+    """Redirect short codes on cubsw.link domain"""
+    # Only handle short codes on the short domain
+    host = request.host.lower()
+    if 'cubsw.link' not in host:
+        # Not the short domain, return 404 (let other routes handle it)
+        return render_template('404.html'), 404
+
     links = load_links()
     if code not in links:
         return render_template('404.html'), 404

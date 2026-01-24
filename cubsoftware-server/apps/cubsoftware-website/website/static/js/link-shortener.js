@@ -75,8 +75,8 @@ async function shortenUrl() {
             throw new Error(data.error || 'Failed to shorten URL');
         }
 
-        // Show result
-        const shortUrl = window.location.origin + '/s/' + data.code;
+        // Show result - use the short domain
+        const shortUrl = 'https://cubsw.link/' + data.shortCode;
         shortUrlInput.value = shortUrl;
         visitLink.href = shortUrl;
         resultSection.style.display = 'block';
@@ -158,7 +158,7 @@ function loadRecentLinks() {
     }
 
     recentList.innerHTML = recent.map(item => {
-        const shortUrl = window.location.origin + '/s/' + item.code;
+        const shortUrl = 'https://cubsw.link/' + item.code;
         return `
             <div class="recent-item">
                 <div class="recent-item-info">

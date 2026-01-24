@@ -267,38 +267,95 @@
                     <div class="preview-header">
                         <h3>Preview</h3>
                         <div class="preview-options">
-                            <select id="templateSelect" title="Layout Style">
-                                <option value="modern">Modern</option>
-                                <option value="classic">Classic</option>
-                                <option value="minimal">Minimal</option>
-                                <option value="executive">Executive</option>
-                                <option value="professional">Professional</option>
-                            </select>
-                            <select id="backgroundSelect" title="Background">
-                                <option value="clean">Clean White</option>
-                                <option value="ivory">Ivory Paper</option>
-                                <option value="elegant">Elegant Gold</option>
-                                <option value="professional">Professional</option>
-                                <option value="corporate">Corporate</option>
-                                <option value="creative">Creative</option>
-                                <option value="premium">Premium</option>
-                            </select>
-                            <select id="fontSelect" title="Font Style">
-                                <option value="georgia">Georgia (Classic)</option>
-                                <option value="arial">Arial (Clean)</option>
-                                <option value="times">Times New Roman</option>
-                                <option value="calibri">Calibri (Modern)</option>
-                                <option value="garamond">Garamond (Elegant)</option>
-                            </select>
-                            <select id="colorSelect" title="Accent Color">
-                                <option value="blue">Blue</option>
-                                <option value="navy">Navy</option>
-                                <option value="green">Green</option>
-                                <option value="burgundy">Burgundy</option>
-                                <option value="black">Black</option>
-                                <option value="teal">Teal</option>
-                                <option value="purple">Purple</option>
-                            </select>
+                            <div class="custom-dropdown" data-target="templateSelect">
+                                <button class="dropdown-toggle" type="button">
+                                    <span class="dropdown-label">Modern</span>
+                                    <svg class="dropdown-arrow" viewBox="0 0 10 10"><path d="M5 7L1 3h8z"/></svg>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-item active" data-value="modern">Modern</div>
+                                    <div class="dropdown-item" data-value="classic">Classic</div>
+                                    <div class="dropdown-item" data-value="minimal">Minimal</div>
+                                    <div class="dropdown-item" data-value="executive">Executive</div>
+                                    <div class="dropdown-item" data-value="professional">Professional</div>
+                                </div>
+                                <select id="templateSelect" hidden>
+                                    <option value="modern">Modern</option>
+                                    <option value="classic">Classic</option>
+                                    <option value="minimal">Minimal</option>
+                                    <option value="executive">Executive</option>
+                                    <option value="professional">Professional</option>
+                                </select>
+                            </div>
+                            <div class="custom-dropdown" data-target="backgroundSelect">
+                                <button class="dropdown-toggle" type="button">
+                                    <span class="dropdown-label">Clean White</span>
+                                    <svg class="dropdown-arrow" viewBox="0 0 10 10"><path d="M5 7L1 3h8z"/></svg>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-item active" data-value="clean">Clean White</div>
+                                    <div class="dropdown-item" data-value="ivory">Ivory Paper</div>
+                                    <div class="dropdown-item" data-value="elegant">Elegant Gold</div>
+                                    <div class="dropdown-item" data-value="professional">Professional</div>
+                                    <div class="dropdown-item" data-value="corporate">Corporate</div>
+                                    <div class="dropdown-item" data-value="creative">Creative</div>
+                                    <div class="dropdown-item" data-value="premium">Premium</div>
+                                </div>
+                                <select id="backgroundSelect" hidden>
+                                    <option value="clean">Clean White</option>
+                                    <option value="ivory">Ivory Paper</option>
+                                    <option value="elegant">Elegant Gold</option>
+                                    <option value="professional">Professional</option>
+                                    <option value="corporate">Corporate</option>
+                                    <option value="creative">Creative</option>
+                                    <option value="premium">Premium</option>
+                                </select>
+                            </div>
+                            <div class="custom-dropdown" data-target="fontSelect">
+                                <button class="dropdown-toggle" type="button">
+                                    <span class="dropdown-label">Georgia</span>
+                                    <svg class="dropdown-arrow" viewBox="0 0 10 10"><path d="M5 7L1 3h8z"/></svg>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-item active" data-value="georgia">Georgia (Classic)</div>
+                                    <div class="dropdown-item" data-value="arial">Arial (Clean)</div>
+                                    <div class="dropdown-item" data-value="times">Times New Roman</div>
+                                    <div class="dropdown-item" data-value="calibri">Calibri (Modern)</div>
+                                    <div class="dropdown-item" data-value="garamond">Garamond (Elegant)</div>
+                                </div>
+                                <select id="fontSelect" hidden>
+                                    <option value="georgia">Georgia (Classic)</option>
+                                    <option value="arial">Arial (Clean)</option>
+                                    <option value="times">Times New Roman</option>
+                                    <option value="calibri">Calibri (Modern)</option>
+                                    <option value="garamond">Garamond (Elegant)</option>
+                                </select>
+                            </div>
+                            <div class="custom-dropdown" data-target="colorSelect">
+                                <button class="dropdown-toggle" type="button">
+                                    <span class="dropdown-label">Blue</span>
+                                    <span class="color-indicator" style="background: #2563eb;"></span>
+                                    <svg class="dropdown-arrow" viewBox="0 0 10 10"><path d="M5 7L1 3h8z"/></svg>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-item active" data-value="blue"><span class="color-dot" style="background: #2563eb;"></span>Blue</div>
+                                    <div class="dropdown-item" data-value="navy"><span class="color-dot" style="background: #1e3a5f;"></span>Navy</div>
+                                    <div class="dropdown-item" data-value="green"><span class="color-dot" style="background: #059669;"></span>Green</div>
+                                    <div class="dropdown-item" data-value="burgundy"><span class="color-dot" style="background: #7c2d36;"></span>Burgundy</div>
+                                    <div class="dropdown-item" data-value="black"><span class="color-dot" style="background: #1a1a1a;"></span>Black</div>
+                                    <div class="dropdown-item" data-value="teal"><span class="color-dot" style="background: #0d9488;"></span>Teal</div>
+                                    <div class="dropdown-item" data-value="purple"><span class="color-dot" style="background: #7c3aed;"></span>Purple</div>
+                                </div>
+                                <select id="colorSelect" hidden>
+                                    <option value="blue">Blue</option>
+                                    <option value="navy">Navy</option>
+                                    <option value="green">Green</option>
+                                    <option value="burgundy">Burgundy</option>
+                                    <option value="black">Black</option>
+                                    <option value="teal">Teal</option>
+                                    <option value="purple">Purple</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="preview-container" id="previewContainer">
