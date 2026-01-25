@@ -74,10 +74,10 @@
 /* Category Sections */
 .category-section {
     margin-bottom: 50px;
-    max-width: 1400px;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .category-section:last-child {
@@ -95,6 +95,7 @@
     letter-spacing: 3px;
     color: var(--text-primary);
     position: relative;
+    width: 100%;
 }
 
 .category-title::before {
@@ -127,13 +128,14 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 25px;
-    max-width: 1400px;
-    margin: 0 auto;
+    max-width: 1200px;
+    width: 100%;
 }
 
 .features-grid .feature-card {
     flex: 0 1 280px;
     max-width: 320px;
+    text-align: center;
 }
 
 .feature-card {

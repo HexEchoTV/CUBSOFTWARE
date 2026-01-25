@@ -57,10 +57,9 @@ async function deployCommands() {
 
         const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
-        // Deploy to guild for instant updates (use applicationCommands for global)
-        const guildId = '1404523107544469545';
+        // Deploy globally (takes up to 1 hour to propagate to all servers)
         const data = await rest.put(
-            Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, guildId),
+            Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
             { body: commands },
         );
 

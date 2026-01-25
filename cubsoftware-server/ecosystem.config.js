@@ -98,6 +98,34 @@ module.exports = {
             out_file: './logs/onion-bot-out.log',
             log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
             merge_logs: true
+        },
+
+        // ============================================
+        // CleanMe Bot (Discord Bot)
+        // ============================================
+        {
+            name: 'cleanme-bot',
+            script: 'index.js',
+            cwd: './apps/cleanme-bot',
+            interpreter: 'node',
+            watch: false,
+            autorestart: true,
+            max_restarts: 10,
+            restart_delay: 5000,
+            // Node.js specific settings
+            node_args: '--max-old-space-size=256',
+            // Environment variables
+            env: {
+                NODE_ENV: 'production'
+            },
+            env_development: {
+                NODE_ENV: 'development'
+            },
+            // Logging
+            error_file: './logs/cleanme-bot-error.log',
+            out_file: './logs/cleanme-bot-out.log',
+            log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+            merge_logs: true
         }
 
         // ============================================
