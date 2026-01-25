@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, PermissionFlagsBits, ChannelType, Collection, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, REST, Routes, SlashCommandBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, PermissionFlagsBits, ChannelType, Collection, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, REST, Routes, SlashCommandBuilder, ActivityType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -89,12 +89,36 @@ const client = new Client({
 // Store pending confirmations
 const pendingConfirmations = new Collection();
 
+// Rich presence rotation
+const presenceMessages = [
+    { text: '/help - View all commands', type: ActivityType.Playing },
+    { text: '/save - Backup your server', type: ActivityType.Playing },
+    { text: '/copy - Clone a server setup', type: ActivityType.Playing },
+    { text: '/clean - Wipe server clean', type: ActivityType.Playing },
+    { text: '/list - Check saved configs', type: ActivityType.Playing },
+    { text: '/cleanroles - Remove all roles', type: ActivityType.Playing },
+    { text: '/cleanchannels - Remove all channels', type: ActivityType.Playing },
+];
+
+let presenceIndex = 0;
+
+function updatePresence() {
+    const presence = presenceMessages[presenceIndex];
+    client.user.setActivity(presence.text, { type: presence.type });
+    console.log(`[Presence] Updated to: ${presence.text}`);
+    presenceIndex = (presenceIndex + 1) % presenceMessages.length;
+}
+
 client.once('ready', async () => {
     console.log(`CleanMe Bot is online! Logged in as ${client.user.tag}`);
     console.log(`Serving ${client.guilds.cache.size} servers`);
 
     // Deploy commands on startup
     await deployCommands();
+
+    // Start presence rotation (every 30 seconds)
+    updatePresence();
+    setInterval(updatePresence, 30000);
 });
 
 // Handle slash commands
