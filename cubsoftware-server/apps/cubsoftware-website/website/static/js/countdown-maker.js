@@ -29,6 +29,7 @@ const themeBtns = document.querySelectorAll('.theme-btn');
 let currentTheme = 'dark';
 let countdownInterval = null;
 let currentShareId = null;
+let currentSavedId = null; // Track the ID of the currently loaded saved countdown
 
 // Initialize
 function init() {
@@ -182,7 +183,7 @@ async function createShareableLink() {
 
 // Update the share button text based on whether we're creating or updating
 function updateShareButtonText() {
-    const btnText = createShareBtn.querySelector('svg').nextSibling;
+    if (!createShareBtn) return;
     if (currentShareId) {
         createShareBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -199,6 +200,30 @@ function updateShareButtonText() {
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
             </svg>
             Create Shareable Link
+        `;
+    }
+}
+
+// Update the save button text based on whether we're editing an existing countdown
+function updateSaveButtonText() {
+    if (!saveCountdownBtn) return;
+    if (currentSavedId) {
+        saveCountdownBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Update Saved
+        `;
+    } else {
+        saveCountdownBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Save Current
         `;
     }
 }
@@ -367,8 +392,13 @@ function saveCountdown() {
 
     let saved = JSON.parse(localStorage.getItem('savedCountdowns') || '[]');
 
-    // Check if we're updating an existing saved countdown (by shareId)
-    const existingIndex = currentShareId ? saved.findIndex(c => c.shareId === currentShareId) : -1;
+    // Check if we're updating an existing saved countdown (by saved ID or shareId)
+    let existingIndex = -1;
+    if (currentSavedId) {
+        existingIndex = saved.findIndex(c => c.id === currentSavedId);
+    } else if (currentShareId) {
+        existingIndex = saved.findIndex(c => c.shareId === currentShareId);
+    }
 
     const countdown = {
         id: existingIndex >= 0 ? saved[existingIndex].id : Date.now(),
@@ -380,22 +410,25 @@ function saveCountdown() {
         showHours: showHours.checked,
         showMinutes: showMinutes.checked,
         showSeconds: showSeconds.checked,
-        shareId: currentShareId || null,
-        shareUrl: currentShareId ? shareLink.value : null
+        shareId: currentShareId || (existingIndex >= 0 ? saved[existingIndex].shareId : null),
+        shareUrl: currentShareId ? shareLink.value : (existingIndex >= 0 ? saved[existingIndex].shareUrl : null)
     };
 
     if (existingIndex >= 0) {
         // Update existing
         saved[existingIndex] = countdown;
+        currentSavedId = countdown.id;
         showToast('Countdown updated!');
     } else {
         // Add new
         saved.push(countdown);
+        currentSavedId = countdown.id;
         showToast('Countdown saved!');
     }
 
     localStorage.setItem('savedCountdowns', JSON.stringify(saved));
     loadSavedCountdowns();
+    updateSaveButtonText();
 }
 
 // Load saved countdowns
@@ -408,16 +441,17 @@ function loadSavedCountdowns() {
     }
 
     savedList.innerHTML = saved.map(countdown => `
-        <div class="saved-item" data-id="${countdown.id}">
+        <div class="saved-item ${currentSavedId === countdown.id ? 'editing' : ''}" data-id="${countdown.id}">
             <div class="saved-item-info">
                 <div class="saved-item-title">
                     ${escapeHtml(countdown.title)}
                     ${countdown.shareId ? '<span class="shared-badge" title="Has shareable link">🔗</span>' : ''}
+                    ${currentSavedId === countdown.id ? '<span class="editing-badge">Editing</span>' : ''}
                 </div>
                 <div class="saved-item-date">${formatReadableDate(countdown.date)}</div>
             </div>
             <div class="saved-item-actions">
-                <button onclick="loadCountdown(${countdown.id})">Load</button>
+                <button onclick="loadCountdown(${countdown.id})">${currentSavedId === countdown.id ? 'Reload' : 'Edit'}</button>
                 <button class="delete-btn" onclick="deleteCountdown(${countdown.id})">Delete</button>
             </div>
         </div>
@@ -430,6 +464,9 @@ window.loadCountdown = function(id) {
     const countdown = saved.find(c => c.id === id);
 
     if (!countdown) return;
+
+    // Track that we're editing this saved countdown
+    currentSavedId = countdown.id;
 
     eventTitle.value = countdown.title;
     eventDate.value = countdown.date;
@@ -462,8 +499,9 @@ window.loadCountdown = function(id) {
     updatePreviewTheme();
     updateDisplayOptions();
     startCountdown();
+    updateSaveButtonText();
 
-    showToast('Countdown loaded!');
+    showToast('Countdown loaded - edit and save to update');
 };
 
 // Delete countdown

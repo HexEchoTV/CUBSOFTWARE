@@ -248,7 +248,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 80px;
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
 }
 
 .time-value {
@@ -416,6 +418,22 @@
     font-size: 0.9rem;
 }
 
+.editing-badge {
+    margin-left: 0.5rem;
+    font-size: 0.7rem;
+    background: var(--primary);
+    color: white;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.saved-item.editing {
+    border: 1px solid var(--primary);
+    background: rgba(88, 101, 242, 0.1);
+}
+
 .save-btn {
     display: flex;
     align-items: center;
@@ -546,7 +564,9 @@
     }
 
     .time-block {
-        min-width: 60px;
+        width: 70px;
+        min-width: 70px;
+        max-width: 70px;
     }
 
     .saved-item {

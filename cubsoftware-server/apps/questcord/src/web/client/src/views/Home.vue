@@ -6,9 +6,9 @@
     <!-- Header with Cross-Site Navigation -->
     <header class="site-header">
       <div class="header-top">
-        <a href="/" class="logo">
+        <a href="https://cubsoftware.site" class="logo">
           <span class="logo-text">
-            <span class="cub">QUEST</span><span class="software">CORD</span>
+            <span class="cub">CUB</span><span class="software">SOFTWARE</span>
           </span>
         </a>
         <nav class="site-nav">
