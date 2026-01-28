@@ -65,6 +65,11 @@ def serve_images(filename):
     """Serve image files for main website"""
     return send_from_directory('website/static/images', filename)
 
+@app.route('/favicon.ico')
+def favicon():
+    """Serve favicon"""
+    return send_from_directory('website/static/images', 'company-logo.png', mimetype='image/png')
+
 # ==================== STREAMERBOT COMMANDS ====================
 
 @app.route('/apps/streamerbot-commands')
