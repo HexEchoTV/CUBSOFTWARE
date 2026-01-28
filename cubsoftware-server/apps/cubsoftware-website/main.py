@@ -27,7 +27,10 @@ STREAMERBOT_DOCS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abs
 
 @app.route('/')
 def index():
-    """Serve the main landing page"""
+    """Serve the main landing page, or redirect if on short link domain"""
+    host = request.host.lower()
+    if 'cubsw.link' in host:
+        return redirect('https://cubsoftware.site')
     return render_template('index.html')
 
 @app.route('/terms')
@@ -299,6 +302,10 @@ def shorten_url():
     # Validate URL
     if not original_url.startswith(('http://', 'https://')):
         original_url = 'https://' + original_url
+
+    # Block URLs pointing to cubsw.link to prevent redirect loops
+    if 'cubsw.link' in original_url.lower():
+        return jsonify({'error': 'Cannot shorten cubsw.link URLs'}), 400
 
     links = load_links()
 
