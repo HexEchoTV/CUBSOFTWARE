@@ -203,6 +203,7 @@
     user-select: none;
     min-width: 40px;
     overflow: hidden;
+    white-space: pre;
 }
 
 #jsonInput {
