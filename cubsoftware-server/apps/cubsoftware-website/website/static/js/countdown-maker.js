@@ -244,6 +244,9 @@ function updateCountdown() {
         previewMinutes.textContent = '00';
         previewSeconds.textContent = '00';
 
+        // All checkboxes can be enabled when countdown is done
+        updateCheckboxStates(0, 0, 0, 0);
+
         if (endMessage.value) {
             document.querySelector('.preview-timer').style.display = 'none';
             previewEndMessage.textContent = endMessage.value;
@@ -265,6 +268,50 @@ function updateCountdown() {
     previewHours.textContent = String(hours).padStart(2, '0');
     previewMinutes.textContent = String(minutes).padStart(2, '0');
     previewSeconds.textContent = String(seconds).padStart(2, '0');
+
+    // Update which checkboxes can be toggled
+    updateCheckboxStates(days, hours, minutes, seconds);
+}
+
+// Update checkbox enabled/disabled states based on time values
+// Rule: Can only disable a unit if it's zero (except seconds which can always be toggled)
+function updateCheckboxStates(days, hours, minutes, seconds) {
+    // Days: can only disable if days is 0
+    const canDisableDays = days === 0;
+    showDays.disabled = !canDisableDays;
+    showDays.parentElement.classList.toggle('checkbox-disabled', !canDisableDays);
+
+    // If days > 0, force it to be checked
+    if (days > 0 && !showDays.checked) {
+        showDays.checked = true;
+        updateDisplayOptions();
+    }
+
+    // Hours: can only disable if hours is 0
+    const canDisableHours = hours === 0;
+    showHours.disabled = !canDisableHours;
+    showHours.parentElement.classList.toggle('checkbox-disabled', !canDisableHours);
+
+    // If hours > 0, force it to be checked
+    if (hours > 0 && !showHours.checked) {
+        showHours.checked = true;
+        updateDisplayOptions();
+    }
+
+    // Minutes: can only disable if minutes is 0
+    const canDisableMinutes = minutes === 0;
+    showMinutes.disabled = !canDisableMinutes;
+    showMinutes.parentElement.classList.toggle('checkbox-disabled', !canDisableMinutes);
+
+    // If minutes > 0, force it to be checked
+    if (minutes > 0 && !showMinutes.checked) {
+        showMinutes.checked = true;
+        updateDisplayOptions();
+    }
+
+    // Seconds: can always be toggled (it's just precision)
+    showSeconds.disabled = false;
+    showSeconds.parentElement.classList.remove('checkbox-disabled');
 }
 
 // Called when settings change - no longer clears the share ID

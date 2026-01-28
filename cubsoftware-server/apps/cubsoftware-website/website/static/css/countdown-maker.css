@@ -164,6 +164,16 @@
     opacity: 1;
 }
 
+/* Disabled checkbox state */
+.checkbox-label.checkbox-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.checkbox-label.checkbox-disabled .checkbox-custom {
+    cursor: not-allowed;
+}
+
 /* Preview Panel */
 .preview-panel {
     background: var(--surface-color);
