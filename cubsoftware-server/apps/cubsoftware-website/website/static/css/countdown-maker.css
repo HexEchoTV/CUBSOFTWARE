@@ -372,6 +372,40 @@
     font-size: 1.1rem;
 }
 
+.saved-header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.new-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.new-btn:hover {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.new-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.shared-badge {
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
 .save-btn {
     display: flex;
     align-items: center;
@@ -425,6 +459,8 @@
     color: var(--text-light);
     font-weight: 500;
     margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
 }
 
 .saved-item-date {

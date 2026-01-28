@@ -235,6 +235,28 @@ def get_countdown(countdown_id):
 
     return jsonify(countdowns[countdown_id]['data'])
 
+@app.route('/api/countdown/<countdown_id>', methods=['PUT'])
+def update_countdown(countdown_id):
+    """API endpoint to update an existing countdown"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Countdown data is required'}), 400
+
+    countdowns = load_countdowns()
+    if countdown_id not in countdowns:
+        return jsonify({'error': 'Countdown not found'}), 404
+
+    # Update the countdown data
+    countdowns[countdown_id]['data'] = data
+    countdowns[countdown_id]['updated'] = time.time()
+    save_countdowns(countdowns)
+
+    return jsonify({
+        'success': True,
+        'countdownId': countdown_id,
+        'message': 'Countdown updated successfully'
+    })
+
 # ==================== LINK SHORTENER ====================
 
 # Storage for shortened links (in production, use a database)

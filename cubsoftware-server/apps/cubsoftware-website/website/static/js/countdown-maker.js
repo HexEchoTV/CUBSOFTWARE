@@ -113,7 +113,7 @@ function setupEventListeners() {
     saveCountdownBtn.addEventListener('click', saveCountdown);
 }
 
-// Create shareable link via API
+// Create or update shareable link via API
 async function createShareableLink() {
     if (!eventTitle.value || !eventDate.value) {
         showToast('Please enter a title and date');
@@ -132,30 +132,74 @@ async function createShareableLink() {
     };
 
     try {
-        const response = await fetch('/api/countdown/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(countdownData)
-        });
+        let response;
+        let isUpdate = false;
+
+        // If we have an existing share ID, update it instead of creating new
+        if (currentShareId) {
+            isUpdate = true;
+            response = await fetch(`/api/countdown/${currentShareId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(countdownData)
+            });
+        } else {
+            response = await fetch('/api/countdown/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(countdownData)
+            });
+        }
 
         if (!response.ok) {
-            throw new Error('Failed to create shareable link');
+            throw new Error('Failed to save shareable link');
         }
 
         const result = await response.json();
-        currentShareId = result.countdownId;
-        shareLink.value = result.shareUrl;
+
+        if (!isUpdate) {
+            currentShareId = result.countdownId;
+            shareLink.value = result.shareUrl;
+        }
 
         // Show the share link container
         document.getElementById('shareLinkContainer').style.display = 'flex';
 
-        showToast('Shareable link created!');
+        // Update button text to show it's now in update mode
+        updateShareButtonText();
+
+        showToast(isUpdate ? 'Countdown updated!' : 'Shareable link created!');
 
     } catch (error) {
-        showToast('Failed to create link');
+        showToast('Failed to save link');
         console.error('Share error:', error);
+    }
+}
+
+// Update the share button text based on whether we're creating or updating
+function updateShareButtonText() {
+    const btnText = createShareBtn.querySelector('svg').nextSibling;
+    if (currentShareId) {
+        createShareBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Update Shareable Link
+        `;
+    } else {
+        createShareBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            Create Shareable Link
+        `;
     }
 }
 
@@ -223,14 +267,13 @@ function updateCountdown() {
     previewSeconds.textContent = String(seconds).padStart(2, '0');
 }
 
-// Clear share link when settings change (user needs to regenerate)
+// Called when settings change - no longer clears the share ID
+// User can now update their existing shared countdown
 function updateShareLink() {
-    // Hide the share link container when settings change
-    // User will need to click "Create Shareable Link" again
-    if (currentShareId) {
-        document.getElementById('shareLinkContainer').style.display = 'none';
-        currentShareId = null;
-        shareLink.value = '';
+    // Keep the share ID so user can update the existing link
+    // Just ensure the button text is correct
+    if (createShareBtn) {
+        updateShareButtonText();
     }
 }
 
@@ -275,12 +318,13 @@ function saveCountdown() {
         return;
     }
 
-    const saved = JSON.parse(localStorage.getItem('savedCountdowns') || '[]');
+    let saved = JSON.parse(localStorage.getItem('savedCountdowns') || '[]');
 
-    // No limit - using localStorage
+    // Check if we're updating an existing saved countdown (by shareId)
+    const existingIndex = currentShareId ? saved.findIndex(c => c.shareId === currentShareId) : -1;
 
     const countdown = {
-        id: Date.now(),
+        id: existingIndex >= 0 ? saved[existingIndex].id : Date.now(),
         title: eventTitle.value,
         date: eventDate.value,
         endMessage: endMessage.value,
@@ -288,14 +332,23 @@ function saveCountdown() {
         showDays: showDays.checked,
         showHours: showHours.checked,
         showMinutes: showMinutes.checked,
-        showSeconds: showSeconds.checked
+        showSeconds: showSeconds.checked,
+        shareId: currentShareId || null,
+        shareUrl: currentShareId ? shareLink.value : null
     };
 
-    saved.push(countdown);
-    localStorage.setItem('savedCountdowns', JSON.stringify(saved));
+    if (existingIndex >= 0) {
+        // Update existing
+        saved[existingIndex] = countdown;
+        showToast('Countdown updated!');
+    } else {
+        // Add new
+        saved.push(countdown);
+        showToast('Countdown saved!');
+    }
 
+    localStorage.setItem('savedCountdowns', JSON.stringify(saved));
     loadSavedCountdowns();
-    showToast('Countdown saved!');
 }
 
 // Load saved countdowns
@@ -310,7 +363,10 @@ function loadSavedCountdowns() {
     savedList.innerHTML = saved.map(countdown => `
         <div class="saved-item" data-id="${countdown.id}">
             <div class="saved-item-info">
-                <div class="saved-item-title">${escapeHtml(countdown.title)}</div>
+                <div class="saved-item-title">
+                    ${escapeHtml(countdown.title)}
+                    ${countdown.shareId ? '<span class="shared-badge" title="Has shareable link">🔗</span>' : ''}
+                </div>
                 <div class="saved-item-date">${formatReadableDate(countdown.date)}</div>
             </div>
             <div class="saved-item-actions">
@@ -342,11 +398,23 @@ window.loadCountdown = function(id) {
     showMinutes.checked = countdown.showMinutes;
     showSeconds.checked = countdown.showSeconds;
 
+    // Restore share ID and URL if they exist
+    if (countdown.shareId) {
+        currentShareId = countdown.shareId;
+        shareLink.value = countdown.shareUrl || '';
+        document.getElementById('shareLinkContainer').style.display = 'flex';
+        updateShareButtonText();
+    } else {
+        currentShareId = null;
+        shareLink.value = '';
+        document.getElementById('shareLinkContainer').style.display = 'none';
+        updateShareButtonText();
+    }
+
     updatePreview();
     updatePreviewTheme();
     updateDisplayOptions();
     startCountdown();
-    updateShareLink();
 
     showToast('Countdown loaded!');
 };
@@ -387,6 +455,45 @@ function showToast(message) {
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2000);
 }
+
+// Start a new countdown (clear everything)
+window.newCountdown = function() {
+    // Reset form
+    eventTitle.value = '';
+    endMessage.value = '';
+
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(12, 0, 0, 0);
+    eventDate.value = formatDateTimeLocal(tomorrow);
+
+    // Reset theme to dark
+    currentTheme = 'dark';
+    themeBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === 'dark');
+    });
+
+    // Reset display options
+    showDays.checked = true;
+    showHours.checked = true;
+    showMinutes.checked = true;
+    showSeconds.checked = true;
+
+    // Clear share state
+    currentShareId = null;
+    shareLink.value = '';
+    document.getElementById('shareLinkContainer').style.display = 'none';
+    updateShareButtonText();
+
+    // Update UI
+    updatePreview();
+    updatePreviewTheme();
+    updateDisplayOptions();
+    startCountdown();
+
+    showToast('Ready for new countdown!');
+};
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', init);
