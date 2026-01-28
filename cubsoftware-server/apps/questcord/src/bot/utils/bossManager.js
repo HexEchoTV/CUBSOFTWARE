@@ -104,9 +104,9 @@ class BossManager {
 
     static async announceBossSpawn(server, bossTemplate, bossId) {
         try {
-            // Specific announcement channel
-            const ANNOUNCEMENT_CHANNEL_ID = '1411045103921004554';
-            const BOSS_ROLE_ID = '1411051374153826386';
+            // Specific announcement channel (CUB SOFTWARE server)
+            const ANNOUNCEMENT_CHANNEL_ID = '1466194334876700725';
+            const BOSS_ROLE_ID = '1466196380023394336';
 
             const announcementChannel = this.client.channels.cache.get(ANNOUNCEMENT_CHANNEL_ID);
             if (!announcementChannel) {

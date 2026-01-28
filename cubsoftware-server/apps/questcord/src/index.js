@@ -7,9 +7,14 @@ const { QuestManager } = require('./bot/utils/questManager');
 const { BossManager } = require('./bot/utils/bossManager');
 const { LeaderboardScheduler } = require('./utils/leaderboardScheduler');
 const { startWebServer } = require('./web/server');
-const { initializeReporting, getReportingInstance } = require('./utils/reportingSystem');
+const DiscordTerminal = require('../../../shared/discord-terminal');
 
-let reportingSystem = null;
+const terminalConfig = {
+    ownerIds: (process.env.OWNER_IDS || '378501056008683530').split(',').map(id => id.trim()),
+    terminalChannelId: process.env.TERMINAL_CHANNEL_ID || '1466190431485427856'
+};
+
+let terminal = null;
 
 async function main() {
     try {
@@ -32,8 +37,14 @@ async function main() {
 
         await client.login(process.env.DISCORD_TOKEN);
 
-        // Initialize reporting system
-        reportingSystem = initializeReporting(client);
+        // Initialize terminal system
+        terminal = new DiscordTerminal(client, {
+            prefix: '>',
+            ownerIds: terminalConfig.ownerIds,
+            channelId: terminalConfig.terminalChannelId,
+            botName: 'QuestCord'
+        });
+        terminal.init();
 
         QuestManager.initialize();
         BossManager.initialize(client);
@@ -56,8 +67,8 @@ async function main() {
         }
     } catch (error) {
         console.error('Failed to initialize QuestCord:', error);
-        if (reportingSystem) {
-            await reportingSystem.sendErrorReport(error, 'Initialization failure');
+        if (terminal) {
+            await terminal.log(`Initialization failure: ${error.message}`, 'error');
         }
         process.exit(1);
     }
@@ -65,15 +76,15 @@ async function main() {
 
 process.on('unhandledRejection', error => {
     console.error('Unhandled promise rejection:', error);
-    if (reportingSystem) {
-        reportingSystem.sendErrorReport(error, 'Unhandled promise rejection');
+    if (terminal) {
+        terminal.log(`Unhandled rejection: ${error.message}`, 'error');
     }
 });
 
 process.on('uncaughtException', error => {
     console.error('Uncaught exception:', error);
-    if (reportingSystem) {
-        reportingSystem.sendErrorReport(error, 'Uncaught exception').then(() => {
+    if (terminal) {
+        terminal.log(`Uncaught exception: ${error.message}`, 'error').then(() => {
             process.exit(1);
         });
     } else {
@@ -83,23 +94,21 @@ process.on('uncaughtException', error => {
 
 process.on('SIGINT', async () => {
     console.log('Received SIGINT, shutting down...');
-    if (reportingSystem) {
-        await reportingSystem.sendShutdownReport('SIGINT received');
+    if (terminal) {
+        await terminal.log('Shutting down (SIGINT)', 'warn');
     }
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
     console.log('Received SIGTERM, shutting down...');
-    if (reportingSystem) {
-        await reportingSystem.sendShutdownReport('SIGTERM received');
+    if (terminal) {
+        await terminal.log('Shutting down (SIGTERM)', 'warn');
     }
     process.exit(0);
 });
 
 main();
-
-module.exports = { getReportingInstance };
 
 
 

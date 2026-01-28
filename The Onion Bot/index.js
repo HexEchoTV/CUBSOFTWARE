@@ -2,10 +2,14 @@ const { Client, GatewayIntentBits, Collection, REST, Routes } = require('discord
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
-const webhookLogger = require('./utils/webhookLogger');
+const DiscordTerminal = require('../cubsoftware-server/shared/discord-terminal');
 
-// Initialize console override to send logs to Discord webhook
-webhookLogger.initConsoleOverride();
+const terminalConfig = {
+    ownerIds: (process.env.OWNER_IDS || '378501056008683530').split(',').map(id => id.trim()),
+    terminalChannelId: process.env.TERMINAL_CHANNEL_ID || '1466190703637037250'
+};
+
+let terminal = null;
 
 // Auto-deploy commands on startup
 async function deployCommands() {
@@ -35,7 +39,9 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildMembers
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
     ]
 });
 
@@ -104,12 +110,26 @@ client.tempConfinementData = new Map();
     });
 })();
 
+// Initialize terminal after client is ready
+client.once('ready', () => {
+    console.log(`[INFO] ${client.user.tag} is online!`);
+
+    terminal = new DiscordTerminal(client, {
+        prefix: '>',
+        ownerIds: terminalConfig.ownerIds,
+        channelId: terminalConfig.terminalChannelId,
+        botName: 'Onion Bot'
+    });
+    terminal.init();
+});
+
 // Handle graceful shutdown
 const shutdown = async (signal) => {
     console.log(`[SHUTDOWN] Received ${signal}, shutting down...`);
-    await webhookLogger.logOffline(`Received ${signal} signal`);
+    if (terminal) {
+        await terminal.log(`Shutting down (${signal})`, 'warn');
+    }
 
-    // Give webhook time to send
     setTimeout(() => {
         client.destroy();
         process.exit(0);
@@ -120,9 +140,14 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('uncaughtException', async (error) => {
     console.error('[FATAL] Uncaught Exception:', error);
-    await webhookLogger.logOffline(`Uncaught Exception: ${error.message}`);
+    if (terminal) {
+        await terminal.log(`Uncaught Exception: ${error.message}`, 'error');
+    }
     setTimeout(() => process.exit(1), 2000);
 });
 process.on('unhandledRejection', (reason, promise) => {
     console.error('[ERROR] Unhandled Rejection at:', promise, 'reason:', reason);
+    if (terminal) {
+        terminal.log(`Unhandled Rejection: ${reason}`, 'error');
+    }
 });

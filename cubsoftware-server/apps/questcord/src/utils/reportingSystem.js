@@ -4,8 +4,8 @@ const os = require('os');
 class ReportingSystem {
     constructor(client) {
         this.client = client;
-        this.reportChannelId = '1404555278594342993';
-        this.reportGuildId = '1404523107544469545';
+        this.reportChannelId = '1466190431485427856';
+        this.reportGuildId = '1284593395188367502';
         this.lastReport = null;
         this.startTime = Date.now();
         this.errorCount = 0;

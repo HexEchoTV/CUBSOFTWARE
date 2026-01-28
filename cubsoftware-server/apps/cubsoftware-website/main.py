@@ -11,8 +11,17 @@ import secrets
 import subprocess
 import requests
 import urllib.parse
+import atexit
+import signal
 from functools import wraps
 from jinja2 import ChoiceLoader, FileSystemLoader
+
+# Add shared folder to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'shared'))
+from bot_logger import BotLogger
+
+# Initialize bot logger
+logger = BotLogger('cubsoftware-website', os.environ.get('BOT_API_KEY'))
 
 # Create the main Flask app with multiple template folders
 app = Flask(__name__,
@@ -950,6 +959,18 @@ if __name__ == '__main__':
     print("Press Ctrl+C to stop")
     print("=" * 70)
     print()
+
+    # Log startup
+    logger.startup()
+
+    # Register shutdown handler
+    def shutdown_handler(signum=None, frame=None):
+        logger.shutdown()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, shutdown_handler)
+    signal.signal(signal.SIGTERM, shutdown_handler)
+    atexit.register(lambda: logger.shutdown())
 
     # Run production server with Waitress
     serve(app, host='0.0.0.0', port=3000, threads=4)

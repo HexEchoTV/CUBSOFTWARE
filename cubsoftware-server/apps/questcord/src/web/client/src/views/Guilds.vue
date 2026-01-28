@@ -469,7 +469,7 @@ onMounted(async () => {
 async function fetchUserServers() {
   try {
     if (!authStore.isAuthenticated) {
-      userServers.value = [{ id: '1404523107544469545', name: 'QuestCord' }]
+      userServers.value = [{ id: '1284593395188367502', name: 'CUB SOFTWARE' }]
       return
     }
 
@@ -480,11 +480,11 @@ async function fetchUserServers() {
     if (response.data.success && response.data.data.length > 0) {
       userServers.value = response.data.data
     } else {
-      userServers.value = [{ id: '1404523107544469545', name: 'QuestCord' }]
+      userServers.value = [{ id: '1284593395188367502', name: 'CUB SOFTWARE' }]
     }
   } catch (err) {
     console.error('Error fetching servers:', err)
-    userServers.value = [{ id: '1404523107544469545', name: 'QuestCord' }]
+    userServers.value = [{ id: '1284593395188367502', name: 'CUB SOFTWARE' }]
   }
 }
 

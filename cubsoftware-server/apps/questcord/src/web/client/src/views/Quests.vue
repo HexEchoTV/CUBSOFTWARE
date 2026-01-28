@@ -168,7 +168,7 @@ async function fetchUserServers() {
     if (!authStore.isAuthenticated) {
       // Default server if not authenticated
       userServers.value = [
-        { id: '1404523107544469545', name: 'QuestCord' }
+        { id: '1284593395188367502', name: 'CUB SOFTWARE' }
       ]
       return
     }
@@ -182,14 +182,14 @@ async function fetchUserServers() {
     } else {
       // Fallback to QuestCord server
       userServers.value = [
-        { id: '1404523107544469545', name: 'QuestCord' }
+        { id: '1284593395188367502', name: 'CUB SOFTWARE' }
       ]
     }
   } catch (err) {
     console.error('Error fetching servers:', err)
     // Fallback to QuestCord server
     userServers.value = [
-      { id: '1404523107544469545', name: 'QuestCord' }
+      { id: '1284593395188367502', name: 'CUB SOFTWARE' }
     ]
   }
 }

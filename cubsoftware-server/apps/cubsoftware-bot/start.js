@@ -95,10 +95,9 @@ if (!process.env.CLIENT_ID || process.env.CLIENT_ID === 'your_client_id_here') {
 
 if (!process.env.API_KEY || process.env.API_KEY === 'your_secure_api_key_here') {
     console.log('');
-    console.log('ERROR: API_KEY not configured in .env file!');
-    console.log('Please generate a secure API key and add it to .env');
-    console.log('='.repeat(50));
-    process.exit(1);
+    console.log('WARNING: API_KEY not configured in .env file!');
+    console.log('Some features (whitelist management) will not work.');
+    console.log('');
 }
 
 console.log('Configuration validated!');

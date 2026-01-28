@@ -2,6 +2,14 @@ const { Client, GatewayIntentBits, PermissionFlagsBits, ChannelType, Collection,
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+const DiscordTerminal = require('../../shared/discord-terminal');
+
+const terminalConfig = {
+    ownerIds: (process.env.OWNER_IDS || '378501056008683530').split(',').map(id => id.trim()),
+    terminalChannelId: process.env.TERMINAL_CHANNEL_ID || '1466190746401902855'
+};
+
+let terminal = null;
 
 // Define slash commands
 const commands = [
@@ -83,6 +91,8 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
     ]
 });
 
@@ -112,6 +122,15 @@ function updatePresence() {
 client.once('ready', async () => {
     console.log(`CleanMe Bot is online! Logged in as ${client.user.tag}`);
     console.log(`Serving ${client.guilds.cache.size} servers`);
+
+    // Initialize terminal
+    terminal = new DiscordTerminal(client, {
+        prefix: '>',
+        ownerIds: terminalConfig.ownerIds,
+        channelId: terminalConfig.terminalChannelId,
+        botName: 'CleanMe Bot'
+    });
+    terminal.init();
 
     // Deploy commands on startup
     await deployCommands();
@@ -983,6 +1002,36 @@ async function handleButton(interaction) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// Process handlers for logging
+process.on('unhandledRejection', (error) => {
+    console.error('Unhandled rejection:', error);
+    if (terminal) {
+        terminal.log(`Unhandled rejection: ${error}`, 'error');
+    }
+});
+
+process.on('uncaughtException', async (error) => {
+    console.error('Uncaught exception:', error);
+    if (terminal) {
+        await terminal.log(`Uncaught exception: ${error.message}`, 'error');
+    }
+    process.exit(1);
+});
+
+process.on('SIGINT', async () => {
+    if (terminal) {
+        await terminal.log('Shutting down (SIGINT)', 'warn');
+    }
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    if (terminal) {
+        await terminal.log('Shutting down (SIGTERM)', 'warn');
+    }
+    process.exit(0);
+});
 
 // Login
 client.login(process.env.BOT_TOKEN);
