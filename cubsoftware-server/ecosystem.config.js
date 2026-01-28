@@ -133,7 +133,7 @@ module.exports = {
         // ============================================
         {
             name: 'cubsoftware-bot',
-            script: 'index.js',
+            script: 'start.js',
             cwd: './apps/cubsoftware-bot',
             interpreter: 'node',
             watch: false,
