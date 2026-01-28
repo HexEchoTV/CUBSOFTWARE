@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#5865f2">
+    <title>PM2 Dashboard - CUB SOFTWARE</title>
+
+    <meta name="description" content="PM2 Process Monitor Dashboard">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" type="image/png" href="/static/images/company-logo.png">
+    <link rel="apple-touch-icon" href="/static/images/company-logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <link rel="stylesheet" href="/static/css/pm2-dashboard.css">
+</head>
+<body>
+    <div class="main-container">
+        {% include 'header.html' %}
+
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <div class="header-left">
+                    <h1>PM2 Dashboard</h1>
+                    <p>Process Monitor & Management</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <img src="{{ user.avatar_url }}" alt="Avatar" class="user-avatar">
+                        <span class="user-name">{{ user.username }}</span>
+                    </div>
+                    <button class="control-btn small" onclick="toggleWhitelistPanel()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Whitelist
+                    </button>
+                    <a href="/apps/pm2-dashboard/logout" class="logout-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Logout
+                    </a>
+                </div>
+            </div>
+
+            <!-- Whitelist Management Panel -->
+            <div class="whitelist-panel" id="whitelistPanel" style="display: none;">
+                <div class="whitelist-header">
+                    <h3>Whitelist Management</h3>
+                    <button class="close-btn" onclick="toggleWhitelistPanel()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="whitelist-add">
+                    <input type="text" id="newUserId" placeholder="Discord User ID">
+                    <button class="control-btn primary" onclick="addToWhitelist()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add User
+                    </button>
+                </div>
+                <div class="whitelist-info">
+                    <p>To get a Discord User ID: Enable Developer Mode in Discord settings, then right-click on a user and select "Copy ID".</p>
+                </div>
+                <div class="whitelist-list" id="whitelistList">
+                    <div class="loading">Loading whitelist...</div>
+                </div>
+            </div>
+
+            <div class="dashboard-controls">
+                <div class="control-group">
+                    <button id="refreshBtn" class="control-btn primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                    <label class="auto-refresh">
+                        <input type="checkbox" id="autoRefresh" checked>
+                        <span class="checkbox-custom"></span>
+                        Auto-refresh
+                    </label>
+                    <div class="refresh-rate">
+                        <span>Rate:</span>
+                        <select id="refreshRate">
+                            <option value="1000">1s</option>
+                            <option value="2000">2s</option>
+                            <option value="5000" selected>5s</option>
+                            <option value="10000">10s</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="lastUpdate">Last updated: --</span>
+                </div>
+            </div>
+
+            <div class="processes-grid" id="processesGrid">
+                <div class="loading">Loading processes...</div>
+            </div>
+
+            <div class="logs-section">
+                <div class="logs-header">
+                    <h2>Process Logs</h2>
+                    <div class="logs-controls">
+                        <select id="processSelect">
+                            <option value="">Select a process...</option>
+                        </select>
+                        <select id="logType">
+                            <option value="out">stdout</option>
+                            <option value="err">stderr</option>
+                        </select>
+                        <label class="auto-refresh" style="margin-left: 0.5rem;">
+                            <input type="checkbox" id="autoScrollLogs" checked>
+                            <span class="checkbox-custom"></span>
+                            Auto-scroll
+                        </label>
+                        <button id="clearLogsBtn" class="control-btn small">Clear</button>
+                    </div>
+                </div>
+                <div class="logs-container" id="logsContainer">
+                    <div class="logs-placeholder">Select a process to view logs</div>
+                </div>
+            </div>
+        </div>
+
+        {% include 'footer.html' %}
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/js/pm2-dashboard.js"></script>
+</body>
+</html>

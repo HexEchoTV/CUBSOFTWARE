@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory, render_template, redirect, request, jsonify
+from flask import Flask, send_from_directory, render_template, redirect, request, jsonify, session, url_for
 from waitress import serve
 import socket
 import os
@@ -7,11 +7,19 @@ import importlib.util
 import json
 import hashlib
 import time
+import secrets
+import subprocess
+import requests
+import urllib.parse
+from functools import wraps
 from jinja2 import ChoiceLoader, FileSystemLoader
 
 # Create the main Flask app with multiple template folders
 app = Flask(__name__,
             static_folder='website/static')
+
+# Secret key for sessions
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
 
 # Configure Jinja to look in multiple template directories
 app.jinja_loader = ChoiceLoader([
@@ -476,6 +484,444 @@ spec_social = importlib.util.spec_from_file_location("social_blueprint", social_
 social_module = importlib.util.module_from_spec(spec_social)
 spec_social.loader.exec_module(social_module)
 app.register_blueprint(social_module.social_media_bp, url_prefix='/apps/social-media-saver')
+
+# ==================== PM2 DASHBOARD ====================
+
+# PM2 Dashboard Configuration
+PM2_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'pm2_config.json')
+PM2_WHITELIST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'pm2_whitelist.json')
+
+# Discord OAuth Configuration (loaded from config file or environment)
+def load_pm2_config():
+    """Load PM2 dashboard configuration"""
+    if os.path.exists(PM2_CONFIG_FILE):
+        with open(PM2_CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    return {
+        'discord_client_id': os.environ.get('DISCORD_CLIENT_ID', ''),
+        'discord_client_secret': os.environ.get('DISCORD_CLIENT_SECRET', ''),
+        'discord_redirect_uri': os.environ.get('DISCORD_REDIRECT_URI', 'https://cubsoftware.site/apps/pm2-dashboard/callback')
+    }
+
+def save_pm2_config(config):
+    """Save PM2 dashboard configuration"""
+    os.makedirs(os.path.dirname(PM2_CONFIG_FILE), exist_ok=True)
+    with open(PM2_CONFIG_FILE, 'w') as f:
+        json.dump(config, f, indent=2)
+
+def load_pm2_whitelist():
+    """Load PM2 dashboard whitelist"""
+    if os.path.exists(PM2_WHITELIST_FILE):
+        with open(PM2_WHITELIST_FILE, 'r') as f:
+            return json.load(f)
+    return {'allowed_users': ['378501056008683530']}
+
+def save_pm2_whitelist(whitelist):
+    """Save PM2 dashboard whitelist"""
+    os.makedirs(os.path.dirname(PM2_WHITELIST_FILE), exist_ok=True)
+    with open(PM2_WHITELIST_FILE, 'w') as f:
+        json.dump(whitelist, f, indent=2)
+
+def is_user_whitelisted(user_id):
+    """Check if a user is whitelisted for PM2 dashboard access"""
+    whitelist = load_pm2_whitelist()
+    return str(user_id) in whitelist.get('allowed_users', [])
+
+def pm2_auth_required(f):
+    """Decorator to require PM2 dashboard authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'pm2_user' not in session:
+            return redirect(url_for('pm2_login'))
+        if not is_user_whitelisted(session['pm2_user']['id']):
+            session.pop('pm2_user', None)
+            return redirect(url_for('pm2_login', error='not_whitelisted'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/apps/pm2-dashboard')
+@app.route('/apps/pm2-dashboard/')
+@pm2_auth_required
+def pm2_dashboard():
+    """PM2 Dashboard - Process Monitor & Management"""
+    return render_template('pm2-dashboard.html', user=session['pm2_user'])
+
+@app.route('/apps/pm2-dashboard/login')
+def pm2_login():
+    """PM2 Dashboard Login Page"""
+    config = load_pm2_config()
+    error = request.args.get('error')
+    error_messages = {
+        'not_whitelisted': 'Your Discord account is not whitelisted for dashboard access.',
+        'auth_failed': 'Discord authentication failed. Please try again.',
+        'invalid_state': 'Invalid authentication state. Please try again.'
+    }
+
+    # Build Discord OAuth URL
+    params = {
+        'client_id': config['discord_client_id'],
+        'redirect_uri': config['discord_redirect_uri'],
+        'response_type': 'code',
+        'scope': 'identify',
+        'state': secrets.token_urlsafe(16)
+    }
+    session['oauth_state'] = params['state']
+    discord_url = f"https://discord.com/api/oauth2/authorize?{urllib.parse.urlencode(params)}"
+
+    return render_template('pm2-login.html',
+                          discord_url=discord_url,
+                          error=error_messages.get(error))
+
+@app.route('/apps/pm2-dashboard/callback')
+def pm2_callback():
+    """Discord OAuth callback for PM2 Dashboard"""
+    error = request.args.get('error')
+    if error:
+        return redirect(url_for('pm2_login', error='auth_failed'))
+
+    code = request.args.get('code')
+    state = request.args.get('state')
+
+    # Verify state
+    if state != session.get('oauth_state'):
+        return redirect(url_for('pm2_login', error='invalid_state'))
+
+    config = load_pm2_config()
+
+    # Exchange code for access token
+    try:
+        token_response = requests.post('https://discord.com/api/oauth2/token', data={
+            'client_id': config['discord_client_id'],
+            'client_secret': config['discord_client_secret'],
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': config['discord_redirect_uri']
+        }, headers={
+            'Content-Type': 'application/x-www-form-urlencoded'
+        })
+
+        if token_response.status_code != 200:
+            return redirect(url_for('pm2_login', error='auth_failed'))
+
+        token_data = token_response.json()
+        access_token = token_data['access_token']
+
+        # Get user info
+        user_response = requests.get('https://discord.com/api/users/@me', headers={
+            'Authorization': f'Bearer {access_token}'
+        })
+
+        if user_response.status_code != 200:
+            return redirect(url_for('pm2_login', error='auth_failed'))
+
+        user_data = user_response.json()
+
+        # Check whitelist
+        if not is_user_whitelisted(user_data['id']):
+            return redirect(url_for('pm2_login', error='not_whitelisted'))
+
+        # Store user in session
+        avatar_hash = user_data.get('avatar')
+        if avatar_hash:
+            avatar_url = f"https://cdn.discordapp.com/avatars/{user_data['id']}/{avatar_hash}.png"
+        else:
+            avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
+
+        session['pm2_user'] = {
+            'id': user_data['id'],
+            'username': user_data['username'],
+            'discriminator': user_data.get('discriminator', '0'),
+            'avatar_url': avatar_url
+        }
+
+        return redirect(url_for('pm2_dashboard'))
+
+    except Exception as e:
+        print(f"PM2 OAuth error: {e}")
+        return redirect(url_for('pm2_login', error='auth_failed'))
+
+@app.route('/apps/pm2-dashboard/logout')
+def pm2_logout():
+    """Logout from PM2 Dashboard"""
+    session.pop('pm2_user', None)
+    return redirect(url_for('pm2_login'))
+
+# PM2 API Endpoints
+@app.route('/api/pm2/processes')
+@pm2_auth_required
+def pm2_get_processes():
+    """Get all PM2 processes with system stats"""
+    try:
+        # Get PM2 process list in JSON format
+        result = subprocess.run(
+            ['pm2', 'jlist'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        if result.returncode != 0:
+            return jsonify({'error': 'Failed to get PM2 processes'}), 500
+
+        processes_data = json.loads(result.stdout)
+
+        processes = []
+        total_cpu = 0
+        total_memory = 0
+
+        for proc in processes_data:
+            cpu = proc.get('monit', {}).get('cpu', 0)
+            memory = proc.get('monit', {}).get('memory', 0)
+            total_cpu += cpu
+            total_memory += memory
+
+            pm2_env = proc.get('pm2_env', {})
+
+            processes.append({
+                'name': proc.get('name'),
+                'pm_id': proc.get('pm_id'),
+                'pid': proc.get('pid'),
+                'status': pm2_env.get('status', 'unknown'),
+                'cpu': cpu,
+                'memory': memory,
+                'uptime': time.time() * 1000 - pm2_env.get('pm_uptime', time.time() * 1000) if pm2_env.get('status') == 'online' else 0,
+                'restarts': pm2_env.get('restart_time', 0),
+                'exec_mode': pm2_env.get('exec_mode', 'fork'),
+                'instances': pm2_env.get('instances', 1)
+            })
+
+        # Get system stats
+        try:
+            # Try to get system CPU and memory usage
+            import psutil
+            system_cpu = psutil.cpu_percent(interval=0.1)
+            system_memory = psutil.virtual_memory().percent
+        except ImportError:
+            # Fallback if psutil not installed
+            system_cpu = total_cpu
+            system_memory = 0
+
+        return jsonify({
+            'processes': processes,
+            'system': {
+                'cpu': system_cpu,
+                'memory': system_memory
+            }
+        })
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'error': 'PM2 command timed out'}), 500
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Invalid PM2 response'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pm2/logs/<process_name>')
+@pm2_auth_required
+def pm2_get_logs(process_name):
+    """Get logs for a specific PM2 process"""
+    try:
+        log_type = request.args.get('type', 'out')
+        lines = int(request.args.get('lines', 100))
+
+        # Determine log file type
+        log_suffix = 'out' if log_type == 'out' else 'error'
+
+        # Get PM2 logs using tail
+        result = subprocess.run(
+            ['pm2', 'logs', process_name, '--nostream', '--lines', str(lines)],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        # Parse log output
+        logs = []
+        for line in result.stdout.split('\n'):
+            if line.strip():
+                # Try to extract timestamp and content
+                parts = line.split('|', 1)
+                if len(parts) == 2:
+                    logs.append({
+                        'timestamp': parts[0].strip(),
+                        'content': parts[1].strip()
+                    })
+                else:
+                    logs.append({
+                        'timestamp': '',
+                        'content': line.strip()
+                    })
+
+        return jsonify({'logs': logs[-lines:]})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pm2/start/<process_name>', methods=['POST'])
+@pm2_auth_required
+def pm2_start_process(process_name):
+    """Start a PM2 process"""
+    try:
+        result = subprocess.run(
+            ['pm2', 'start', process_name],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode != 0:
+            return jsonify({'error': result.stderr or 'Failed to start process'}), 500
+
+        return jsonify({'success': True, 'message': f'Process {process_name} started'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pm2/stop/<process_name>', methods=['POST'])
+@pm2_auth_required
+def pm2_stop_process(process_name):
+    """Stop a PM2 process"""
+    try:
+        result = subprocess.run(
+            ['pm2', 'stop', process_name],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode != 0:
+            return jsonify({'error': result.stderr or 'Failed to stop process'}), 500
+
+        return jsonify({'success': True, 'message': f'Process {process_name} stopped'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pm2/restart/<process_name>', methods=['POST'])
+@pm2_auth_required
+def pm2_restart_process(process_name):
+    """Restart a PM2 process"""
+    try:
+        result = subprocess.run(
+            ['pm2', 'restart', process_name],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode != 0:
+            return jsonify({'error': result.stderr or 'Failed to restart process'}), 500
+
+        return jsonify({'success': True, 'message': f'Process {process_name} restarted'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Whitelist Management API (for Discord bot integration)
+@app.route('/api/pm2/whitelist', methods=['GET'])
+@pm2_auth_required
+def pm2_get_whitelist():
+    """Get the current whitelist"""
+    whitelist = load_pm2_whitelist()
+    return jsonify(whitelist)
+
+@app.route('/api/pm2/whitelist/add', methods=['POST'])
+@pm2_auth_required
+def pm2_add_to_whitelist():
+    """Add a user to the whitelist"""
+    data = request.get_json()
+    if not data or 'user_id' not in data:
+        return jsonify({'error': 'User ID is required'}), 400
+
+    whitelist = load_pm2_whitelist()
+    user_id = str(data['user_id'])
+
+    if user_id not in whitelist['allowed_users']:
+        whitelist['allowed_users'].append(user_id)
+        save_pm2_whitelist(whitelist)
+
+    return jsonify({'success': True, 'message': f'User {user_id} added to whitelist'})
+
+@app.route('/api/pm2/whitelist/remove', methods=['POST'])
+@pm2_auth_required
+def pm2_remove_from_whitelist():
+    """Remove a user from the whitelist"""
+    data = request.get_json()
+    if not data or 'user_id' not in data:
+        return jsonify({'error': 'User ID is required'}), 400
+
+    whitelist = load_pm2_whitelist()
+    user_id = str(data['user_id'])
+
+    # Don't allow removing yourself
+    if user_id == session['pm2_user']['id']:
+        return jsonify({'error': 'Cannot remove yourself from whitelist'}), 400
+
+    if user_id in whitelist['allowed_users']:
+        whitelist['allowed_users'].remove(user_id)
+        save_pm2_whitelist(whitelist)
+
+    return jsonify({'success': True, 'message': f'User {user_id} removed from whitelist'})
+
+# Bot API endpoint for whitelist management (uses API key)
+@app.route('/api/pm2/bot/whitelist/add', methods=['POST'])
+def pm2_bot_add_whitelist():
+    """Add user to whitelist via bot (requires API key)"""
+    api_key = request.headers.get('X-API-Key')
+    config = load_pm2_config()
+
+    if not api_key or api_key != config.get('bot_api_key'):
+        return jsonify({'error': 'Invalid API key'}), 401
+
+    data = request.get_json()
+    if not data or 'user_id' not in data:
+        return jsonify({'error': 'User ID is required'}), 400
+
+    whitelist = load_pm2_whitelist()
+    user_id = str(data['user_id'])
+    username = data.get('username', 'Unknown')
+
+    if user_id not in whitelist['allowed_users']:
+        whitelist['allowed_users'].append(user_id)
+        save_pm2_whitelist(whitelist)
+        return jsonify({'success': True, 'message': f'User {username} ({user_id}) added to whitelist'})
+
+    return jsonify({'success': True, 'message': f'User {username} ({user_id}) already whitelisted'})
+
+@app.route('/api/pm2/bot/whitelist/remove', methods=['POST'])
+def pm2_bot_remove_whitelist():
+    """Remove user from whitelist via bot (requires API key)"""
+    api_key = request.headers.get('X-API-Key')
+    config = load_pm2_config()
+
+    if not api_key or api_key != config.get('bot_api_key'):
+        return jsonify({'error': 'Invalid API key'}), 401
+
+    data = request.get_json()
+    if not data or 'user_id' not in data:
+        return jsonify({'error': 'User ID is required'}), 400
+
+    whitelist = load_pm2_whitelist()
+    user_id = str(data['user_id'])
+
+    if user_id in whitelist['allowed_users']:
+        whitelist['allowed_users'].remove(user_id)
+        save_pm2_whitelist(whitelist)
+        return jsonify({'success': True, 'message': f'User {user_id} removed from whitelist'})
+
+    return jsonify({'success': False, 'message': f'User {user_id} not in whitelist'})
+
+@app.route('/api/pm2/bot/whitelist', methods=['GET'])
+def pm2_bot_get_whitelist():
+    """Get whitelist via bot (requires API key)"""
+    api_key = request.headers.get('X-API-Key')
+    config = load_pm2_config()
+
+    if not api_key or api_key != config.get('bot_api_key'):
+        return jsonify({'error': 'Invalid API key'}), 401
+
+    whitelist = load_pm2_whitelist()
+    return jsonify(whitelist)
 
 # ==================== SERVER STARTUP ====================
 
