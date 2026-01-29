@@ -14,8 +14,9 @@ class WheelSpinner {
         this.confettiEnabled = true;
         this.history = [];
         this.currentTheme = 'default';
+        this.isSharedMode = false; // View-only mode for shared wheels
 
-        // Theme color palettes
+        // Theme color palettes (50 themes)
         this.themes = {
             default: ['#5865f2', '#7c3aed', '#ec4899', '#f59e0b', '#22c55e', '#06b6d4', '#8b5cf6', '#ef4444'],
             neon: ['#ff006e', '#00f5d4', '#fee440', '#9b5de5', '#00bbf9', '#f15bb5', '#00ff87', '#fb5607'],
@@ -24,7 +25,48 @@ class WheelSpinner {
             monochrome: ['#1a1a2e', '#16213e', '#0f3460', '#533483', '#5865f2', '#7c3aed', '#4a5568', '#2d3748'],
             sunset: ['#ff6b6b', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd', '#ff6b6b', '#feca57', '#48dbfb'],
             ocean: ['#0077b6', '#00b4d8', '#90e0ef', '#caf0f8', '#023e8a', '#0096c7', '#48cae4', '#ade8f4'],
-            forest: ['#2d6a4f', '#40916c', '#52b788', '#74c69d', '#95d5b2', '#b7e4c7', '#1b4332', '#081c15']
+            forest: ['#2d6a4f', '#40916c', '#52b788', '#74c69d', '#95d5b2', '#b7e4c7', '#1b4332', '#081c15'],
+            candy: ['#ff6b6b', '#ff8e72', '#ffd93d', '#6bcb77', '#4d96ff', '#9b59b6', '#ff6b9d', '#c44569'],
+            retro: ['#e74c3c', '#e67e22', '#f39c12', '#27ae60', '#2980b9', '#8e44ad', '#2c3e50', '#16a085'],
+            cyberpunk: ['#ff00ff', '#00ffff', '#ff0080', '#80ff00', '#0080ff', '#ff8000', '#8000ff', '#00ff80'],
+            autumn: ['#d35400', '#e74c3c', '#c0392b', '#8e44ad', '#9b59b6', '#f39c12', '#e67e22', '#a04000'],
+            winter: ['#a8d8ea', '#aa96da', '#fcbad3', '#ffffd2', '#b8e0d2', '#d6eadf', '#eac7c7', '#d0bdf4'],
+            spring: ['#a8e6cf', '#dcedc1', '#ffd3b6', '#ffaaa5', '#ff8b94', '#98d8c8', '#f7dc6f', '#bb8fce'],
+            halloween: ['#ff6600', '#000000', '#8b00ff', '#00ff00', '#ff0000', '#ffff00', '#ff6600', '#1a1a1a'],
+            christmas: ['#c41e3a', '#006400', '#ffd700', '#ffffff', '#c41e3a', '#006400', '#ffd700', '#ff0000'],
+            galaxy: ['#0c0c1e', '#1a1a3e', '#2e1a47', '#4a1a6b', '#6b2d8e', '#8e44ad', '#9b59b6', '#bb8fce'],
+            fire: ['#ff0000', '#ff3300', '#ff6600', '#ff9900', '#ffcc00', '#ffff00', '#ff6600', '#ff3300'],
+            ice: ['#e0ffff', '#b0e0e6', '#87ceeb', '#00bfff', '#1e90ff', '#4169e1', '#00ffff', '#40e0d0'],
+            earth: ['#8b4513', '#a0522d', '#cd853f', '#deb887', '#d2691e', '#8b0000', '#556b2f', '#6b8e23'],
+            berry: ['#8e4585', '#c71585', '#db7093', '#ff69b4', '#ff1493', '#dc143c', '#b22222', '#800020'],
+            tropical: ['#ff6f61', '#ffcc5c', '#88d8b0', '#96ceb4', '#ffeead', '#ff6f69', '#ffcc5c', '#2ab7ca'],
+            lavender: ['#e6e6fa', '#d8bfd8', '#dda0dd', '#da70d6', '#ba55d3', '#9932cc', '#9400d3', '#8b008b'],
+            gold: ['#ffd700', '#ffcc00', '#ffb300', '#ff9900', '#ff8000', '#cc6600', '#b8860b', '#daa520'],
+            midnight: ['#191970', '#000080', '#00008b', '#0000cd', '#4169e1', '#6495ed', '#1e90ff', '#87ceeb'],
+            bubblegum: ['#ff69b4', '#ff1493', '#db7093', '#ffb6c1', '#ffc0cb', '#ff85a2', '#ff69b4', '#ee82ee'],
+            mint: ['#98ff98', '#90ee90', '#00fa9a', '#00ff7f', '#3cb371', '#2e8b57', '#20b2aa', '#66cdaa'],
+            coffee: ['#6f4e37', '#8b4513', '#a0522d', '#d2691e', '#cd853f', '#deb887', '#f5deb3', '#ffe4c4'],
+            wine: ['#722f37', '#8b0000', '#800000', '#a52a2a', '#b22222', '#cd5c5c', '#dc143c', '#c71585'],
+            slate: ['#2f4f4f', '#708090', '#778899', '#696969', '#808080', '#a9a9a9', '#c0c0c0', '#d3d3d3'],
+            royal: ['#4169e1', '#0000cd', '#00008b', '#000080', '#191970', '#6a5acd', '#7b68ee', '#9370db'],
+            coral: ['#ff7f50', '#ff6347', '#ff4500', '#ff8c00', '#ffa07a', '#fa8072', '#e9967a', '#f08080'],
+            jungle: ['#228b22', '#006400', '#008000', '#2e8b57', '#3cb371', '#90ee90', '#32cd32', '#7cfc00'],
+            desert: ['#edc9af', '#d2b48c', '#deb887', '#f5deb3', '#ffe4c4', '#ffdab9', '#ffefd5', '#faf0e6'],
+            aurora: ['#00ff00', '#00ffff', '#ff00ff', '#ffff00', '#00ff7f', '#7fffd4', '#40e0d0', '#9400d3'],
+            vintage: ['#704214', '#a67b5b', '#c19a6b', '#d4a574', '#e8c39e', '#f5deb3', '#8b7355', '#6b4423'],
+            electric: ['#7df9ff', '#00ffff', '#00bfff', '#1e90ff', '#4169e1', '#0000ff', '#8a2be2', '#9400d3'],
+            peach: ['#ffcba4', '#ffdab9', '#ffefd5', '#ffe4e1', '#fff0f5', '#ffc0cb', '#ffb6c1', '#ff69b4'],
+            moss: ['#8a9a5b', '#6b8e23', '#808000', '#556b2f', '#2e8b57', '#228b22', '#006400', '#004d00'],
+            plum: ['#dda0dd', '#da70d6', '#ba55d3', '#9932cc', '#9400d3', '#8b008b', '#800080', '#4b0082'],
+            sahara: ['#c2b280', '#c19a6b', '#cd853f', '#d2691e', '#8b4513', '#a0522d', '#deb887', '#f4a460'],
+            arctic: ['#f0ffff', '#e0ffff', '#afeeee', '#b0e0e6', '#add8e6', '#87ceeb', '#87cefa', '#00bfff'],
+            volcanic: ['#8b0000', '#b22222', '#cd5c5c', '#f08080', '#ff6347', '#ff4500', '#ff8c00', '#2f2f2f'],
+            meadow: ['#7cfc00', '#7fff00', '#adff2f', '#9acd32', '#6b8e23', '#556b2f', '#228b22', '#008000'],
+            dusk: ['#483d8b', '#6a5acd', '#7b68ee', '#9370db', '#8a2be2', '#9400d3', '#ff8c00', '#ff6347'],
+            cherry: ['#de3163', '#ff007f', '#ff0090', '#dc143c', '#c71585', '#db7093', '#ff69b4', '#ffb6c1'],
+            steel: ['#71797e', '#848884', '#a9a9a9', '#b0c4de', '#778899', '#708090', '#4682b4', '#5f9ea0'],
+            tangerine: ['#ff9966', '#ff7f50', '#ff6347', '#ff4500', '#ff8c00', '#ffa500', '#ffb347', '#ffcc00'],
+            sapphire: ['#0f52ba', '#0066cc', '#0047ab', '#082567', '#000080', '#00008b', '#191970', '#4169e1']
         };
 
         // Audio context for sounds
@@ -164,6 +206,7 @@ class WheelSpinner {
     }
 
     addEntries() {
+        if (this.isSharedMode) return; // Can't edit shared wheel
         const input = document.getElementById('entriesInput');
         const text = input.value.trim();
         if (!text) return;
@@ -220,20 +263,25 @@ class WheelSpinner {
         this.entries.forEach((entry, index) => {
             const item = document.createElement('div');
             item.className = 'entry-item';
-            item.innerHTML = `
-                <div class="entry-color" style="background: ${entry.color}"></div>
-                <span class="entry-name">${this.escapeHtml(entry.name)}</span>
+            // Only show remove button if not in shared mode
+            const removeBtn = this.isSharedMode ? '' : `
                 <button class="entry-remove" onclick="wheel.removeEntry(${index})" title="Remove">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                         <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                     </svg>
                 </button>
             `;
+            item.innerHTML = `
+                <div class="entry-color" style="background: ${entry.color}"></div>
+                <span class="entry-name">${this.escapeHtml(entry.name)}</span>
+                ${removeBtn}
+            `;
             list.appendChild(item);
         });
     }
 
     removeEntry(index) {
+        if (this.isSharedMode) return; // Can't edit shared wheel
         this.entries.splice(index, 1);
         this.updateColors();
         this.renderEntryList();
@@ -243,6 +291,7 @@ class WheelSpinner {
     }
 
     clearEntries() {
+        if (this.isSharedMode) return; // Can't edit shared wheel
         if (this.entries.length === 0) return;
         if (!confirm('Clear all entries?')) return;
         this.entries = [];
@@ -733,6 +782,9 @@ class WheelSpinner {
                     this.currentTheme = decoded.t;
                     document.getElementById('themeSelect').value = decoded.t;
                 }
+                // Enable shared/view-only mode
+                this.isSharedMode = true;
+                this.enableSharedMode();
                 this.renderEntryList();
             } catch (e) {
                 console.error('Failed to load from URL:', e);
@@ -740,7 +792,38 @@ class WheelSpinner {
         }
     }
 
+    enableSharedMode() {
+        // Disable editing controls
+        document.getElementById('entriesInput').disabled = true;
+        document.getElementById('entriesInput').placeholder = 'This is a shared wheel (view-only)';
+        document.getElementById('addEntriesBtn').disabled = true;
+        document.getElementById('clearEntriesBtn').disabled = true;
+        document.getElementById('importBtn').disabled = true;
+        document.getElementById('themeSelect').disabled = true;
+        document.getElementById('durationSelect').disabled = true;
+
+        // Hide eliminate winner option in shared mode
+        const eliminateBtn = document.getElementById('eliminateWinner');
+        if (eliminateBtn) eliminateBtn.disabled = true;
+
+        // Add visual indicator
+        const header = document.querySelector('.panel-header');
+        if (header) {
+            const badge = document.createElement('span');
+            badge.className = 'shared-badge';
+            badge.textContent = 'SHARED';
+            badge.style.cssText = 'background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; margin-left: 10px;';
+            header.querySelector('h2').appendChild(badge);
+        }
+
+        // Show toast notification
+        this.showToast('Viewing shared wheel (read-only)', 'info');
+    }
+
     saveToStorage() {
+        // Don't save to storage in shared mode - keeps owner's wheel intact
+        if (this.isSharedMode) return;
+
         const data = {
             entries: this.entries.map(e => e.name),
             theme: this.currentTheme,

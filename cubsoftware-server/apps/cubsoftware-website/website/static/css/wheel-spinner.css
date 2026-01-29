@@ -3,11 +3,11 @@
 /* Layout */
 .wheel-container {
     display: grid;
-    grid-template-columns: 320px 1fr 320px;
+    grid-template-columns: 1fr minmax(500px, 800px) 1fr;
     gap: 30px;
     padding: 30px;
     min-height: calc(100vh - 70px);
-    max-width: 1800px;
+    max-width: 2200px;
     margin: 0 auto;
     align-items: start;
 }
@@ -22,10 +22,12 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    height: 700px;
     max-height: calc(100vh - 130px);
     overflow-y: auto;
     position: sticky;
     top: 90px;
+    min-width: 280px;
 }
 
 .panel-header {
@@ -110,8 +112,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-height: 100px;
-    max-height: 300px;
+    min-height: 150px;
 }
 
 .entry-item {
@@ -186,11 +187,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    max-width: 700px;
 }
 
 #wheelCanvas {
     width: 100%;
-    max-width: 550px;
+    max-width: 700px;
     height: auto;
     filter: drop-shadow(0 15px 40px rgba(88, 101, 242, 0.3));
 }
@@ -217,9 +220,9 @@
 
 @keyframes pointerBounce {
     0% { transform: translateX(-50%) rotate(0deg); }
-    30% { transform: translateX(-50%) rotate(12deg); }
-    60% { transform: translateX(-50%) rotate(-5deg); }
-    80% { transform: translateX(-50%) rotate(2deg); }
+    30% { transform: translateX(-50%) rotate(-12deg); }
+    60% { transform: translateX(-50%) rotate(5deg); }
+    80% { transform: translateX(-50%) rotate(-2deg); }
     100% { transform: translateX(-50%) rotate(0deg); }
 }
 
