@@ -432,20 +432,22 @@ class WheelSpinner {
         // Determine winner (segment at top where pointer is)
         const sliceAngle = (2 * Math.PI) / this.entries.length;
 
-        // The pointer is at the top (12 o'clock = 3π/2 in canvas coordinates)
+        // The pointer is at the top (12 o'clock = 3π/2 in canvas coordinates where angles go clockwise)
+        // Segment i is drawn from (rotation + i*sliceAngle) to (rotation + (i+1)*sliceAngle)
+        // We need to find which segment index contains the pointer angle
+
+        // Use the raw rotation value (don't normalize first, normalize the result instead)
         const pointerAngle = 3 * Math.PI / 2;
 
-        // Normalize rotation to [0, 2π)
-        const normalizedRotation = ((this.rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        // Calculate which segment contains the pointer
+        // The segment at the pointer: (pointerAngle - rotation) / sliceAngle
+        let angleFromStart = pointerAngle - this.rotation;
 
-        // Calculate how far clockwise from segment 0's start to the pointer
-        // Segment i is drawn from (rotation + i*sliceAngle) to (rotation + (i+1)*sliceAngle)
-        // We need to find which segment covers the pointer angle
-        let angleToPointer = pointerAngle - normalizedRotation;
-        angleToPointer = ((angleToPointer % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        // Normalize to [0, 2π)
+        angleFromStart = ((angleFromStart % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
-        // The winner is the segment at this angle
-        const winnerIndex = Math.floor(angleToPointer / sliceAngle);
+        // Get the segment index
+        const winnerIndex = Math.floor(angleFromStart / sliceAngle) % this.entries.length;
         const winner = this.entries[winnerIndex];
 
         // Play win sound
