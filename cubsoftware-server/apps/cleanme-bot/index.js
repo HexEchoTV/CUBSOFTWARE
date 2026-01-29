@@ -26,6 +26,19 @@ const commands = [
         .setDescription('Check if your server has a saved configuration'),
 
     new SlashCommandBuilder()
+        .setName('lookup')
+        .setDescription('Look up a saved configuration by server ID')
+        .addStringOption(option =>
+            option.setName('serverid')
+                .setDescription('The server ID to look up')
+                .setRequired(true)
+        ),
+
+    new SlashCommandBuilder()
+        .setName('delete')
+        .setDescription('Delete your server\'s saved configuration'),
+
+    new SlashCommandBuilder()
         .setName('copy')
         .setDescription('Copy another server\'s saved configuration to your server')
         .addStringOption(option =>
@@ -132,6 +145,69 @@ client.once('ready', async () => {
     });
     terminal.init();
 
+    // Add custom terminal commands
+    terminal.addCommand('saves', {
+        description: 'List all saved server configurations',
+        usage: 'saves',
+        execute: async () => {
+            const saves = loadSaves();
+            const serverIds = Object.keys(saves);
+            if (serverIds.length === 0) {
+                return '📋 No saves found';
+            }
+            let output = '📋 **Saved Servers:**\n```\n';
+            for (const id of serverIds) {
+                const save = saves[id];
+                output += `${id} - ${save.guildName}\n`;
+                output += `  Roles: ${save.roles.length}, Channels: ${save.channels.length}, Categories: ${save.categories.length}\n`;
+                output += `  Saved: ${new Date(save.savedAt).toLocaleString()}\n\n`;
+            }
+            output += '```';
+            return output;
+        }
+    });
+
+    terminal.addCommand('saveinfo', {
+        description: 'Get detailed info about a save',
+        usage: 'saveinfo <serverid>',
+        execute: async (args) => {
+            if (!args[0]) return '❌ Usage: `>saveinfo <serverid>`';
+            const saves = loadSaves();
+            const save = saves[args[0]];
+            if (!save) return `❌ No save found for server ID: ${args[0]}`;
+
+            let output = `📋 **Save Info for ${save.guildName}**\n`;
+            output += `Server ID: ${args[0]}\n`;
+            output += `Saved: ${new Date(save.savedAt).toLocaleString()}\n\n`;
+            output += `**Roles (${save.roles.length}):**\n\`\`\`\n`;
+            output += save.roles.slice(0, 15).map(r => r.name).join(', ');
+            if (save.roles.length > 15) output += `\n... and ${save.roles.length - 15} more`;
+            output += '\n```\n';
+            output += `**Categories (${save.categories.length}):**\n\`\`\`\n`;
+            output += save.categories.map(c => c.name).join(', ') || 'None';
+            output += '\n```\n';
+            output += `**Channels (${save.channels.length}):**\n\`\`\`\n`;
+            output += save.channels.slice(0, 15).map(c => c.name).join(', ');
+            if (save.channels.length > 15) output += `\n... and ${save.channels.length - 15} more`;
+            output += '\n```';
+            return output;
+        }
+    });
+
+    terminal.addCommand('deletesave', {
+        description: 'Delete a saved server configuration',
+        usage: 'deletesave <serverid>',
+        execute: async (args) => {
+            if (!args[0]) return '❌ Usage: `>deletesave <serverid>`';
+            const saves = loadSaves();
+            if (!saves[args[0]]) return `❌ No save found for server ID: ${args[0]}`;
+            const name = saves[args[0]].guildName;
+            delete saves[args[0]];
+            saveSaves(saves);
+            return `🗑️ Deleted save for **${name}** (${args[0]})`;
+        }
+    });
+
     // Deploy commands on startup
     await deployCommands();
 
@@ -172,6 +248,12 @@ client.on('interactionCreate', async (interaction) => {
         case 'list':
             await handleList(interaction);
             break;
+        case 'lookup':
+            await handleLookup(interaction);
+            break;
+        case 'delete':
+            await handleDelete(interaction);
+            break;
         case 'copy':
             await handleCopy(interaction);
             break;
@@ -196,7 +278,7 @@ async function handleHelp(interaction) {
         .addFields(
             {
                 name: '📥 /save',
-                value: 'Save your current server configuration (roles, channels, categories). Each server can have one save. Running again will prompt to override.',
+                value: 'Save your current server configuration (roles, channels, categories). Each server can have one save.',
                 inline: false
             },
             {
@@ -205,13 +287,23 @@ async function handleHelp(interaction) {
                 inline: false
             },
             {
+                name: '🔍 /lookup [serverid]',
+                value: 'Look up any server\'s saved configuration by their server ID. See what roles, channels, and categories are included.',
+                inline: false
+            },
+            {
+                name: '🗑️ /delete',
+                value: 'Delete your server\'s saved configuration. Others will no longer be able to copy it.',
+                inline: false
+            },
+            {
                 name: '📤 /copy [serverid]',
                 value: 'Copy another server\'s saved configuration to your server. **Warning:** This will wipe your current setup first!',
                 inline: false
             },
             {
-                name: '🗑️ /clean',
-                value: 'Delete ALL channels and roles from your server (except @everyone and the bot\'s role).',
+                name: '💣 /clean',
+                value: 'Delete ALL channels and roles from your server.',
                 inline: false
             },
             {
@@ -280,7 +372,10 @@ async function handleSave(interaction) {
 }
 
 async function performSave(interaction, isOverride = false) {
-    await interaction.deferReply({ ephemeral: true });
+    // Only defer if not already deferred (override case)
+    if (!isOverride) {
+        await interaction.deferReply({ ephemeral: true });
+    }
 
     try {
         const guild = interaction.guild;
@@ -445,6 +540,115 @@ async function handleList(interaction) {
     await interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
+// Lookup command - look up any server's save by ID
+async function handleLookup(interaction) {
+    const targetServerId = interaction.options.getString('serverid');
+    const saves = loadSaves();
+
+    if (!saves[targetServerId]) {
+        const embed = new EmbedBuilder()
+            .setTitle('🔍 Save Lookup')
+            .setColor(0xFF6B6B)
+            .setDescription(`No saved configuration found for server ID: \`${targetServerId}\``)
+            .addFields({
+                name: 'Tip',
+                value: 'Make sure the server has used `/save` to save their configuration first.',
+                inline: false
+            })
+            .setTimestamp();
+
+        return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    const save = saves[targetServerId];
+
+    // Show role names (first 20)
+    const roleNames = save.roles.slice(0, 20).map(r => r.name).join(', ');
+    const roleText = roleNames + (save.roles.length > 20 ? `\n... and ${save.roles.length - 20} more` : '');
+
+    // Show category names
+    const categoryNames = save.categories.map(c => c.name).join(', ') || 'None';
+
+    // Show channel names (first 20)
+    const channelNames = save.channels.slice(0, 20).map(c => `#${c.name}`).join(', ');
+    const channelText = channelNames + (save.channels.length > 20 ? `\n... and ${save.channels.length - 20} more` : '');
+
+    const embed = new EmbedBuilder()
+        .setTitle('🔍 Save Lookup')
+        .setColor(0x5865F2)
+        .setDescription(`Found saved configuration for **${save.guildName}**`)
+        .addFields(
+            { name: 'Server ID', value: targetServerId, inline: true },
+            { name: 'Saved At', value: new Date(save.savedAt).toLocaleString(), inline: true },
+            { name: '\u200b', value: '\u200b', inline: true },
+            { name: `Roles (${save.roles.length})`, value: roleText || 'None', inline: false },
+            { name: `Categories (${save.categories.length})`, value: categoryNames, inline: false },
+            { name: `Channels (${save.channels.length})`, value: channelText || 'None', inline: false }
+        )
+        .addFields({
+            name: 'Copy This Setup',
+            value: `Use \`/copy ${targetServerId}\` to copy this configuration to your server.\n⚠️ This will wipe your current setup!`,
+            inline: false
+        })
+        .setTimestamp();
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+// Delete command - delete your server's save
+async function handleDelete(interaction) {
+    const saves = loadSaves();
+    const guildId = interaction.guild.id;
+
+    if (!saves[guildId]) {
+        return interaction.reply({
+            content: '❌ This server does not have a saved configuration to delete.',
+            ephemeral: true
+        });
+    }
+
+    const confirmId = `delete_${guildId}_${Date.now()}`;
+    pendingConfirmations.set(confirmId, {
+        type: 'delete_save',
+        guildId: guildId,
+        userId: interaction.user.id,
+        expires: Date.now() + 60000
+    });
+
+    const save = saves[guildId];
+    const row = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId(`confirm_${confirmId}`)
+                .setLabel('Yes, Delete Save')
+                .setStyle(ButtonStyle.Danger),
+            new ButtonBuilder()
+                .setCustomId(`cancel_${confirmId}`)
+                .setLabel('Cancel')
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+    const embed = new EmbedBuilder()
+        .setTitle('⚠️ Delete Saved Configuration')
+        .setColor(0xFF0000)
+        .setDescription('Are you sure you want to delete this server\'s saved configuration?')
+        .addFields(
+            { name: 'Server Name', value: save.guildName, inline: true },
+            { name: 'Saved At', value: new Date(save.savedAt).toLocaleString(), inline: true },
+            { name: '\u200b', value: '\u200b', inline: true },
+            { name: 'Roles', value: `${save.roles.length}`, inline: true },
+            { name: 'Channels', value: `${save.channels.length}`, inline: true },
+            { name: 'Categories', value: `${save.categories.length}`, inline: true }
+        )
+        .addFields({
+            name: '🚨 This cannot be undone!',
+            value: 'Other servers will no longer be able to copy this configuration.',
+            inline: false
+        });
+
+    await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+}
+
 // Copy command
 async function handleCopy(interaction) {
     const targetServerId = interaction.options.getString('serverid');
@@ -550,9 +754,10 @@ async function performCopy(interaction, sourceServerId) {
 
         // Step 3: Create roles
         statusEmbed.setFields({ name: 'Status', value: '🎭 Creating roles...', inline: false });
-        await interaction.editReply({ embeds: [statusEmbed] });
+        await interaction.editReply({ embeds: [statusEmbed] }).catch(() => {});
 
         const roleMap = new Map(); // Map old role names to new role objects
+        const roleErrors = [];
         for (const roleData of save.roles.reverse()) { // Reverse to create lowest first
             try {
                 const newRole = await guild.roles.create({
@@ -567,14 +772,16 @@ async function performCopy(interaction, sourceServerId) {
                 await sleep(300);
             } catch (e) {
                 console.log(`Could not create role ${roleData.name}: ${e.message}`);
+                roleErrors.push(`${roleData.name}: ${e.message}`);
             }
         }
 
         // Step 4: Create categories
         statusEmbed.setFields({ name: 'Status', value: '📁 Creating categories...', inline: false });
-        await interaction.editReply({ embeds: [statusEmbed] });
+        await interaction.editReply({ embeds: [statusEmbed] }).catch(() => {});
 
         const categoryMap = new Map(); // Map category names to new category objects
+        const categoryErrors = [];
         for (const catData of save.categories) {
             try {
                 const permissionOverwrites = buildPermissionOverwrites(catData.permissionOverwrites, roleMap, guild);
@@ -588,13 +795,16 @@ async function performCopy(interaction, sourceServerId) {
                 await sleep(300);
             } catch (e) {
                 console.log(`Could not create category ${catData.name}: ${e.message}`);
+                categoryErrors.push(`${catData.name}: ${e.message}`);
             }
         }
 
         // Step 5: Create channels
         statusEmbed.setFields({ name: 'Status', value: '📺 Creating channels...', inline: false });
-        await interaction.editReply({ embeds: [statusEmbed] });
+        await interaction.editReply({ embeds: [statusEmbed] }).catch(() => {});
 
+        let channelsCreated = 0;
+        const channelErrors = [];
         for (const channelData of save.channels) {
             try {
                 const permissionOverwrites = buildPermissionOverwrites(channelData.permissionOverwrites, roleMap, guild);
@@ -617,23 +827,36 @@ async function performCopy(interaction, sourceServerId) {
                 }
 
                 await guild.channels.create(channelOptions);
+                channelsCreated++;
                 await sleep(300);
             } catch (e) {
                 console.log(`Could not create channel ${channelData.name}: ${e.message}`);
+                channelErrors.push(`${channelData.name}: ${e.message}`);
             }
         }
 
         // Done!
+        const hasErrors = roleErrors.length > 0 || categoryErrors.length > 0 || channelErrors.length > 0;
         const doneEmbed = new EmbedBuilder()
-            .setTitle('✅ Server Copy Complete!')
-            .setColor(0x00FF00)
-            .setDescription(`Successfully copied configuration from **${save.guildName}**!`)
+            .setTitle(hasErrors ? '⚠️ Server Copy Complete (with errors)' : '✅ Server Copy Complete!')
+            .setColor(hasErrors ? 0xFFA500 : 0x00FF00)
+            .setDescription(`Copied configuration from **${save.guildName}**`)
             .addFields(
-                { name: 'Roles Created', value: `${roleMap.size}`, inline: true },
-                { name: 'Categories Created', value: `${categoryMap.size}`, inline: true },
-                { name: 'Channels Created', value: `${save.channels.length}`, inline: true }
+                { name: 'Roles Created', value: `${roleMap.size}/${save.roles.length}`, inline: true },
+                { name: 'Categories Created', value: `${categoryMap.size}/${save.categories.length}`, inline: true },
+                { name: 'Channels Created', value: `${channelsCreated}/${save.channels.length}`, inline: true }
             )
             .setTimestamp();
+
+        if (hasErrors) {
+            const allErrors = [
+                ...roleErrors.map(e => `Role: ${e}`),
+                ...categoryErrors.map(e => `Category: ${e}`),
+                ...channelErrors.map(e => `Channel: ${e}`)
+            ];
+            const errorText = allErrors.slice(0, 10).join('\n') + (allErrors.length > 10 ? `\n... and ${allErrors.length - 10} more` : '');
+            doneEmbed.addFields({ name: '❌ Errors', value: errorText || 'Unknown errors', inline: false });
+        }
 
         // Try to find a text channel to send the completion message
         const textChannel = guild.channels.cache.find(c => c.type === ChannelType.GuildText);
@@ -994,8 +1217,40 @@ async function handleButton(interaction) {
                 await interaction.deferUpdate();
                 await performCleanChannels(interaction);
                 break;
+            case 'delete_save':
+                await performDeleteSave(interaction, pending.guildId);
+                break;
         }
     }
+}
+
+async function performDeleteSave(interaction, guildId) {
+    const saves = loadSaves();
+
+    if (!saves[guildId]) {
+        return interaction.update({
+            content: '❌ Save not found (may have already been deleted).',
+            embeds: [],
+            components: []
+        });
+    }
+
+    const serverName = saves[guildId].guildName;
+    delete saves[guildId];
+    saveSaves(saves);
+
+    const embed = new EmbedBuilder()
+        .setTitle('🗑️ Save Deleted')
+        .setColor(0x00FF00)
+        .setDescription(`Successfully deleted the saved configuration for **${serverName}**.`)
+        .addFields({
+            name: 'Note',
+            value: 'Other servers can no longer copy this configuration. Use `/save` to create a new save.',
+            inline: false
+        })
+        .setTimestamp();
+
+    await interaction.update({ embeds: [embed], components: [] });
 }
 
 // Utility function for rate limiting
