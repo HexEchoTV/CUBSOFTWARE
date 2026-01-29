@@ -297,8 +297,8 @@
 
 /* Processes Grid */
 .processes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 2rem;
 }
@@ -317,6 +317,8 @@
     border-radius: 16px;
     padding: 1.25rem;
     transition: all 0.3s ease;
+    width: 380px;
+    flex-shrink: 0;
 }
 
 .process-card:hover {
@@ -523,6 +525,11 @@
 .process-actions button.start:hover {
     border-color: #22c55e;
     color: #22c55e;
+}
+
+.process-actions button.reset:hover {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
 }
 
 .process-actions button svg {
@@ -793,7 +800,11 @@
     }
 
     .processes-grid {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
+    .process-card {
+        width: 100%;
     }
 
     .dashboard-controls {

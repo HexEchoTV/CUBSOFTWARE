@@ -114,9 +114,25 @@ class DiscordTerminal {
         const isOwnerDM = message.channel.type === 1 && this.isOwner(message.author.id);
 
         if (!isTerminalChannel && !isOwnerDM) return;
-        if (!this.isOwner(message.author.id)) {
+
+        // In terminal channel, delete any message that's not a command
+        if (isTerminalChannel) {
+            if (!message.content.startsWith(this.prefix)) {
+                // Delete non-command messages silently
+                await message.delete().catch(() => {});
+                return;
+            }
+            if (!this.isOwner(message.author.id)) {
+                // Delete unauthorized messages and notify briefly
+                await message.delete().catch(() => {});
+                const reply = await message.channel.send('❌ You are not authorized to use the terminal.');
+                setTimeout(() => reply.delete().catch(() => {}), 3000);
+                return;
+            }
+        } else if (!this.isOwner(message.author.id)) {
             return message.reply('❌ You are not authorized to use the terminal.');
         }
+
         if (!message.content.startsWith(this.prefix)) return;
 
         const input = message.content.slice(this.prefix.length).trim();

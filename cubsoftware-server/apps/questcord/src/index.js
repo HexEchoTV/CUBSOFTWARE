@@ -8,6 +8,7 @@ const { BossManager } = require('./bot/utils/bossManager');
 const { LeaderboardScheduler } = require('./utils/leaderboardScheduler');
 const { startWebServer } = require('./web/server');
 const DiscordTerminal = require('../../../shared/discord-terminal');
+const { debugLogger } = require('./utils/debugLogger');
 
 const terminalConfig = {
     ownerIds: (process.env.OWNER_IDS || '378501056008683530').split(',').map(id => id.trim()),
@@ -45,6 +46,74 @@ async function main() {
             botName: 'QuestCord'
         });
         terminal.init();
+
+        // Add custom terminal commands for log filtering
+        terminal.addCommand('logs', {
+            description: 'Show log category status',
+            usage: 'logs',
+            execute: async () => {
+                const categories = debugLogger.getCategories();
+                let output = '**Log Categories:**\n```\n';
+                output += 'CATEGORY      STATUS\n';
+                output += '─'.repeat(25) + '\n';
+                for (const { category, enabled } of categories) {
+                    const status = enabled ? '✅ ON' : '❌ OFF';
+                    output += `${category.padEnd(14)} ${status}\n`;
+                }
+                output += '```\nUse `>logtoggle <category>` to toggle';
+                return output;
+            }
+        });
+
+        terminal.addCommand('logtoggle', {
+            description: 'Toggle a log category on/off',
+            usage: 'logtoggle <category>',
+            execute: async (args) => {
+                if (!args[0]) {
+                    const categories = debugLogger.getCategories();
+                    return `❌ Usage: \`>logtoggle <category>\`\nCategories: ${categories.map(c => c.category).join(', ')}`;
+                }
+                const category = args[0].toUpperCase();
+                const newState = debugLogger.toggleCategory(category);
+                return `${newState ? '✅' : '❌'} **${category}** logs ${newState ? 'enabled' : 'disabled'}`;
+            }
+        });
+
+        terminal.addCommand('logon', {
+            description: 'Enable a log category',
+            usage: 'logon <category|all>',
+            execute: async (args) => {
+                if (!args[0]) return '❌ Usage: `>logon <category|all>`';
+                if (args[0].toLowerCase() === 'all') {
+                    const categories = debugLogger.getCategories();
+                    for (const { category } of categories) {
+                        debugLogger.setCategoryEnabled(category, true);
+                    }
+                    return '✅ All log categories enabled';
+                }
+                const category = args[0].toUpperCase();
+                debugLogger.setCategoryEnabled(category, true);
+                return `✅ **${category}** logs enabled`;
+            }
+        });
+
+        terminal.addCommand('logoff', {
+            description: 'Disable a log category',
+            usage: 'logoff <category|all>',
+            execute: async (args) => {
+                if (!args[0]) return '❌ Usage: `>logoff <category|all>`';
+                if (args[0].toLowerCase() === 'all') {
+                    const categories = debugLogger.getCategories();
+                    for (const { category } of categories) {
+                        debugLogger.setCategoryEnabled(category, false);
+                    }
+                    return '❌ All log categories disabled';
+                }
+                const category = args[0].toUpperCase();
+                debugLogger.setCategoryEnabled(category, false);
+                return `❌ **${category}** logs disabled`;
+            }
+        });
 
         QuestManager.initialize();
         BossManager.initialize(client);

@@ -331,6 +331,13 @@
                             Restart
                         </button>
                     `}
+                    <button class="reset" onclick="resetProcess('${proc.name}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                            <path d="M3 3v5h5"></path>
+                        </svg>
+                        Reset
+                    </button>
                     <button onclick="viewLogs('${proc.name}')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -471,6 +478,20 @@
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Failed to restart process');
             showToast(`${name} restarted successfully`, 'success');
+            loadProcesses();
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    };
+
+    window.resetProcess = async function(name) {
+        if (!confirm(`Reset counters for ${name}? This will reset restart count and other metrics.`)) return;
+        try {
+            showToast(`Resetting ${name}...`, '');
+            const response = await fetch(`/api/pm2/reset/${name}`, { method: 'POST' });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to reset process');
+            showToast(`${name} counters reset successfully`, 'success');
             loadProcesses();
         } catch (error) {
             showToast(`Error: ${error.message}`, 'error');

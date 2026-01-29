@@ -826,6 +826,26 @@ def pm2_restart_process(process_name):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/pm2/reset/<process_name>', methods=['POST'])
+@pm2_auth_required
+def pm2_reset_process(process_name):
+    """Reset PM2 process counters (restart count, etc.)"""
+    try:
+        result = subprocess.run(
+            ['pm2', 'reset', process_name],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode != 0:
+            return jsonify({'error': result.stderr or 'Failed to reset process'}), 500
+
+        return jsonify({'success': True, 'message': f'Process {process_name} counters reset'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Whitelist Management API (for Discord bot integration)
 @app.route('/api/pm2/whitelist', methods=['GET'])
 @pm2_auth_required

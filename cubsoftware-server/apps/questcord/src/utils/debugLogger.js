@@ -24,6 +24,48 @@ class DebugLogger {
             warn: '\u26A0\uFE0F',
             error: '\u274C'
         };
+        // Category filters - set to false to disable logging for specific categories
+        this.categoryFilters = {
+            'WEBSITE': true,
+            'WEBSOCKET': true,
+            'QUEST': true,
+            'BOSS': true,
+            'DATABASE': true,
+            'API': true,
+            'COMMAND': true,
+            'EVENT': true,
+            'TRAVEL': true,
+            'LEADERBOARD': true
+        };
+    }
+
+    isCategoryEnabled(category) {
+        const upperCategory = category.toUpperCase();
+        // If category not in filters, default to enabled
+        if (!(upperCategory in this.categoryFilters)) {
+            return true;
+        }
+        return this.categoryFilters[upperCategory];
+    }
+
+    setCategoryEnabled(category, enabled) {
+        const upperCategory = category.toUpperCase();
+        this.categoryFilters[upperCategory] = enabled;
+        console.log(`[DEBUG] Category ${upperCategory} ${enabled ? 'enabled' : 'disabled'}`);
+    }
+
+    toggleCategory(category) {
+        const upperCategory = category.toUpperCase();
+        const newState = !this.isCategoryEnabled(upperCategory);
+        this.setCategoryEnabled(upperCategory, newState);
+        return newState;
+    }
+
+    getCategories() {
+        return Object.entries(this.categoryFilters).map(([category, enabled]) => ({
+            category,
+            enabled
+        }));
     }
 
     setClient(client) {
@@ -52,6 +94,7 @@ class DebugLogger {
 
     async log(category, message, data = null, level = 'info') {
         if (!this.enabled) return;
+        if (!this.isCategoryEnabled(category)) return;
 
         console.log(`[DEBUG ${category}] ${message}`, data || '');
 
