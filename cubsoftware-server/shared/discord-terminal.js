@@ -29,7 +29,9 @@
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
-const { ChannelType, EmbedBuilder } = require('discord.js');
+
+// Note: We use plain embed objects instead of EmbedBuilder to avoid requiring discord.js
+// in the shared folder (which doesn't have its own node_modules)
 
 class DiscordTerminal {
     constructor(client, options = {}) {
@@ -91,11 +93,12 @@ class DiscordTerminal {
                 error: '❌'
             };
 
-            const embed = new EmbedBuilder()
-                .setColor(colors[type] || colors.info)
-                .setDescription(`${icons[type] || ''} ${message}`)
-                .setFooter({ text: this.botName })
-                .setTimestamp();
+            const embed = {
+                color: colors[type] || colors.info,
+                description: `${icons[type] || ''} ${message}`,
+                footer: { text: this.botName },
+                timestamp: new Date().toISOString()
+            };
 
             await channel.send({ embeds: [embed] });
         } catch (err) {
@@ -107,7 +110,8 @@ class DiscordTerminal {
         if (message.author.bot) return;
 
         const isTerminalChannel = message.channel.id === this.channelId;
-        const isOwnerDM = message.channel.type === ChannelType.DM && this.isOwner(message.author.id);
+        // ChannelType.DM = 1
+        const isOwnerDM = message.channel.type === 1 && this.isOwner(message.author.id);
 
         if (!isTerminalChannel && !isOwnerDM) return;
         if (!this.isOwner(message.author.id)) {
@@ -152,18 +156,19 @@ class DiscordTerminal {
             description: 'Show all available commands',
             usage: 'help',
             execute: async (args, message) => {
-                const embed = new EmbedBuilder()
-                    .setColor(0x5865f2)
-                    .setTitle(`${self.botName} Terminal`)
-                    .setDescription('Available commands:')
-                    .setFooter({ text: `Prefix: ${self.prefix}` })
-                    .setTimestamp();
-
                 let commandList = '';
                 for (const [name, cmd] of self.commands) {
                     commandList += `\`${self.prefix}${cmd.usage || name}\` - ${cmd.description}\n`;
                 }
-                embed.addFields({ name: 'Commands', value: commandList || 'No commands available' });
+
+                const embed = {
+                    color: 0x5865f2,
+                    title: `${self.botName} Terminal`,
+                    description: 'Available commands:',
+                    fields: [{ name: 'Commands', value: commandList || 'No commands available' }],
+                    footer: { text: `Prefix: ${self.prefix}` },
+                    timestamp: new Date().toISOString()
+                };
 
                 await message.channel.send({ embeds: [embed] });
                 return null;
