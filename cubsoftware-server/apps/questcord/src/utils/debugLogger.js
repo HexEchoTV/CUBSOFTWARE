@@ -1,6 +1,10 @@
 // Debug Logger - Sends debug information to Discord terminal channel as embeds
 const { EmbedBuilder } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+
 const DEBUG_CHANNEL_ID = process.env.TERMINAL_CHANNEL_ID || '1466190431485427856';
+const SETTINGS_FILE = path.join(__dirname, '..', '..', 'debug-settings.json');
 
 class DebugLogger {
     constructor() {
@@ -37,6 +41,31 @@ class DebugLogger {
             'TRAVEL': true,
             'LEADERBOARD': true
         };
+        // Load saved settings
+        this._loadSettings();
+    }
+
+    _loadSettings() {
+        try {
+            if (fs.existsSync(SETTINGS_FILE)) {
+                const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+                if (data.categoryFilters) {
+                    this.categoryFilters = { ...this.categoryFilters, ...data.categoryFilters };
+                }
+                console.log('[DEBUG] Loaded settings from file');
+            }
+        } catch (err) {
+            console.error('[DEBUG] Failed to load settings:', err.message);
+        }
+    }
+
+    _saveSettings() {
+        try {
+            const data = { categoryFilters: this.categoryFilters };
+            fs.writeFileSync(SETTINGS_FILE, JSON.stringify(data, null, 2), 'utf8');
+        } catch (err) {
+            console.error('[DEBUG] Failed to save settings:', err.message);
+        }
     }
 
     isCategoryEnabled(category) {
@@ -51,6 +80,7 @@ class DebugLogger {
     setCategoryEnabled(category, enabled) {
         const upperCategory = category.toUpperCase();
         this.categoryFilters[upperCategory] = enabled;
+        this._saveSettings();
         console.log(`[DEBUG] Category ${upperCategory} ${enabled ? 'enabled' : 'disabled'}`);
     }
 
