@@ -430,25 +430,69 @@ class WheelSpinner {
         spinBtn.textContent = 'SPIN';
 
         // Determine winner (segment at top where pointer is)
-        const sliceAngle = (2 * Math.PI) / this.entries.length;
+        const n = this.entries.length;
+        const sliceAngle = (2 * Math.PI) / n;
 
-        // The pointer is at the top (12 o'clock = 3π/2 in canvas coordinates where angles go clockwise)
-        // Segment i is drawn from (rotation + i*sliceAngle) to (rotation + (i+1)*sliceAngle)
-        // We need to find which segment index contains the pointer angle
+        // DEBUG: Log all segment positions
+        console.log('=== WHEEL DEBUG ===');
+        console.log('Total entries:', n);
+        console.log('Slice angle (radians):', sliceAngle, '=', (sliceAngle * 180 / Math.PI).toFixed(1) + '°');
+        console.log('Raw rotation:', this.rotation, '=', (this.rotation * 180 / Math.PI).toFixed(1) + '°');
 
-        // Use the raw rotation value (don't normalize first, normalize the result instead)
-        const pointerAngle = 3 * Math.PI / 2;
+        // Normalize rotation to [0, 2π)
+        const normalizedRotation = ((this.rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        console.log('Normalized rotation:', normalizedRotation.toFixed(4), '=', (normalizedRotation * 180 / Math.PI).toFixed(1) + '°');
 
-        // Calculate which segment contains the pointer
-        // The segment at the pointer: (pointerAngle - rotation) / sliceAngle
-        let angleFromStart = pointerAngle - this.rotation;
+        // Log where each segment is drawn
+        console.log('--- Segment positions (start angles) ---');
+        for (let i = 0; i < n; i++) {
+            const startAngle = normalizedRotation + i * sliceAngle;
+            const endAngle = startAngle + sliceAngle;
+            const normalizedStart = ((startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const normalizedEnd = ((endAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            console.log(`  Segment ${i} ("${this.entries[i].name}"): ${(normalizedStart * 180 / Math.PI).toFixed(1)}° to ${(normalizedEnd * 180 / Math.PI).toFixed(1)}°`);
+        }
 
-        // Normalize to [0, 2π)
-        angleFromStart = ((angleFromStart % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        // The pointer is at the TOP of the wheel
+        // In canvas: 0° = 3 o'clock (right), 90° = 6 o'clock (bottom), 180° = 9 o'clock (left), 270° = 12 o'clock (top)
+        const pointerAngleDeg = 270; // 12 o'clock = top
+        const pointerAngle = pointerAngleDeg * Math.PI / 180; // = 3π/2
+        console.log('Pointer at:', pointerAngleDeg + '° (top of wheel)');
 
-        // Get the segment index
-        const winnerIndex = Math.floor(angleFromStart / sliceAngle) % this.entries.length;
+        // Find which segment contains the pointer angle
+        // Segment i covers: [normalizedRotation + i*sliceAngle, normalizedRotation + (i+1)*sliceAngle)
+        let winnerIndex = -1;
+        for (let i = 0; i < n; i++) {
+            const startAngle = ((normalizedRotation + i * sliceAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+            const endAngle = ((normalizedRotation + (i + 1) * sliceAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+
+            // Check if pointer is in this segment (handling wrap-around)
+            let inSegment = false;
+            if (startAngle <= endAngle) {
+                // Normal case: segment doesn't wrap around 0
+                inSegment = pointerAngle >= startAngle && pointerAngle < endAngle;
+            } else {
+                // Wrap-around case: segment crosses the 0° line
+                inSegment = pointerAngle >= startAngle || pointerAngle < endAngle;
+            }
+
+            if (inSegment) {
+                winnerIndex = i;
+                console.log(`>>> Pointer (${pointerAngleDeg}°) is in Segment ${i} ("${this.entries[i].name}")`);
+                break;
+            }
+        }
+
+        // Fallback if loop didn't find it (shouldn't happen)
+        if (winnerIndex === -1) {
+            console.log('ERROR: Could not find segment containing pointer, using fallback calculation');
+            let angleFromStart = pointerAngle - normalizedRotation;
+            angleFromStart = ((angleFromStart % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            winnerIndex = Math.floor(angleFromStart / sliceAngle) % n;
+        }
+
         const winner = this.entries[winnerIndex];
+        console.log('=== WINNER: "' + winner.name + '" (index ' + winnerIndex + ') ===');
 
         // Play win sound
         this.playWinSound();
