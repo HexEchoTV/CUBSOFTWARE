@@ -52,10 +52,26 @@ class DiscordTerminal {
         // Send startup message
         this.log(`**${this.botName}** terminal ready`, 'success');
 
-        // Clear terminal channel every hour
+        // Clear terminal channel on the hour (1:00, 2:00, etc.)
         if (this.channelId) {
-            setInterval(() => this._clearChannel(), 60 * 60 * 1000); // 1 hour
+            this._scheduleHourlyClear();
         }
+    }
+
+    _scheduleHourlyClear() {
+        const now = new Date();
+        const nextHour = new Date(now);
+        nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0); // Next hour at :00:00
+        const msUntilNextHour = nextHour.getTime() - now.getTime();
+
+        // Schedule first clear at the next hour
+        setTimeout(() => {
+            this._clearChannel();
+            // Then repeat every hour
+            setInterval(() => this._clearChannel(), 60 * 60 * 1000);
+        }, msUntilNextHour);
+
+        console.log(`[${this.botName}] Terminal will clear at ${nextHour.toLocaleTimeString()} and every hour after`);
     }
 
     async _clearChannel() {

@@ -338,6 +338,16 @@ class BossManager {
 
             await message.edit({ content: null, embeds: [embed] });
             console.log(`Boss defeat notification sent for ${boss.boss_name}`);
+
+            // Delete the message after 5 minutes
+            setTimeout(async () => {
+                try {
+                    await message.delete();
+                    console.log(`Boss defeat notification deleted for ${boss.boss_name}`);
+                } catch (err) {
+                    console.error('Error deleting boss defeat notification:', err);
+                }
+            }, 5 * 60 * 1000);
         } catch (error) {
             console.error('Error announcing boss defeat:', error);
         }
@@ -432,6 +442,16 @@ class BossManager {
 
             await message.edit({ content: null, embeds: [embed] });
             console.log(`Boss despawn notification sent for ${boss.boss_name}`);
+
+            // Delete the message after 5 minutes
+            setTimeout(async () => {
+                try {
+                    await message.delete();
+                    console.log(`Boss despawn notification deleted for ${boss.boss_name}`);
+                } catch (err) {
+                    console.error('Error deleting boss despawn notification:', err);
+                }
+            }, 5 * 60 * 1000);
         } catch (error) {
             console.error('Error announcing boss despawn:', error);
         }
@@ -443,7 +463,52 @@ class BossManager {
             this.updateBossNotification();
         }, 60 * 1000); // 1 minute in milliseconds
 
+        // Schedule hourly cleanup on the hour (1:00, 2:00, etc.)
+        this._scheduleHourlyCleanup();
+
         console.log('Boss notification updater started');
+    }
+
+    static _scheduleHourlyCleanup() {
+        const now = new Date();
+        const nextHour = new Date(now);
+        nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+        const msUntilNextHour = nextHour.getTime() - now.getTime();
+
+        setTimeout(() => {
+            this._cleanupOldNotifications();
+            setInterval(() => this._cleanupOldNotifications(), 60 * 60 * 1000);
+        }, msUntilNextHour);
+
+        console.log(`Boss notification cleanup scheduled for ${nextHour.toLocaleTimeString()} and every hour after`);
+    }
+
+    static async _cleanupOldNotifications() {
+        try {
+            const ANNOUNCEMENT_CHANNEL_ID = '1466194334876700725';
+            const channel = this.client.channels.cache.get(ANNOUNCEMENT_CHANNEL_ID);
+            if (!channel) return;
+
+            // Fetch recent messages and delete any boss notifications older than 1 hour
+            const messages = await channel.messages.fetch({ limit: 50 });
+            const oneHourAgo = Date.now() - (60 * 60 * 1000);
+
+            for (const [, message] of messages) {
+                if (message.author.id === this.client.user.id &&
+                    message.embeds.length > 0 &&
+                    message.embeds[0].author?.name?.includes('Boss Notification') &&
+                    message.createdTimestamp < oneHourAgo) {
+                    try {
+                        await message.delete();
+                        console.log('Deleted old boss notification');
+                    } catch (err) {
+                        // Message may already be deleted
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error cleaning up old boss notifications:', error);
+        }
     }
 }
 

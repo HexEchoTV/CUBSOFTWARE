@@ -187,6 +187,23 @@
     border: 1px solid var(--border-color);
 }
 
+/* Disabled/Coming Soon Cards */
+.feature-card-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.feature-card-disabled:hover {
+    transform: none;
+    border-color: var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.feature-card-disabled h3 {
+    color: var(--text-secondary);
+}
+
 /* Mobile */
 @media (max-width: 768px) {
     .hero {
