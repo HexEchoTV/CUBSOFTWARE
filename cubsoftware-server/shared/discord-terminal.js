@@ -51,6 +51,36 @@ class DiscordTerminal {
 
         // Send startup message
         this.log(`**${this.botName}** terminal ready`, 'success');
+
+        // Clear terminal channel every hour
+        if (this.channelId) {
+            setInterval(() => this._clearChannel(), 60 * 60 * 1000); // 1 hour
+        }
+    }
+
+    async _clearChannel() {
+        if (!this.channelId) return;
+
+        try {
+            const channel = await this.client.channels.fetch(this.channelId).catch(() => null);
+            if (!channel) return;
+
+            let deleted;
+            let totalDeleted = 0;
+
+            // Keep deleting in batches until no more messages (max 500 to prevent infinite loop)
+            do {
+                deleted = await channel.bulkDelete(100, true).catch(() => ({ size: 0 }));
+                totalDeleted += deleted.size;
+            } while (deleted.size > 0 && totalDeleted < 500);
+
+            console.log(`[${this.botName}] Terminal cleared: ${totalDeleted} messages`);
+
+            // Send a fresh ready message after clearing
+            await this.log(`Terminal cleared (${totalDeleted} messages) - **${this.botName}** ready`, 'success');
+        } catch (err) {
+            console.error(`[${this.botName}] Failed to clear terminal:`, err.message);
+        }
     }
 
     addCommand(name, command) {
@@ -341,6 +371,15 @@ class DiscordTerminal {
                 const deleted = await message.channel.bulkDelete(count, true);
                 const msg = await message.channel.send(`🗑️ Cleared ${deleted.size} messages`);
                 setTimeout(() => msg.delete().catch(() => {}), 3000);
+                return null;
+            }
+        });
+
+        this.addCommand('clearall', {
+            description: 'Clear all messages in terminal',
+            usage: 'clearall',
+            execute: async (args, message) => {
+                await self._clearChannel();
                 return null;
             }
         });
