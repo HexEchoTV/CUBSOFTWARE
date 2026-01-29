@@ -205,9 +205,12 @@ class WheelSpinner {
             this.entries[i].color = this.themes[theme][i % this.themes[theme].length];
         }
         this.renderEntryList();
-        this.draw();
+        // Force canvas redraw on next frame
+        requestAnimationFrame(() => {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.draw();
+        });
         this.saveToStorage();
-        console.log(`Theme changed to: ${theme}, entries: ${this.entries.length}`);
     }
 
     renderEntryList() {
