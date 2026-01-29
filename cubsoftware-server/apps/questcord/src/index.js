@@ -43,7 +43,7 @@ async function main() {
             prefix: '>',
             ownerIds: terminalConfig.ownerIds,
             channelId: terminalConfig.terminalChannelId,
-            botName: 'QuestCord'
+            botName: 'QuestCord Bot & Website'
         });
         terminal.init();
 

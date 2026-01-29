@@ -32,7 +32,7 @@ const terminal = new DiscordTerminal(client, {
     prefix: '>',
     ownerIds: config.ownerIds,
     channelId: config.terminalChannelId,
-    botName: 'CubSoftware Bot'
+    botName: 'CubSoftware Bot & Website'
 });
 
 // Custom command: whitelist management
