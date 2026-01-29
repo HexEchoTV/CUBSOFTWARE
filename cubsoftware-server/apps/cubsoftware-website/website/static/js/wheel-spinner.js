@@ -104,9 +104,7 @@ class WheelSpinner {
 
         // Settings
         document.getElementById('themeSelect').addEventListener('change', (e) => {
-            this.currentTheme = e.target.value;
-            this.draw();
-            this.saveToStorage();
+            this.changeTheme(e.target.value);
         });
 
         document.getElementById('durationSelect').addEventListener('change', (e) => {
@@ -114,13 +112,15 @@ class WheelSpinner {
             this.saveToStorage();
         });
 
-        document.getElementById('eliminateWinner').addEventListener('change', (e) => {
-            this.eliminateWinner = e.target.checked;
+        document.getElementById('eliminateWinner').addEventListener('click', (e) => {
+            this.eliminateWinner = !this.eliminateWinner;
+            e.target.classList.toggle('active', this.eliminateWinner);
             this.saveToStorage();
         });
 
-        document.getElementById('confettiEnabled').addEventListener('change', (e) => {
-            this.confettiEnabled = e.target.checked;
+        document.getElementById('confettiEnabled').addEventListener('click', (e) => {
+            this.confettiEnabled = !this.confettiEnabled;
+            e.target.classList.toggle('active', this.confettiEnabled);
             this.saveToStorage();
         });
 
@@ -196,6 +196,18 @@ class WheelSpinner {
         this.entries.forEach((entry, index) => {
             entry.color = this.getColorForIndex(index);
         });
+    }
+
+    changeTheme(theme) {
+        this.currentTheme = theme;
+        // Update all entry colors with the new theme
+        for (let i = 0; i < this.entries.length; i++) {
+            this.entries[i].color = this.themes[theme][i % this.themes[theme].length];
+        }
+        this.renderEntryList();
+        this.draw();
+        this.saveToStorage();
+        console.log(`Theme changed to: ${theme}, entries: ${this.entries.length}`);
     }
 
     renderEntryList() {
@@ -372,6 +384,7 @@ class WheelSpinner {
         const startTime = performance.now();
         let lastTickAngle = 0;
         const sliceAngle = (2 * Math.PI) / this.entries.length;
+        const pointer = document.querySelector('.wheel-pointer');
 
         const animate = (currentTime) => {
             const elapsed = currentTime - startTime;
@@ -381,11 +394,15 @@ class WheelSpinner {
             const easeOut = 1 - Math.pow(1 - progress, 4);
             this.rotation = startRotation + targetRotation * easeOut;
 
-            // Play tick sound when passing segment boundaries
+            // Play tick sound and bounce pointer when passing segment boundaries
             const normalizedRotation = this.rotation % (2 * Math.PI);
             const currentSlice = Math.floor(normalizedRotation / sliceAngle);
-            if (currentSlice !== lastTickAngle && progress < 0.95) {
+            if (currentSlice !== lastTickAngle) {
                 this.playTick();
+                // Bounce the pointer
+                pointer.classList.remove('bounce');
+                void pointer.offsetWidth; // Trigger reflow to restart animation
+                pointer.classList.add('bounce');
                 lastTickAngle = currentSlice;
             }
 
@@ -394,6 +411,7 @@ class WheelSpinner {
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
+                pointer.classList.remove('bounce');
                 this.onSpinComplete();
             }
         };
@@ -408,10 +426,18 @@ class WheelSpinner {
         spinBtn.classList.remove('spinning');
         spinBtn.textContent = 'SPIN';
 
-        // Determine winner (segment at top, accounting for pointer position)
-        const normalizedRotation = ((2 * Math.PI - (this.rotation % (2 * Math.PI))) + Math.PI / 2) % (2 * Math.PI);
+        // Determine winner (segment at top where pointer is)
+        // The pointer is at the top of the wheel (270 degrees = 3π/2 radians)
+        const pointerAngle = 3 * Math.PI / 2;
         const sliceAngle = (2 * Math.PI) / this.entries.length;
-        const winnerIndex = Math.floor(normalizedRotation / sliceAngle) % this.entries.length;
+
+        // Calculate which segment is at the pointer position
+        // We need to find the angle relative to the wheel's rotation
+        let angleAtPointer = pointerAngle - this.rotation;
+        // Normalize to [0, 2π)
+        angleAtPointer = ((angleAtPointer % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+        const winnerIndex = Math.floor(angleAtPointer / sliceAngle) % this.entries.length;
         const winner = this.entries[winnerIndex];
 
         // Play win sound
@@ -679,11 +705,11 @@ class WheelSpinner {
                 }
                 if (data.eliminate !== undefined) {
                     this.eliminateWinner = data.eliminate;
-                    document.getElementById('eliminateWinner').checked = data.eliminate;
+                    document.getElementById('eliminateWinner').classList.toggle('active', data.eliminate);
                 }
                 if (data.confetti !== undefined) {
                     this.confettiEnabled = data.confetti;
-                    document.getElementById('confettiEnabled').checked = data.confetti;
+                    document.getElementById('confettiEnabled').classList.toggle('active', data.confetti);
                 }
                 if (data.sound !== undefined) {
                     this.soundEnabled = data.sound;
