@@ -1,15 +1,27 @@
 /* Wheel Spinner Styles */
 
+/* Body layout for footer positioning */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main.wheel-container {
+    flex: 1;
+}
+
 /* Layout */
 .wheel-container {
     display: grid;
-    grid-template-columns: 1fr minmax(500px, 800px) 1fr;
-    gap: 30px;
-    padding: 30px;
-    min-height: calc(100vh - 70px);
-    max-width: 2200px;
+    grid-template-columns: 400px 1fr 400px;
+    gap: 25px;
+    padding: 15px 25px;
+    height: calc(100vh - 150px);
+    max-width: 2400px;
     margin: 0 auto;
-    align-items: start;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Panels */
@@ -18,16 +30,53 @@
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    height: 700px;
-    max-height: calc(100vh - 130px);
+    gap: 16px;
+    height: calc(100vh - 190px);
     overflow-y: auto;
-    position: sticky;
-    top: 90px;
-    min-width: 280px;
+    width: 100%;
+}
+
+/* Custom Scrollbars */
+.entries-panel::-webkit-scrollbar,
+.settings-panel::-webkit-scrollbar,
+.entries-list::-webkit-scrollbar,
+.history-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.entries-panel::-webkit-scrollbar-track,
+.settings-panel::-webkit-scrollbar-track,
+.entries-list::-webkit-scrollbar-track,
+.history-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.entries-panel::-webkit-scrollbar-thumb,
+.settings-panel::-webkit-scrollbar-thumb,
+.entries-list::-webkit-scrollbar-thumb,
+.history-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #5865f2 0%, #7c3aed 100%);
+    border-radius: 10px;
+}
+
+.entries-panel::-webkit-scrollbar-thumb:hover,
+.settings-panel::-webkit-scrollbar-thumb:hover,
+.entries-list::-webkit-scrollbar-thumb:hover,
+.history-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #6d7af2 0%, #8e4aed 100%);
+}
+
+/* Firefox scrollbar */
+.entries-panel,
+.settings-panel,
+.entries-list,
+.history-list {
+    scrollbar-width: thin;
+    scrollbar-color: #5865f2 rgba(255, 255, 255, 0.05);
 }
 
 .panel-header {
@@ -178,8 +227,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 30px;
-    padding: 20px 0;
+    gap: 20px;
+    padding: 10px 0;
+    height: 100%;
 }
 
 .wheel-wrapper {
@@ -188,12 +238,12 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-width: 700px;
+    max-width: 800px;
 }
 
 #wheelCanvas {
     width: 100%;
-    max-width: 700px;
+    max-width: 800px;
     height: auto;
     filter: drop-shadow(0 15px 40px rgba(88, 101, 242, 0.3));
 }
@@ -633,10 +683,17 @@
     to { transform: translateY(0); opacity: 1; }
 }
 
+/* Footer for wheel page */
+.footer {
+    padding: 15px 0;
+    margin-top: auto;
+}
+
 /* Fullscreen Mode */
 body.fullscreen-mode .site-header,
 body.fullscreen-mode .entries-panel,
-body.fullscreen-mode .settings-panel {
+body.fullscreen-mode .settings-panel,
+body.fullscreen-mode .footer {
     display: none;
 }
 
@@ -655,15 +712,23 @@ body.fullscreen-mode #wheelCanvas {
 }
 
 /* Responsive */
-@media (max-width: 1400px) {
+@media (max-width: 1800px) {
     .wheel-container {
-        grid-template-columns: 280px 1fr 280px;
+        grid-template-columns: 350px 1fr 350px;
         gap: 20px;
-        padding: 20px;
+        padding: 15px 20px;
+    }
+}
+
+@media (max-width: 1500px) {
+    .wheel-container {
+        grid-template-columns: 300px 1fr 300px;
+        gap: 15px;
+        padding: 15px;
     }
 
     #wheelCanvas {
-        max-width: 480px;
+        max-width: 550px;
     }
 }
 
@@ -671,12 +736,14 @@ body.fullscreen-mode #wheelCanvas {
     .wheel-container {
         grid-template-columns: 1fr;
         gap: 20px;
+        height: auto;
+        min-height: calc(100vh - 150px);
     }
 
     .entries-panel,
     .settings-panel {
-        position: static;
-        max-height: none;
+        height: auto;
+        max-height: 400px;
     }
 
     .wheel-section {
@@ -684,7 +751,7 @@ body.fullscreen-mode #wheelCanvas {
     }
 
     #wheelCanvas {
-        max-width: 450px;
+        max-width: 500px;
     }
 }
 
@@ -709,6 +776,7 @@ body.fullscreen-mode #wheelCanvas {
     .entries-panel,
     .settings-panel {
         padding: 16px;
+        max-height: 350px;
     }
 }
 

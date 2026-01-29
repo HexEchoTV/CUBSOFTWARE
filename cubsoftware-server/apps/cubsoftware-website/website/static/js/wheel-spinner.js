@@ -15,6 +15,7 @@ class WheelSpinner {
         this.history = [];
         this.currentTheme = 'default';
         this.isSharedMode = false; // View-only mode for shared wheels
+        this.logoImage = null; // Center logo image
 
         // Theme color palettes (50 themes)
         this.themes = {
@@ -81,9 +82,18 @@ class WheelSpinner {
         this.loadFromURL();
         this.bindEvents();
         this.loadFromStorage();
+        this.loadLogo();
         this.draw();
         this.updateEntryCount();
         this.initAudio();
+    }
+
+    loadLogo() {
+        this.logoImage = new Image();
+        this.logoImage.onload = () => {
+            this.draw(); // Redraw when logo loads
+        };
+        this.logoImage.src = '/static/images/company-logo.png';
     }
 
     initAudio() {
@@ -383,14 +393,32 @@ class WheelSpinner {
             ctx.restore();
         });
 
-        // Draw center circle
+        // Draw center circle with logo
+        const centerRadius = 40;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
         ctx.fillStyle = '#1a1a2e';
         ctx.fill();
         ctx.strokeStyle = '#5865f2';
         ctx.lineWidth = 4;
         ctx.stroke();
+
+        // Draw logo in center
+        if (this.logoImage && this.logoImage.complete) {
+            const logoSize = centerRadius * 1.5;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, centerRadius - 2, 0, 2 * Math.PI);
+            ctx.clip();
+            ctx.drawImage(
+                this.logoImage,
+                centerX - logoSize / 2,
+                centerY - logoSize / 2,
+                logoSize,
+                logoSize
+            );
+            ctx.restore();
+        }
 
         // Draw outer ring
         ctx.beginPath();
@@ -398,48 +426,6 @@ class WheelSpinner {
         ctx.strokeStyle = '#5865f2';
         ctx.lineWidth = 6;
         ctx.stroke();
-
-        // DEBUG: Draw segment index numbers near the edge
-        this.entries.forEach((entry, index) => {
-            const midAngle = this.rotation + index * sliceAngle + sliceAngle / 2;
-            const debugRadius = radius - 60;
-            const x = centerX + Math.cos(midAngle) * debugRadius;
-            const y = centerY + Math.sin(midAngle) * debugRadius;
-
-            ctx.save();
-            ctx.fillStyle = '#ffff00';
-            ctx.font = 'bold 14px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(`[${index}]`, x, y);
-            ctx.restore();
-        });
-
-        // DEBUG: Draw a bright line showing where 270° (top/12 o'clock) is
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        const pointerAngle = 3 * Math.PI / 2; // 270° = top
-        const lineX = centerX + Math.cos(pointerAngle) * radius;
-        const lineY = centerY + Math.sin(pointerAngle) * radius;
-        ctx.lineTo(lineX, lineY);
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.restore();
-
-        // DEBUG: Draw angle reference at 0° (3 o'clock)
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(centerX + radius, centerY);
-        ctx.strokeStyle = '#ff0000';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.fillStyle = '#ff0000';
-        ctx.font = '12px Arial';
-        ctx.fillText('0°', centerX + radius + 10, centerY);
-        ctx.restore();
     }
 
     getColorBrightness(color) {
@@ -538,29 +524,6 @@ class WheelSpinner {
         // The segment at the pointer
         const winnerIndex = Math.floor(angleToPointer / sliceAngle) % n;
         const winner = this.entries[winnerIndex];
-
-        // ============ DEBUG OUTPUT ============
-        console.log('\n========== WHEEL SPIN RESULT ==========');
-        console.log('Entries:', n);
-        console.log('Slice angle:', (sliceAngle * 180 / Math.PI).toFixed(1) + '°');
-        console.log('Rotation (raw):', this.rotation.toFixed(4), 'rad =', (this.rotation * 180 / Math.PI).toFixed(1) + '°');
-        console.log('Pointer angle:', (pointerAngle * 180 / Math.PI).toFixed(1) + '° (TOP)');
-        console.log('Angle to pointer:', (angleToPointer * 180 / Math.PI).toFixed(1) + '°');
-        console.log('Calculation: floor(' + (angleToPointer * 180 / Math.PI).toFixed(1) + '° / ' + (sliceAngle * 180 / Math.PI).toFixed(1) + '°) = floor(' + (angleToPointer / sliceAngle).toFixed(2) + ') = ' + winnerIndex);
-        console.log('');
-        console.log('--- Where segments are drawn ---');
-        for (let i = 0; i < n; i++) {
-            const start = this.rotation + i * sliceAngle;
-            const end = start + sliceAngle;
-            const startNorm = ((start % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-            const endNorm = ((end % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-            const marker = (i === winnerIndex) ? ' <-- CALCULATED WINNER' : '';
-            console.log(`  [${i}] "${this.entries[i].name}": ${(startNorm * 180 / Math.PI).toFixed(1)}° to ${(endNorm * 180 / Math.PI).toFixed(1)}°${marker}`);
-        }
-        console.log('');
-        console.log('>>> WINNER: "' + winner.name + '" (index ' + winnerIndex + ')');
-        console.log('>>> Look at the GREEN line on the wheel - which segment index [#] is there?');
-        console.log('========================================\n');
 
         // Play win sound
         this.playWinSound();
