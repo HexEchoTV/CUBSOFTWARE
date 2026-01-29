@@ -485,6 +485,14 @@ def json_formatter():
     """JSON Formatter - Beautify, minify, and validate JSON"""
     return render_template('json-formatter.html')
 
+# ==================== WHEEL SPINNER ====================
+
+@app.route('/apps/wheel-spinner')
+@app.route('/apps/wheel-spinner/')
+def wheel_spinner():
+    """Wheel Spinner - Customizable spinning wheel for giveaways, decisions, and games"""
+    return render_template('wheel-spinner.html')
+
 # ==================== SOCIAL MEDIA SAVER APP INTEGRATION ====================
 
 # Load Social Media Saver blueprint using importlib
@@ -951,6 +959,18 @@ def pm2_bot_get_whitelist():
 
     whitelist = load_pm2_whitelist()
     return jsonify(whitelist)
+
+# ==================== ERROR HANDLERS ====================
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """Handle 404 errors - serve custom 404 page"""
+    return render_template('404.html'), 404
+
+@app.route('/apps/<path:subpath>')
+def apps_catch_all(subpath):
+    """Catch-all for undefined /apps/* routes - return 404"""
+    return render_template('404.html'), 404
 
 # ==================== SERVER STARTUP ====================
 
