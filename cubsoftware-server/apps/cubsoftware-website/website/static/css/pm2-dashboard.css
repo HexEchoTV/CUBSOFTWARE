@@ -1,9 +1,10 @@
 /* PM2 Dashboard Styles */
 
 .dashboard-container {
-    max-width: 1400px;
+    width: 100%;
+    max-width: none;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1.5rem;
 }
 
 .dashboard-header {
@@ -302,8 +303,9 @@
 .processes-grid {
     display: flex;
     flex-wrap: nowrap;
-    gap: 1rem;
+    gap: 0.75rem;
     margin-bottom: 2rem;
+    overflow-x: auto;
 }
 
 .loading {
@@ -317,11 +319,11 @@
 .process-card {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 1rem;
+    border-radius: 12px;
+    padding: 0.75rem;
     transition: all 0.3s ease;
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 0;
+    min-width: 180px;
 }
 
 .process-card:hover {
@@ -818,14 +820,6 @@
     .system-stat-card {
         flex: 1 1 calc(50% - 0.5rem);
         min-width: 140px;
-    }
-
-    .processes-grid {
-        flex-wrap: wrap;
-    }
-
-    .process-card {
-        flex: 1 1 100%;
     }
 
     .dashboard-controls {
