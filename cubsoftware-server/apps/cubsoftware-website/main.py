@@ -493,6 +493,14 @@ def wheel_spinner():
     """Wheel Spinner - Customizable spinning wheel for giveaways, decisions, and games"""
     return render_template('wheel-spinner.html')
 
+# ==================== RANDOM PICKER ====================
+
+@app.route('/apps/random-picker')
+@app.route('/apps/random-picker/')
+def random_picker():
+    """Random Picker - Coin flip, dice roll, random number, pick from list"""
+    return render_template('random-picker.html')
+
 # ==================== SOCIAL MEDIA SAVER APP INTEGRATION ====================
 
 # Load Social Media Saver blueprint using importlib

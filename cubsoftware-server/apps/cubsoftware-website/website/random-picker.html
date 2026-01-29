@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#5865f2">
+    <title>Random Picker - Coin Flip, Dice Roll, Random Number | CUB SOFTWARE</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Free random picker tools: coin flip, dice roll, pick from list, random number generator. Make decisions the fun way!">
+    <meta name="keywords" content="random picker, coin flip, dice roll, random number generator, decision maker, pick random">
+    <meta name="author" content="CUB">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://cubsoftware.site/apps/random-picker">
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Random Picker - Coin Flip, Dice Roll & More | CUB SOFTWARE">
+    <meta property="og:description" content="Free random picker tools. Flip coins, roll dice, pick from lists, generate random numbers.">
+    <meta property="og:url" content="https://cubsoftware.site/apps/random-picker">
+    <meta property="og:site_name" content="CUB SOFTWARE">
+    <meta property="og:image" content="https://cubsoftware.site/static/images/company-logo.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/static/images/company-logo.png">
+    <link rel="apple-touch-icon" href="/static/images/company-logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <link rel="stylesheet" href="/static/css/random-picker.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="site-header">
+        <div class="header-top">
+            <a href="/" class="logo">
+                <span class="logo-text">
+                    <span class="cub">CUB</span><span class="software">SOFTWARE</span>
+                </span>
+            </a>
+            <nav class="site-nav">
+                <a href="/">Home</a>
+                <a href="/#apps">Tools</a>
+                <a href="https://questcord.fun" target="_blank">QuestCord</a>
+                <a href="/contact">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="picker-container">
+        <h1 class="page-title">Random Picker</h1>
+        <p class="page-subtitle">Quick decision tools for when you can't decide</p>
+
+        <div class="tools-grid">
+            <!-- Coin Flip -->
+            <section class="tool-card" id="coinFlip">
+                <h2>Coin Flip</h2>
+                <div class="coin-container">
+                    <div class="coin" id="coin">
+                        <div class="coin-side coin-heads">H</div>
+                        <div class="coin-side coin-tails">T</div>
+                    </div>
+                </div>
+                <div class="result" id="coinResult">Click to flip!</div>
+                <button class="action-btn" onclick="flipCoin()">Flip Coin</button>
+                <div class="stats">
+                    <span>Heads: <strong id="headsCount">0</strong></span>
+                    <span>Tails: <strong id="tailsCount">0</strong></span>
+                </div>
+            </section>
+
+            <!-- Dice Roll -->
+            <section class="tool-card" id="diceRoll">
+                <h2>Dice Roll</h2>
+                <div class="dice-container">
+                    <div class="dice" id="dice">
+                        <span class="dice-value">?</span>
+                    </div>
+                </div>
+                <div class="result" id="diceResult">Click to roll!</div>
+                <div class="dice-options">
+                    <label>Dice type:</label>
+                    <select id="diceType">
+                        <option value="6">D6 (1-6)</option>
+                        <option value="4">D4 (1-4)</option>
+                        <option value="8">D8 (1-8)</option>
+                        <option value="10">D10 (1-10)</option>
+                        <option value="12">D12 (1-12)</option>
+                        <option value="20">D20 (1-20)</option>
+                        <option value="100">D100 (1-100)</option>
+                    </select>
+                </div>
+                <button class="action-btn" onclick="rollDice()">Roll Dice</button>
+            </section>
+
+            <!-- Random Number -->
+            <section class="tool-card" id="randomNumber">
+                <h2>Random Number</h2>
+                <div class="number-display" id="numberDisplay">?</div>
+                <div class="number-inputs">
+                    <div class="input-group">
+                        <label>Min</label>
+                        <input type="number" id="minNumber" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Max</label>
+                        <input type="number" id="maxNumber" value="100">
+                    </div>
+                </div>
+                <button class="action-btn" onclick="generateNumber()">Generate</button>
+                <div class="history-mini" id="numberHistory"></div>
+            </section>
+
+            <!-- Pick From List -->
+            <section class="tool-card tool-card-wide" id="pickFromList">
+                <h2>Pick From List</h2>
+                <div class="list-picker">
+                    <div class="list-input-section">
+                        <textarea id="listInput" placeholder="Enter items (one per line)&#10;&#10;Example:&#10;Pizza&#10;Burger&#10;Tacos&#10;Sushi"></textarea>
+                        <div class="list-actions">
+                            <button class="action-btn secondary" onclick="clearList()">Clear</button>
+                            <button class="action-btn" onclick="pickFromList()">Pick Random</button>
+                        </div>
+                    </div>
+                    <div class="list-result-section">
+                        <div class="picked-item" id="pickedItem">
+                            <span class="picked-label">Winner</span>
+                            <span class="picked-value" id="pickedValue">?</span>
+                        </div>
+                        <div class="pick-options">
+                            <label class="toggle-option">
+                                <input type="checkbox" id="removeAfterPick">
+                                <span>Remove after pick</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Yes/No -->
+            <section class="tool-card" id="yesNo">
+                <h2>Yes or No?</h2>
+                <div class="yesno-display" id="yesnoDisplay">?</div>
+                <button class="action-btn" onclick="yesOrNo()">Decide</button>
+            </section>
+
+            <!-- Magic 8 Ball -->
+            <section class="tool-card" id="magic8Ball">
+                <h2>Magic 8 Ball</h2>
+                <div class="magic8-container">
+                    <div class="magic8" id="magic8">
+                        <div class="magic8-window">
+                            <span id="magic8Text">Ask me</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="action-btn" onclick="shakeMagic8()">Shake</button>
+            </section>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/js/random-picker.js"></script>
+</body>
+</html>
