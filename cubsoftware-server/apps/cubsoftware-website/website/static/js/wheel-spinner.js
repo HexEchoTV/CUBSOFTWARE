@@ -349,6 +349,48 @@ class WheelSpinner {
         ctx.strokeStyle = '#5865f2';
         ctx.lineWidth = 6;
         ctx.stroke();
+
+        // DEBUG: Draw segment index numbers near the edge
+        this.entries.forEach((entry, index) => {
+            const midAngle = this.rotation + index * sliceAngle + sliceAngle / 2;
+            const debugRadius = radius - 60;
+            const x = centerX + Math.cos(midAngle) * debugRadius;
+            const y = centerY + Math.sin(midAngle) * debugRadius;
+
+            ctx.save();
+            ctx.fillStyle = '#ffff00';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`[${index}]`, x, y);
+            ctx.restore();
+        });
+
+        // DEBUG: Draw a bright line showing where 270° (top/12 o'clock) is
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        const pointerAngle = 3 * Math.PI / 2; // 270° = top
+        const lineX = centerX + Math.cos(pointerAngle) * radius;
+        const lineY = centerY + Math.sin(pointerAngle) * radius;
+        ctx.lineTo(lineX, lineY);
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+
+        // DEBUG: Draw angle reference at 0° (3 o'clock)
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(centerX + radius, centerY);
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '12px Arial';
+        ctx.fillText('0°', centerX + radius + 10, centerY);
+        ctx.restore();
     }
 
     getColorBrightness(color) {
@@ -429,70 +471,47 @@ class WheelSpinner {
         spinBtn.classList.remove('spinning');
         spinBtn.textContent = 'SPIN';
 
-        // Determine winner (segment at top where pointer is)
+        // ============ WINNER CALCULATION ============
+        // Pointer is at TOP (270° = 3π/2 radians in canvas coordinates)
+        // Segment i is drawn from: rotation + i*sliceAngle to rotation + (i+1)*sliceAngle
+        // Formula: winnerIndex = floor((pointerAngle - rotation) / sliceAngle) mod n
+
         const n = this.entries.length;
         const sliceAngle = (2 * Math.PI) / n;
+        const pointerAngle = 3 * Math.PI / 2; // 270° = TOP
 
-        // DEBUG: Log all segment positions
-        console.log('=== WHEEL DEBUG ===');
-        console.log('Total entries:', n);
-        console.log('Slice angle (radians):', sliceAngle, '=', (sliceAngle * 180 / Math.PI).toFixed(1) + '°');
-        console.log('Raw rotation:', this.rotation, '=', (this.rotation * 180 / Math.PI).toFixed(1) + '°');
+        // Calculate angle from segment 0's start to the pointer
+        let angleToPointer = pointerAngle - this.rotation;
 
-        // Normalize rotation to [0, 2π)
-        const normalizedRotation = ((this.rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-        console.log('Normalized rotation:', normalizedRotation.toFixed(4), '=', (normalizedRotation * 180 / Math.PI).toFixed(1) + '°');
+        // Normalize to [0, 2π)
+        angleToPointer = ((angleToPointer % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
-        // Log where each segment is drawn
-        console.log('--- Segment positions (start angles) ---');
-        for (let i = 0; i < n; i++) {
-            const startAngle = normalizedRotation + i * sliceAngle;
-            const endAngle = startAngle + sliceAngle;
-            const normalizedStart = ((startAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-            const normalizedEnd = ((endAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-            console.log(`  Segment ${i} ("${this.entries[i].name}"): ${(normalizedStart * 180 / Math.PI).toFixed(1)}° to ${(normalizedEnd * 180 / Math.PI).toFixed(1)}°`);
-        }
-
-        // The pointer is at the TOP of the wheel
-        // In canvas: 0° = 3 o'clock (right), 90° = 6 o'clock (bottom), 180° = 9 o'clock (left), 270° = 12 o'clock (top)
-        const pointerAngleDeg = 270; // 12 o'clock = top
-        const pointerAngle = pointerAngleDeg * Math.PI / 180; // = 3π/2
-        console.log('Pointer at:', pointerAngleDeg + '° (top of wheel)');
-
-        // Find which segment contains the pointer angle
-        // Segment i covers: [normalizedRotation + i*sliceAngle, normalizedRotation + (i+1)*sliceAngle)
-        let winnerIndex = -1;
-        for (let i = 0; i < n; i++) {
-            const startAngle = ((normalizedRotation + i * sliceAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-            const endAngle = ((normalizedRotation + (i + 1) * sliceAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-
-            // Check if pointer is in this segment (handling wrap-around)
-            let inSegment = false;
-            if (startAngle <= endAngle) {
-                // Normal case: segment doesn't wrap around 0
-                inSegment = pointerAngle >= startAngle && pointerAngle < endAngle;
-            } else {
-                // Wrap-around case: segment crosses the 0° line
-                inSegment = pointerAngle >= startAngle || pointerAngle < endAngle;
-            }
-
-            if (inSegment) {
-                winnerIndex = i;
-                console.log(`>>> Pointer (${pointerAngleDeg}°) is in Segment ${i} ("${this.entries[i].name}")`);
-                break;
-            }
-        }
-
-        // Fallback if loop didn't find it (shouldn't happen)
-        if (winnerIndex === -1) {
-            console.log('ERROR: Could not find segment containing pointer, using fallback calculation');
-            let angleFromStart = pointerAngle - normalizedRotation;
-            angleFromStart = ((angleFromStart % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-            winnerIndex = Math.floor(angleFromStart / sliceAngle) % n;
-        }
-
+        // The segment at the pointer
+        const winnerIndex = Math.floor(angleToPointer / sliceAngle) % n;
         const winner = this.entries[winnerIndex];
-        console.log('=== WINNER: "' + winner.name + '" (index ' + winnerIndex + ') ===');
+
+        // ============ DEBUG OUTPUT ============
+        console.log('\n========== WHEEL SPIN RESULT ==========');
+        console.log('Entries:', n);
+        console.log('Slice angle:', (sliceAngle * 180 / Math.PI).toFixed(1) + '°');
+        console.log('Rotation (raw):', this.rotation.toFixed(4), 'rad =', (this.rotation * 180 / Math.PI).toFixed(1) + '°');
+        console.log('Pointer angle:', (pointerAngle * 180 / Math.PI).toFixed(1) + '° (TOP)');
+        console.log('Angle to pointer:', (angleToPointer * 180 / Math.PI).toFixed(1) + '°');
+        console.log('Calculation: floor(' + (angleToPointer * 180 / Math.PI).toFixed(1) + '° / ' + (sliceAngle * 180 / Math.PI).toFixed(1) + '°) = floor(' + (angleToPointer / sliceAngle).toFixed(2) + ') = ' + winnerIndex);
+        console.log('');
+        console.log('--- Where segments are drawn ---');
+        for (let i = 0; i < n; i++) {
+            const start = this.rotation + i * sliceAngle;
+            const end = start + sliceAngle;
+            const startNorm = ((start % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const endNorm = ((end % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const marker = (i === winnerIndex) ? ' <-- CALCULATED WINNER' : '';
+            console.log(`  [${i}] "${this.entries[i].name}": ${(startNorm * 180 / Math.PI).toFixed(1)}° to ${(endNorm * 180 / Math.PI).toFixed(1)}°${marker}`);
+        }
+        console.log('');
+        console.log('>>> WINNER: "' + winner.name + '" (index ' + winnerIndex + ')');
+        console.log('>>> Look at the GREEN line on the wheel - which segment index [#] is there?');
+        console.log('========================================\n');
 
         // Play win sound
         this.playWinSound();
