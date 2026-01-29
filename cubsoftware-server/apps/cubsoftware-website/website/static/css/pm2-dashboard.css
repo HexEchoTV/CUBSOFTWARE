@@ -301,13 +301,13 @@
 /* Processes Grid */
 .processes-grid {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 1rem;
     margin-bottom: 2rem;
 }
 
 .loading {
-    grid-column: 1 / -1;
+    width: 100%;
     text-align: center;
     color: var(--text-muted);
     padding: 3rem;
@@ -318,10 +318,10 @@
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 1.25rem;
+    padding: 1rem;
     transition: all 0.3s ease;
-    width: 380px;
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .process-card:hover {
@@ -345,36 +345,42 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+    gap: 0.5rem;
 }
 
 .process-info {
     flex: 1;
+    min-width: 0;
 }
 
 .process-name {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-light);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .process-id {
     color: var(--text-muted);
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     font-family: 'JetBrains Mono', monospace;
 }
 
 .process-status {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    gap: 0.3rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
+    flex-shrink: 0;
 }
 
 .process-status.online {
@@ -403,27 +409,27 @@
 .process-metrics {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .metric {
     background: var(--dark-bg);
-    border-radius: 10px;
-    padding: 0.875rem;
+    border-radius: 8px;
+    padding: 0.5rem;
 }
 
 .metric-label {
     color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.35rem;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.2rem;
 }
 
 .metric-value {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-light);
 }
@@ -462,36 +468,37 @@
 .process-details {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
     background: var(--dark-bg);
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
 .detail-item {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.1rem;
 }
 
 .detail-label {
     color: var(--text-muted);
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .detail-value {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     color: var(--text-light);
 }
 
 /* Process Actions */
 .process-actions {
     display: flex;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.35rem;
 }
 
 .process-actions button {
@@ -499,15 +506,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.35rem;
-    padding: 0.6rem;
+    gap: 0.2rem;
+    padding: 0.4rem 0.3rem;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 6px;
     background: transparent;
     color: var(--text-muted);
-    font-size: 0.8rem;
+    font-size: 0.65rem;
     cursor: pointer;
     transition: all 0.3s ease;
+    min-width: 0;
 }
 
 .process-actions button:hover {
@@ -536,8 +544,8 @@
 }
 
 .process-actions button svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
 }
 
 /* Logs Section */
@@ -813,11 +821,11 @@
     }
 
     .processes-grid {
-        flex-direction: column;
+        flex-wrap: wrap;
     }
 
     .process-card {
-        width: 100%;
+        flex: 1 1 100%;
     }
 
     .dashboard-controls {
