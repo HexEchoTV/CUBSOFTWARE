@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#5865f2">
+    <title>Keraplast Digestion Calculator | CUB SOFTWARE</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Keraplast Digestion Calculator - Calculate timing for each step of the digestion process automatically.">
+    <meta name="author" content="CUB">
+    <meta name="robots" content="index, follow">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/static/images/company-logo.png">
+    <link rel="apple-touch-icon" href="/static/images/company-logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <link rel="stylesheet" href="/static/css/keraplast.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="site-header">
+        <div class="header-top">
+            <a href="/" class="logo">
+                <span class="logo-text">
+                    <span class="cub">CUB</span><span class="software">SOFTWARE</span>
+                </span>
+            </a>
+            <nav class="site-nav">
+                <a href="/">Home</a>
+                <a href="/#apps">Tools</a>
+                <a href="https://questcord.fun" target="_blank">QuestCord</a>
+                <a href="/contact">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="keraplast-container">
+        <h1 class="page-title">Keraplast Digestion Calculator</h1>
+        <p class="page-subtitle">Enter your start time and all step times will be calculated automatically</p>
+
+        <div class="calculator-card">
+            <div class="start-time-section">
+                <label for="startTime">Start Time</label>
+                <input type="time" id="startTime" value="11:30">
+            </div>
+
+            <div class="timer-controls">
+                <button class="action-btn timer-btn" id="startTimerBtn" onclick="startTimer()">Start Timer</button>
+                <button class="action-btn timer-btn stop-btn" id="stopTimerBtn" onclick="stopTimer()" style="display: none;">Stop Timer</button>
+                <button class="action-btn secondary test-btn" onclick="testSound()">Test Sound</button>
+            </div>
+
+            <div class="timer-status" id="timerStatus">
+                <span class="status-inactive">Timer inactive</span>
+            </div>
+
+            <div class="steps-table">
+                <div class="step-row header-row">
+                    <span class="step-name">Step</span>
+                    <span class="step-offset">Offset</span>
+                    <span class="step-time">Time</span>
+                </div>
+
+                <div class="step-row" data-offset="0">
+                    <span class="step-name">Start Time</span>
+                    <span class="step-offset">-</span>
+                    <span class="step-time" id="time-start">--:--</span>
+                </div>
+
+                <div class="step-row" data-offset="5">
+                    <span class="step-name">PH</span>
+                    <span class="step-offset">+5</span>
+                    <span class="step-time" id="time-ph1">--:--</span>
+                </div>
+
+                <div class="step-row" data-offset="30">
+                    <span class="step-name">Consistently 25hz</span>
+                    <span class="step-offset">+25</span>
+                    <span class="step-time" id="time-25hz">--:--</span>
+                </div>
+
+                <div class="step-row" data-offset="35">
+                    <span class="step-name">PH</span>
+                    <span class="step-offset">+5</span>
+                    <span class="step-time" id="time-ph2">--:--</span>
+                </div>
+
+                <div class="step-row" data-offset="50">
+                    <span class="step-name">Consistently 30hz</span>
+                    <span class="step-offset">+15</span>
+                    <span class="step-time" id="time-30hz">--:--</span>
+                </div>
+
+                <div class="step-row" data-offset="85">
+                    <span class="step-name">Test & PH</span>
+                    <span class="step-offset">+35</span>
+                    <span class="step-time" id="time-testph">--:--</span>
+                </div>
+
+                <div class="step-row" data-offset="125">
+                    <span class="step-name">Test</span>
+                    <span class="step-offset">+40</span>
+                    <span class="step-time" id="time-test1">--:--</span>
+                </div>
+
+                <div class="step-row" data-offset="185">
+                    <span class="step-name">Test</span>
+                    <span class="step-offset">+60</span>
+                    <span class="step-time" id="time-test2">--:--</span>
+                </div>
+
+                <div class="step-row finish-row" data-offset="215">
+                    <span class="step-name">Finish</span>
+                    <span class="step-offset">+30</span>
+                    <span class="step-time" id="time-finish">--:--</span>
+                </div>
+            </div>
+
+            <div class="total-time">
+                Total Duration: <strong>3 hours 35 minutes</strong>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-text">
+                    &copy; 2025 CUB SOFTWARE. Made with love by
+                    <a href="https://discord.com/users/378501056008683530" target="_blank" rel="noopener noreferrer" class="footer-link">CUB</a>
+                </div>
+                <div class="footer-legal-links">
+                    <a href="https://questcord.fun" class="footer-legal-link" target="_blank">QuestCord</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/terms" class="footer-legal-link">Terms of Use</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/privacy" class="footer-legal-link">Privacy Policy</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/copyright" class="footer-legal-link">Copyright</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/contact" class="footer-legal-link">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/static/js/keraplast.js"></script>
+</body>
+</html>

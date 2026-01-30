@@ -501,6 +501,14 @@ def random_picker():
     """Random Picker - Coin flip, dice roll, random number, pick from list"""
     return render_template('random-picker.html')
 
+# ==================== KERAPLAST CALCULATOR ====================
+
+@app.route('/keraplast')
+@app.route('/keraplast/')
+def keraplast():
+    """Keraplast Digestion Calculator - Calculate digestion timing steps"""
+    return render_template('keraplast.html')
+
 # ==================== SOCIAL MEDIA SAVER APP INTEGRATION ====================
 
 # Load Social Media Saver blueprint using importlib

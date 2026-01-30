@@ -1,0 +1,384 @@
+/* Keraplast Digestion Calculator Styles */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.keraplast-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.page-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 5px;
+    background: linear-gradient(135deg, #5865f2 0%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.calculator-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 25px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.start-time-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.start-time-section label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.start-time-section input[type="time"] {
+    padding: 10px 15px;
+    font-size: 1.2rem;
+    font-family: 'Orbitron', sans-serif;
+    background: var(--background-color);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    text-align: center;
+    width: 130px;
+}
+
+.start-time-section input[type="time"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.action-btn {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #5865f2 0%, #7c3aed 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.action-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    box-shadow: none;
+    padding: 8px 15px;
+    font-size: 0.8rem;
+}
+
+.action-btn.secondary:hover {
+    border-color: var(--primary-color);
+    box-shadow: none;
+}
+
+/* Timer Controls */
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.timer-btn {
+    min-width: 120px;
+}
+
+.timer-btn.stop-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.timer-btn.stop-btn:hover {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.test-btn {
+    min-width: auto;
+}
+
+/* Timer Status */
+.timer-status {
+    text-align: center;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.timer-status strong {
+    color: var(--primary-color);
+}
+
+.status-active {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.status-inactive {
+    color: var(--text-secondary);
+}
+
+.status-complete {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+/* Steps Table */
+.steps-table {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.step-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 80px;
+    align-items: center;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.step-row:hover:not(.header-row) {
+    background: rgba(88, 101, 242, 0.1);
+}
+
+.step-row.header-row {
+    background: transparent;
+    padding-bottom: 8px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.step-row.header-row span {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.step-name {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.step-offset {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.step-time {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-align: right;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.step-time.updated {
+    animation: timeUpdate 0.3s ease;
+}
+
+@keyframes timeUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); color: #22c55e; }
+    100% { transform: scale(1); }
+}
+
+.step-row.finish-row {
+    margin-top: 5px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.step-row.finish-row .step-name {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.step-row.finish-row .step-time {
+    color: #22c55e;
+}
+
+/* Timer Step States */
+.step-row.step-completed {
+    opacity: 0.5;
+}
+
+.step-row.step-completed .step-name::after {
+    content: ' ✓';
+    color: #22c55e;
+}
+
+.step-row.step-active {
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%);
+    border: 1px solid var(--primary-color);
+}
+
+.step-row.step-active .step-time {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.step-row.step-triggered {
+    animation: stepTriggered 0.5s ease;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(16, 185, 129, 0.3) 100%);
+    border: 1px solid #22c55e;
+}
+
+@keyframes stepTriggered {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Total Duration */
+.total-time {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.total-time strong {
+    color: var(--primary-color);
+    font-family: 'Orbitron', sans-serif;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border-radius: 12px;
+    padding: 15px 30px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    z-index: 3000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .keraplast-container {
+        padding: 15px;
+    }
+
+    .calculator-card {
+        padding: 20px 15px;
+    }
+
+    .start-time-section {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .start-time-section input[type="time"] {
+        width: 100%;
+    }
+
+    .timer-controls {
+        flex-direction: column;
+    }
+
+    .timer-controls .action-btn {
+        width: 100%;
+    }
+
+    .step-row {
+        grid-template-columns: 1fr 50px 70px;
+        padding: 10px 12px;
+    }
+
+    .step-name {
+        font-size: 0.85rem;
+    }
+
+    .step-time {
+        font-size: 0.9rem;
+    }
+
+    .page-title {
+        font-size: 1.3rem;
+    }
+
+    .toast {
+        left: 15px;
+        right: 15px;
+        transform: translateX(0) translateY(100px);
+        text-align: center;
+    }
+
+    .toast.show {
+        transform: translateX(0) translateY(0);
+    }
+}
