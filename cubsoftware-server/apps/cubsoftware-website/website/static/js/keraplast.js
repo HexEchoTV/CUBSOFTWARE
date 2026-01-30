@@ -9,6 +9,7 @@ function checkPassword() {
 
     if (input.value === CORRECT_PASSWORD) {
         document.getElementById('passwordScreen').classList.add('hidden');
+        document.body.classList.add('authenticated');
         sessionStorage.setItem('keraplast-auth', 'true');
         error.textContent = '';
     } else {
@@ -22,6 +23,7 @@ function checkPassword() {
 function checkAuth() {
     if (sessionStorage.getItem('keraplast-auth') === 'true') {
         document.getElementById('passwordScreen').classList.add('hidden');
+        document.body.classList.add('authenticated');
     } else {
         document.getElementById('passwordInput').focus();
     }
@@ -407,6 +409,22 @@ function stopTimer() {
     document.getElementById('stopTimerBtn').style.display = 'none';
 
     updateTimerDisplay();
+}
+
+function resetTimer() {
+    // Stop the timer if running
+    stopTimer();
+
+    // Set start time to current time
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    document.getElementById('startTime').value = currentTime;
+
+    // Recalculate times
+    calculateTimes();
+
+    // Start the timer
+    startTimer();
 }
 
 function testSound() {

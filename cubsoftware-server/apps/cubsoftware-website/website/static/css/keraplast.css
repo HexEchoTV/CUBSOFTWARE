@@ -7,7 +7,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--background-color);
+    width: 100vw;
+    height: 100vh;
+    background: #0f0f1a;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -16,6 +18,20 @@
 
 .password-screen.hidden {
     display: none;
+}
+
+/* Hide page content until authenticated */
+body:not(.authenticated) .site-header,
+body:not(.authenticated) .keraplast-container,
+body:not(.authenticated) .footer,
+body:not(.authenticated) .toast,
+body:not(.authenticated) .acknowledge-modal {
+    display: none !important;
+}
+
+/* Prevent scrolling when password screen is shown */
+body:not(.authenticated) {
+    overflow: hidden;
 }
 
 .password-box {
@@ -206,6 +222,10 @@ body {
 }
 
 .test-btn {
+    min-width: auto;
+}
+
+.reset-btn {
     min-width: auto;
 }
 
