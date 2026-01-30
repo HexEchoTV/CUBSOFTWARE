@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Step offsets in minutes from start time
 const steps = [
-    { id: 'time-start', offset: 0, name: 'Start Time' },
+    { id: 'time-start', offset: 0, name: 'Recirculation Start Time' },
     { id: 'time-ph1', offset: 5, name: 'PH Test' },
     { id: 'time-25hz', offset: 25, name: 'Mixer Consistently 25hz' },
     { id: 'time-ph2', offset: 30, name: 'PH Test' },
