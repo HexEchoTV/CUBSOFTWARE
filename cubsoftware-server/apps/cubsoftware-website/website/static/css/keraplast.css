@@ -14,10 +14,16 @@
 }
 
 /* Hide main content until authenticated (keep nav and footer visible) */
-body:not(.authenticated) .keraplast-container,
-body:not(.authenticated) .toast,
-body:not(.authenticated) .acknowledge-modal {
+.keraplast-container {
     display: none !important;
+}
+
+body.authenticated .keraplast-container {
+    display: flex !important;
+}
+
+body.authenticated .password-screen {
+    display: none;
 }
 
 .password-box {

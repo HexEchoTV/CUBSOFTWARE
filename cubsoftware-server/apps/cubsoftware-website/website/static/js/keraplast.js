@@ -8,9 +8,7 @@ function checkPassword() {
     const error = document.getElementById('passwordError');
 
     if (input.value === CORRECT_PASSWORD) {
-        document.getElementById('passwordScreen').classList.add('hidden');
         document.body.classList.add('authenticated');
-        sessionStorage.setItem('keraplast-auth', 'true');
         error.textContent = '';
     } else {
         error.textContent = 'Incorrect password';
@@ -19,18 +17,10 @@ function checkPassword() {
     }
 }
 
-// Check if already authenticated this session
-function checkAuth() {
-    if (sessionStorage.getItem('keraplast-auth') === 'true') {
-        document.getElementById('passwordScreen').classList.add('hidden');
-        document.body.classList.add('authenticated');
-    } else {
-        document.getElementById('passwordInput').focus();
-    }
-}
-
-// Run auth check on load
-document.addEventListener('DOMContentLoaded', checkAuth);
+// Focus password input on load
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('passwordInput').focus();
+});
 
 // Step offsets in minutes from start time
 const steps = [
