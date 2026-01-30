@@ -226,49 +226,6 @@ function yesOrNo() {
     }, 800);
 }
 
-// Magic 8 Ball
-const magic8Responses = [
-    // Positive
-    'It is certain',
-    'Without a doubt',
-    'Yes definitely',
-    'You may rely on it',
-    'As I see it, yes',
-    'Most likely',
-    'Outlook good',
-    'Yes',
-    'Signs point to yes',
-    // Neutral
-    'Reply hazy, try again',
-    'Ask again later',
-    'Cannot predict now',
-    'Concentrate and ask again',
-    // Negative
-    "Don't count on it",
-    'My reply is no',
-    'My sources say no',
-    'Outlook not so good',
-    'Very doubtful'
-];
-
-function shakeMagic8() {
-    const ball = document.getElementById('magic8');
-    const text = document.getElementById('magic8Text');
-
-    // Shake animation
-    ball.classList.add('shaking');
-    text.textContent = '...';
-    text.classList.remove('reveal');
-
-    // Reveal answer
-    setTimeout(() => {
-        ball.classList.remove('shaking');
-        const response = magic8Responses[Math.floor(Math.random() * magic8Responses.length)];
-        text.textContent = response;
-        text.classList.add('reveal');
-    }, 500);
-}
-
 // Card Draw
 const suits = ['♠', '♥', '♦', '♣'];
 const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -366,6 +323,50 @@ function generateTeams() {
     `).join('');
 }
 
+// Shuffle List
+let lastShuffled = [];
+
+function shuffleList() {
+    const textarea = document.getElementById('shuffleInput');
+    const output = document.getElementById('shuffleOutput');
+
+    const items = textarea.value
+        .split('\n')
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+
+    if (items.length < 2) {
+        showToast('Add at least 2 items!');
+        return;
+    }
+
+    // Fisher-Yates shuffle
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    lastShuffled = shuffled;
+
+    // Display as numbered list
+    output.innerHTML = '<ol>' + shuffled.map(item => `<li>${item}</li>`).join('') + '</ol>';
+}
+
+function copyShuffled() {
+    if (lastShuffled.length === 0) {
+        showToast('Nothing to copy!');
+        return;
+    }
+
+    const text = lastShuffled.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard!');
+    }).catch(() => {
+        showToast('Failed to copy');
+    });
+}
+
 // Toast notification
 function showToast(message) {
     const toast = document.getElementById('toast');
@@ -396,14 +397,14 @@ document.addEventListener('keydown', (e) => {
         case 'y':
             yesOrNo();
             break;
-        case '8':
-            shakeMagic8();
-            break;
         case 'r':
             drawCard();
             break;
         case 'l':
             generateLetter();
+            break;
+        case 's':
+            shuffleList();
             break;
     }
 });
