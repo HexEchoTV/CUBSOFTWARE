@@ -501,6 +501,14 @@ def random_picker():
     """Random Picker - Coin flip, dice roll, random number, pick from list"""
     return render_template('random-picker.html')
 
+# ==================== CALCULATOR SUITE ====================
+
+@app.route('/apps/calculator-suite')
+@app.route('/apps/calculator-suite/')
+def calculator_suite():
+    """Calculator Suite - Basic, Scientific, Mortgage, Tip, BMI, Age, and Percentage calculators"""
+    return render_template('calculator-suite.html')
+
 # ==================== KERAPLAST CALCULATOR ====================
 
 @app.route('/keraplast')
