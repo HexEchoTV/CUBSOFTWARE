@@ -2,36 +2,22 @@
 
 /* Password Screen */
 .password-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #0f0f1a;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    padding: 20px;
 }
 
 .password-screen.hidden {
     display: none;
 }
 
-/* Hide page content until authenticated */
-body:not(.authenticated) .site-header,
+/* Hide main content until authenticated (keep nav and footer visible) */
 body:not(.authenticated) .keraplast-container,
-body:not(.authenticated) .footer,
 body:not(.authenticated) .toast,
 body:not(.authenticated) .acknowledge-modal {
     display: none !important;
-}
-
-/* Prevent scrolling when password screen is shown */
-body:not(.authenticated) {
-    overflow: hidden;
 }
 
 .password-box {
