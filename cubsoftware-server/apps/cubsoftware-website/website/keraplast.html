@@ -24,17 +24,6 @@
     <link rel="stylesheet" href="/static/css/keraplast.css">
 </head>
 <body>
-    <!-- Password Screen -->
-    <div id="passwordScreen" class="password-screen">
-        <div class="password-box">
-            <h2>Access Required</h2>
-            <p>Enter password to continue</p>
-            <input type="password" id="passwordInput" placeholder="Password" onkeypress="if(event.key === 'Enter') checkPassword()">
-            <button class="action-btn" onclick="checkPassword()">Enter</button>
-            <p id="passwordError" class="password-error"></p>
-        </div>
-    </div>
-
     <!-- Navigation Header -->
     <header class="site-header">
         <div class="header-top">
@@ -51,6 +40,17 @@
             </nav>
         </div>
     </header>
+
+    <!-- Password Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-box">
+            <h2>Access Required</h2>
+            <p>Enter password to continue</p>
+            <input type="password" id="passwordInput" placeholder="Password" onkeypress="if(event.key === 'Enter') checkPassword()">
+            <button class="action-btn" onclick="checkPassword()">Enter</button>
+            <p id="passwordError" class="password-error"></p>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <main class="keraplast-container">

@@ -9,10 +9,6 @@
     padding: 20px;
 }
 
-.password-screen.hidden {
-    display: none;
-}
-
 /* Hide main content until authenticated (keep nav and footer visible) */
 .keraplast-container {
     display: none !important;
@@ -23,7 +19,7 @@ body.authenticated .keraplast-container {
 }
 
 body.authenticated .password-screen {
-    display: none;
+    display: none !important;
 }
 
 .password-box {
