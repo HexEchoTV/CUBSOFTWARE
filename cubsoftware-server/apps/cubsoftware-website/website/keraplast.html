@@ -24,6 +24,17 @@
     <link rel="stylesheet" href="/static/css/keraplast.css">
 </head>
 <body>
+    <!-- Password Screen -->
+    <div id="passwordScreen" class="password-screen">
+        <div class="password-box">
+            <h2>Access Required</h2>
+            <p>Enter password to continue</p>
+            <input type="password" id="passwordInput" placeholder="Password" onkeypress="if(event.key === 'Enter') checkPassword()">
+            <button class="action-btn" onclick="checkPassword()">Enter</button>
+            <p id="passwordError" class="password-error"></p>
+        </div>
+    </div>
+
     <!-- Navigation Header -->
     <header class="site-header">
         <div class="header-top">
@@ -52,11 +63,24 @@
                 <input type="time" id="startTime" value="11:30">
             </div>
 
+            <div class="sound-selector">
+                <label for="soundSelect">Alert Sound:</label>
+                <select id="soundSelect" onchange="changeSound(this)">
+                    <option value="chime">Chime</option>
+                    <option value="alert">Alert</option>
+                    <option value="bell">Bell</option>
+                    <option value="alarm">Alarm</option>
+                    <option value="gentle">Gentle</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+                <button class="action-btn secondary test-btn" onclick="testSound()">Test</button>
+            </div>
+
             <div class="timer-controls">
                 <button class="action-btn timer-btn" id="startTimerBtn" onclick="startTimer()">Start Timer</button>
                 <button class="action-btn timer-btn stop-btn" id="stopTimerBtn" onclick="stopTimer()" style="display: none;">Stop Timer</button>
-                <button class="action-btn secondary test-btn" onclick="testSound()">Test Sound</button>
             </div>
+
 
             <div class="timer-status" id="timerStatus">
                 <span class="status-inactive">Timer inactive</span>
@@ -76,56 +100,56 @@
                 </div>
 
                 <div class="step-row" data-offset="5">
-                    <span class="step-name">PH</span>
+                    <span class="step-name">PH Test</span>
                     <span class="step-offset">+5</span>
                     <span class="step-time" id="time-ph1">--:--</span>
                 </div>
 
-                <div class="step-row" data-offset="30">
-                    <span class="step-name">Consistently 25hz</span>
-                    <span class="step-offset">+25</span>
+                <div class="step-row" data-offset="25">
+                    <span class="step-name">Mixer Consistently 25hz</span>
+                    <span class="step-offset">+20</span>
                     <span class="step-time" id="time-25hz">--:--</span>
                 </div>
 
-                <div class="step-row" data-offset="35">
-                    <span class="step-name">PH</span>
+                <div class="step-row" data-offset="30">
+                    <span class="step-name">PH Test</span>
                     <span class="step-offset">+5</span>
                     <span class="step-time" id="time-ph2">--:--</span>
                 </div>
 
-                <div class="step-row" data-offset="50">
-                    <span class="step-name">Consistently 30hz</span>
+                <div class="step-row" data-offset="45">
+                    <span class="step-name">Mixer Consistently 30hz</span>
                     <span class="step-offset">+15</span>
                     <span class="step-time" id="time-30hz">--:--</span>
                 </div>
 
-                <div class="step-row" data-offset="85">
-                    <span class="step-name">Test & PH</span>
+                <div class="step-row" data-offset="80">
+                    <span class="step-name">Wool Test & PH Test</span>
                     <span class="step-offset">+35</span>
                     <span class="step-time" id="time-testph">--:--</span>
                 </div>
 
-                <div class="step-row" data-offset="125">
-                    <span class="step-name">Test</span>
+                <div class="step-row" data-offset="120">
+                    <span class="step-name">Wool Test</span>
                     <span class="step-offset">+40</span>
                     <span class="step-time" id="time-test1">--:--</span>
                 </div>
 
-                <div class="step-row" data-offset="185">
-                    <span class="step-name">Test</span>
+                <div class="step-row" data-offset="180">
+                    <span class="step-name">Wool Test</span>
                     <span class="step-offset">+60</span>
                     <span class="step-time" id="time-test2">--:--</span>
                 </div>
 
-                <div class="step-row finish-row" data-offset="215">
-                    <span class="step-name">Finish</span>
+                <div class="step-row finish-row" data-offset="210">
+                    <span class="step-name">Finish & Transfer Digestion Liquor</span>
                     <span class="step-offset">+30</span>
                     <span class="step-time" id="time-finish">--:--</span>
                 </div>
             </div>
 
             <div class="total-time">
-                Total Duration: <strong>3 hours 35 minutes</strong>
+                Total Duration: <strong>3 hours 30 minutes</strong>
             </div>
         </div>
     </main>
@@ -133,12 +157,22 @@
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
+    <!-- Acknowledge Modal -->
+    <div id="acknowledgeModal" class="acknowledge-modal">
+        <div class="acknowledge-content">
+            <div class="acknowledge-icon">🔔</div>
+            <h2 id="alertStepName">Step Name</h2>
+            <p class="acknowledge-time" id="alertStepTime">00:00</p>
+            <button class="action-btn acknowledge-btn" onclick="acknowledgeAlert()">Acknowledge</button>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-text">
-                    &copy; 2025 CUB SOFTWARE. Made with love by
+                    &copy; 2026 CUB SOFTWARE. Made with love by
                     <a href="https://discord.com/users/378501056008683530" target="_blank" rel="noopener noreferrer" class="footer-link">CUB</a>
                 </div>
                 <div class="footer-legal-links">

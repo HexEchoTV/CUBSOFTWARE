@@ -1,61 +1,203 @@
 // Keraplast Digestion Calculator
 
+// Password Protection
+const CORRECT_PASSWORD = 'operator26';
+
+function checkPassword() {
+    const input = document.getElementById('passwordInput');
+    const error = document.getElementById('passwordError');
+
+    if (input.value === CORRECT_PASSWORD) {
+        document.getElementById('passwordScreen').classList.add('hidden');
+        sessionStorage.setItem('keraplast-auth', 'true');
+        error.textContent = '';
+    } else {
+        error.textContent = 'Incorrect password';
+        input.value = '';
+        input.focus();
+    }
+}
+
+// Check if already authenticated this session
+function checkAuth() {
+    if (sessionStorage.getItem('keraplast-auth') === 'true') {
+        document.getElementById('passwordScreen').classList.add('hidden');
+    } else {
+        document.getElementById('passwordInput').focus();
+    }
+}
+
+// Run auth check on load
+document.addEventListener('DOMContentLoaded', checkAuth);
+
 // Step offsets in minutes from start time
 const steps = [
     { id: 'time-start', offset: 0, name: 'Start Time' },
-    { id: 'time-ph1', offset: 5, name: 'PH' },
-    { id: 'time-25hz', offset: 30, name: 'Consistently 25hz' },
-    { id: 'time-ph2', offset: 35, name: 'PH' },
-    { id: 'time-30hz', offset: 50, name: 'Consistently 30hz' },
-    { id: 'time-testph', offset: 85, name: 'Test & PH' },
-    { id: 'time-test1', offset: 125, name: 'Test' },
-    { id: 'time-test2', offset: 185, name: 'Test' },
-    { id: 'time-finish', offset: 215, name: 'Finish' }
+    { id: 'time-ph1', offset: 5, name: 'PH Test' },
+    { id: 'time-25hz', offset: 25, name: 'Mixer Consistently 25hz' },
+    { id: 'time-ph2', offset: 30, name: 'PH Test' },
+    { id: 'time-30hz', offset: 45, name: 'Mixer Consistently 30hz' },
+    { id: 'time-testph', offset: 80, name: 'Wool Test & PH Test' },
+    { id: 'time-test1', offset: 120, name: 'Wool Test' },
+    { id: 'time-test2', offset: 180, name: 'Wool Test' },
+    { id: 'time-finish', offset: 210, name: 'Finish & Transfer Digestion Liquor' }
 ];
 
 let timerInterval = null;
 let timerActive = false;
 let triggeredSteps = new Set();
 let audioContext = null;
+let soundLoopInterval = null;
+let pendingAcknowledgement = null;
+let currentSound = 'chime';
 
-// Create notification sound using Web Audio API
+// Sound definitions
+const sounds = {
+    chime: {
+        name: 'Chime',
+        play: (ctx) => {
+            const now = ctx.currentTime;
+            playTone(ctx, 523.25, now, 0.15, 'sine');        // C5
+            playTone(ctx, 659.25, now + 0.15, 0.15, 'sine'); // E5
+            playTone(ctx, 783.99, now + 0.3, 0.3, 'sine');   // G5
+        }
+    },
+    alert: {
+        name: 'Alert',
+        play: (ctx) => {
+            const now = ctx.currentTime;
+            playTone(ctx, 880, now, 0.1, 'square');
+            playTone(ctx, 880, now + 0.15, 0.1, 'square');
+            playTone(ctx, 880, now + 0.3, 0.1, 'square');
+        }
+    },
+    bell: {
+        name: 'Bell',
+        play: (ctx) => {
+            const now = ctx.currentTime;
+            playTone(ctx, 1200, now, 0.4, 'sine');
+            playTone(ctx, 600, now, 0.5, 'sine');
+        }
+    },
+    alarm: {
+        name: 'Alarm',
+        play: (ctx) => {
+            const now = ctx.currentTime;
+            for (let i = 0; i < 3; i++) {
+                playTone(ctx, 800, now + i * 0.2, 0.1, 'sawtooth');
+                playTone(ctx, 600, now + i * 0.2 + 0.1, 0.1, 'sawtooth');
+            }
+        }
+    },
+    gentle: {
+        name: 'Gentle',
+        play: (ctx) => {
+            const now = ctx.currentTime;
+            playTone(ctx, 392, now, 0.3, 'sine');      // G4
+            playTone(ctx, 440, now + 0.3, 0.3, 'sine'); // A4
+        }
+    },
+    urgent: {
+        name: 'Urgent',
+        play: (ctx) => {
+            const now = ctx.currentTime;
+            for (let i = 0; i < 5; i++) {
+                playTone(ctx, 1000, now + i * 0.12, 0.06, 'square');
+            }
+        }
+    }
+};
+
+function playTone(ctx, frequency, startTime, duration, type) {
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+
+    gainNode.gain.setValueAtTime(0.3, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration);
+}
+
+function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    return audioContext;
+}
+
 function playNotificationSound() {
     try {
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        // Resume audio context if suspended (browser autoplay policy)
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-
-        // Create a pleasant notification sound (three ascending tones)
-        const playTone = (frequency, startTime, duration) => {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.frequency.value = frequency;
-            oscillator.type = 'sine';
-
-            gainNode.gain.setValueAtTime(0.3, startTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-
-            oscillator.start(startTime);
-            oscillator.stop(startTime + duration);
-        };
-
-        const now = audioContext.currentTime;
-        playTone(523.25, now, 0.15);        // C5
-        playTone(659.25, now + 0.15, 0.15); // E5
-        playTone(783.99, now + 0.3, 0.3);   // G5
-
+        const ctx = initAudioContext();
+        sounds[currentSound].play(ctx);
     } catch (e) {
         console.log('Audio not supported:', e);
     }
+}
+
+function startSoundLoop(stepName, stepTime) {
+    // Stop any existing loop
+    stopSoundLoop();
+
+    pendingAcknowledgement = { stepName, stepTime };
+
+    // Play immediately
+    playNotificationSound();
+
+    // Loop every 2 seconds until acknowledged
+    soundLoopInterval = setInterval(() => {
+        playNotificationSound();
+    }, 2000);
+
+    // Show acknowledge button
+    showAcknowledgeModal(stepName, stepTime);
+}
+
+function stopSoundLoop() {
+    if (soundLoopInterval) {
+        clearInterval(soundLoopInterval);
+        soundLoopInterval = null;
+    }
+    pendingAcknowledgement = null;
+    hideAcknowledgeModal();
+}
+
+function acknowledgeAlert() {
+    stopSoundLoop();
+}
+
+function showAcknowledgeModal(stepName, stepTime) {
+    const modal = document.getElementById('acknowledgeModal');
+    const stepNameEl = document.getElementById('alertStepName');
+    const stepTimeEl = document.getElementById('alertStepTime');
+
+    stepNameEl.textContent = stepName;
+    stepTimeEl.textContent = stepTime;
+
+    modal.classList.add('show');
+}
+
+function hideAcknowledgeModal() {
+    const modal = document.getElementById('acknowledgeModal');
+    modal.classList.remove('show');
+}
+
+function changeSound(select) {
+    currentSound = select.value;
+    localStorage.setItem('keraplast-sound', currentSound);
+}
+
+function testSound() {
+    playNotificationSound();
 }
 
 function addMinutes(time, minutes) {
@@ -150,7 +292,7 @@ function checkTimers() {
         // Check if we've hit this step's time and haven't triggered it yet
         if (currentMinutes === stepMinutes && !triggeredSteps.has(step.id)) {
             triggeredSteps.add(step.id);
-            playNotificationSound();
+            startSoundLoop(step.name, stepTime);
             showNotification(step.name, stepTime);
             highlightStep(step.id);
         }
@@ -223,9 +365,10 @@ function startTimer() {
     }
 
     // Initialize audio context on user interaction
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
+    initAudioContext();
+
+    // Request wake lock to keep screen on (mobile)
+    requestWakeLock();
 
     timerActive = true;
     triggeredSteps.clear();
@@ -247,6 +390,12 @@ function stopTimer() {
         timerInterval = null;
     }
 
+    // Stop any looping sound
+    stopSoundLoop();
+
+    // Release wake lock
+    releaseWakeLock();
+
     triggeredSteps.clear();
 
     // Remove all highlights
@@ -264,7 +413,7 @@ function testSound() {
     playNotificationSound();
 }
 
-// Load saved start time on page load
+// Load saved settings on page load
 document.addEventListener('DOMContentLoaded', () => {
     const savedTime = localStorage.getItem('keraplast-start-time');
     if (savedTime) {
@@ -275,8 +424,52 @@ document.addEventListener('DOMContentLoaded', () => {
         calculateTimes();
     }
 
+    // Load saved sound preference
+    const savedSound = localStorage.getItem('keraplast-sound');
+    if (savedSound && sounds[savedSound]) {
+        currentSound = savedSound;
+        document.getElementById('soundSelect').value = savedSound;
+    }
+
     updateTimerDisplay();
+
+    // Request notification permission early
+    if ('Notification' in window && Notification.permission === 'default') {
+        // Will ask when user interacts
+    }
+
+    // Keep page alive when timer is running (prevents throttling)
+    document.addEventListener('visibilitychange', () => {
+        if (timerActive && document.hidden) {
+            // Page is hidden but timer is active - notifications will still work
+            console.log('Page hidden - notifications will still trigger');
+        }
+    });
 });
 
 // Auto-calculate when time input changes
 document.getElementById('startTime').addEventListener('change', calculateTimes);
+
+// Prevent page from sleeping on mobile (if supported)
+let wakeLock = null;
+
+async function requestWakeLock() {
+    if ('wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('Wake lock acquired');
+            wakeLock.addEventListener('release', () => {
+                console.log('Wake lock released');
+            });
+        } catch (e) {
+            console.log('Wake lock not available:', e);
+        }
+    }
+}
+
+function releaseWakeLock() {
+    if (wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+    }
+}

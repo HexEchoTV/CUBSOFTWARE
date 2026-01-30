@@ -1,5 +1,75 @@
 /* Keraplast Digestion Calculator Styles */
 
+/* Password Screen */
+.password-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--background-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.password-screen.hidden {
+    display: none;
+}
+
+.password-box {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    max-width: 350px;
+    width: 90%;
+}
+
+.password-box h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.password-box p {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.password-box input {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1rem;
+    background: var(--background-color);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.password-box input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.password-box .action-btn {
+    width: 100%;
+}
+
+.password-error {
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-top: 15px;
+    margin-bottom: 0;
+    min-height: 20px;
+}
+
 body {
     min-height: 100vh;
     display: flex;
@@ -138,6 +208,36 @@ body {
 .test-btn {
     min-width: auto;
 }
+
+/* Sound Selector */
+.sound-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.sound-selector label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.sound-selector select {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.sound-selector select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
 
 /* Timer Status */
 .timer-status {
@@ -304,6 +404,82 @@ body {
     font-family: 'Orbitron', sans-serif;
 }
 
+/* Acknowledge Modal */
+.acknowledge-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.acknowledge-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.acknowledge-content {
+    background: var(--surface-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 20px;
+    padding: 40px 50px;
+    text-align: center;
+    animation: modalPulse 1s ease-in-out infinite;
+    max-width: 90%;
+}
+
+@keyframes modalPulse {
+    0%, 100% {
+        box-shadow: 0 0 30px rgba(88, 101, 242, 0.5);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 50px rgba(88, 101, 242, 0.8);
+        transform: scale(1.02);
+    }
+}
+
+.acknowledge-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    animation: bellRing 0.5s ease-in-out infinite;
+}
+
+@keyframes bellRing {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(15deg); }
+    75% { transform: rotate(-15deg); }
+}
+
+.acknowledge-content h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.acknowledge-time {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 25px;
+}
+
+.acknowledge-btn {
+    font-size: 1.1rem;
+    padding: 15px 40px;
+    min-width: 200px;
+}
+
 /* Toast Notification */
 .toast {
     position: fixed;
@@ -380,5 +556,25 @@ body {
 
     .toast.show {
         transform: translateX(0) translateY(0);
+    }
+
+    .sound-selector {
+        flex-wrap: wrap;
+    }
+
+    .acknowledge-content {
+        padding: 30px 25px;
+    }
+
+    .acknowledge-content h2 {
+        font-size: 1.4rem;
+    }
+
+    .acknowledge-time {
+        font-size: 2rem;
+    }
+
+    .acknowledge-btn {
+        width: 100%;
     }
 }
