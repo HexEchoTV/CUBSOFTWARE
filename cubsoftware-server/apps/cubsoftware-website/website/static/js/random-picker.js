@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSpeed = savedSpeed;
         document.getElementById('speedSelect').value = savedSpeed;
     }
+
+    // Initialize dice display
+    updateDiceDisplay();
 });
 
 // Coin Flip
@@ -84,12 +87,23 @@ function updateDiceDisplay() {
     const dice3D = document.getElementById('dice');
     const diceSimple = document.getElementById('diceSimple');
 
+    // Remove all dice shape classes
+    diceSimple.classList.remove('dice-d4', 'dice-d8', 'dice-d10', 'dice-d12', 'dice-d20', 'dice-d100');
+
     if (maxValue === 6) {
         dice3D.style.display = 'block';
         diceSimple.style.display = 'none';
     } else {
         dice3D.style.display = 'none';
         diceSimple.style.display = 'flex';
+
+        // Add appropriate shape class
+        if (maxValue === 4) diceSimple.classList.add('dice-d4');
+        else if (maxValue === 8) diceSimple.classList.add('dice-d8');
+        else if (maxValue === 10) diceSimple.classList.add('dice-d10');
+        else if (maxValue === 12) diceSimple.classList.add('dice-d12');
+        else if (maxValue === 20) diceSimple.classList.add('dice-d20');
+        else if (maxValue === 100) diceSimple.classList.add('dice-d100');
     }
 }
 
