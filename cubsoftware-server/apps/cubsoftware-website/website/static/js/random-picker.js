@@ -35,33 +35,68 @@ function flipCoin() {
 }
 
 // Dice Roll
-function rollDice() {
-    const dice = document.getElementById('dice');
-    const diceValue = dice.querySelector('.dice-value');
-    const result = document.getElementById('diceResult');
+const diceRotations = {
+    1: 'rotateX(0deg) rotateY(0deg)',
+    2: 'rotateX(-90deg) rotateY(0deg)',
+    3: 'rotateX(0deg) rotateY(-90deg)',
+    4: 'rotateX(0deg) rotateY(90deg)',
+    5: 'rotateX(90deg) rotateY(0deg)',
+    6: 'rotateX(180deg) rotateY(0deg)'
+};
+
+function updateDiceDisplay() {
     const maxValue = parseInt(document.getElementById('diceType').value);
+    const dice3D = document.getElementById('dice');
+    const diceSimple = document.getElementById('diceSimple');
 
-    // Add rolling animation
-    dice.classList.add('rolling');
+    if (maxValue === 6) {
+        dice3D.style.display = 'block';
+        diceSimple.style.display = 'none';
+    } else {
+        dice3D.style.display = 'none';
+        diceSimple.style.display = 'flex';
+    }
+}
 
-    // Animate through random numbers
-    let animationCount = 0;
-    const animationInterval = setInterval(() => {
-        diceValue.textContent = Math.floor(Math.random() * maxValue) + 1;
-        animationCount++;
-        if (animationCount > 10) {
+function rollDice() {
+    const maxValue = parseInt(document.getElementById('diceType').value);
+    const result = document.getElementById('diceResult');
+
+    if (maxValue === 6) {
+        // 3D Dice roll
+        const dice = document.getElementById('dice');
+        dice.classList.add('rolling');
+
+        setTimeout(() => {
+            dice.classList.remove('rolling');
+            const finalValue = Math.floor(Math.random() * 6) + 1;
+            dice.style.transform = diceRotations[finalValue];
+            result.textContent = `You rolled ${finalValue}!`;
+        }, 800);
+    } else {
+        // Simple dice roll
+        const diceSimple = document.getElementById('diceSimple');
+        const diceValue = document.getElementById('diceValue');
+
+        diceSimple.classList.add('rolling');
+
+        let animationCount = 0;
+        const animationInterval = setInterval(() => {
+            diceValue.textContent = Math.floor(Math.random() * maxValue) + 1;
+            animationCount++;
+            if (animationCount > 12) {
+                clearInterval(animationInterval);
+            }
+        }, 50);
+
+        setTimeout(() => {
+            diceSimple.classList.remove('rolling');
             clearInterval(animationInterval);
-        }
-    }, 50);
-
-    // Final result
-    setTimeout(() => {
-        dice.classList.remove('rolling');
-        clearInterval(animationInterval);
-        const finalValue = Math.floor(Math.random() * maxValue) + 1;
-        diceValue.textContent = finalValue;
-        result.textContent = `You rolled ${finalValue}!`;
-    }, 500);
+            const finalValue = Math.floor(Math.random() * maxValue) + 1;
+            diceValue.textContent = finalValue;
+            result.textContent = `You rolled ${finalValue}!`;
+        }, 600);
+    }
 }
 
 // Random Number Generator
@@ -234,6 +269,103 @@ function shakeMagic8() {
     }, 500);
 }
 
+// Card Draw
+const suits = ['♠', '♥', '♦', '♣'];
+const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+function drawCard() {
+    const cardEl = document.getElementById('card');
+    const cardValue = document.getElementById('cardValue');
+    const cardSuit = document.getElementById('cardSuit');
+    const result = document.getElementById('cardResult');
+
+    cardEl.classList.add('drawing');
+
+    setTimeout(() => {
+        cardEl.classList.remove('drawing');
+        const suit = suits[Math.floor(Math.random() * suits.length)];
+        const value = values[Math.floor(Math.random() * values.length)];
+        const isRed = suit === '♥' || suit === '♦';
+
+        cardValue.textContent = value;
+        cardValue.className = 'card-value ' + (isRed ? 'red' : 'black');
+        cardSuit.textContent = suit;
+        cardSuit.className = 'card-suit ' + (isRed ? 'red' : 'black');
+        result.textContent = `${value} of ${getSuitName(suit)}`;
+    }, 400);
+}
+
+function getSuitName(suit) {
+    switch(suit) {
+        case '♠': return 'Spades';
+        case '♥': return 'Hearts';
+        case '♦': return 'Diamonds';
+        case '♣': return 'Clubs';
+    }
+}
+
+// Letter Generator
+function generateLetter() {
+    const display = document.getElementById('letterDisplay');
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    display.classList.add('animating');
+
+    let animationCount = 0;
+    const animationInterval = setInterval(() => {
+        display.textContent = letters[Math.floor(Math.random() * letters.length)];
+        animationCount++;
+        if (animationCount > 12) {
+            clearInterval(animationInterval);
+        }
+    }, 50);
+
+    setTimeout(() => {
+        clearInterval(animationInterval);
+        display.classList.remove('animating');
+        display.textContent = letters[Math.floor(Math.random() * letters.length)];
+    }, 400);
+}
+
+// Team Generator
+function generateTeams() {
+    const textarea = document.getElementById('teamInput');
+    const teamCount = parseInt(document.getElementById('teamCount').value) || 2;
+    const resultsContainer = document.getElementById('teamResults');
+
+    const names = textarea.value
+        .split('\n')
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+
+    if (names.length < 2) {
+        showToast('Add at least 2 names!');
+        return;
+    }
+
+    if (teamCount > names.length) {
+        showToast('More teams than people!');
+        return;
+    }
+
+    // Shuffle names
+    const shuffled = [...names].sort(() => Math.random() - 0.5);
+
+    // Distribute into teams
+    const teams = Array.from({ length: teamCount }, () => []);
+    shuffled.forEach((name, index) => {
+        teams[index % teamCount].push(name);
+    });
+
+    // Display results
+    resultsContainer.innerHTML = teams.map((team, i) => `
+        <div class="team-result">
+            <div class="team-result-header">Team ${i + 1}</div>
+            <div class="team-result-members">${team.join(', ')}</div>
+        </div>
+    `).join('');
+}
+
 // Toast notification
 function showToast(message) {
     const toast = document.getElementById('toast');
@@ -266,6 +398,12 @@ document.addEventListener('keydown', (e) => {
             break;
         case '8':
             shakeMagic8();
+            break;
+        case 'r':
+            drawCard();
+            break;
+        case 'l':
+            generateLetter();
             break;
     }
 });
