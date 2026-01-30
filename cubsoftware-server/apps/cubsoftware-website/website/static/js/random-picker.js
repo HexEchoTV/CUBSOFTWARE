@@ -6,10 +6,45 @@ let headsCount = 0;
 let tailsCount = 0;
 let numberHistory = [];
 
+// Speed settings
+const speedMultipliers = {
+    fast: 0.5,
+    normal: 1,
+    slow: 1.5,
+    dramatic: 2.5
+};
+
+let currentSpeed = 'normal';
+
+function getSpeed() {
+    return speedMultipliers[currentSpeed];
+}
+
+function updateSpeed() {
+    const select = document.getElementById('speedSelect');
+    currentSpeed = select.value;
+    localStorage.setItem('pickerSpeed', currentSpeed);
+
+    // Update CSS animation durations
+    document.documentElement.style.setProperty('--animation-speed', getSpeed());
+}
+
+// Load saved speed on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const savedSpeed = localStorage.getItem('pickerSpeed');
+    if (savedSpeed && speedMultipliers[savedSpeed]) {
+        currentSpeed = savedSpeed;
+        document.getElementById('speedSelect').value = savedSpeed;
+    }
+});
+
 // Coin Flip
 function flipCoin() {
     const coin = document.getElementById('coin');
     const result = document.getElementById('coinResult');
+
+    // Set animation duration based on speed
+    coin.style.animationDuration = (1.5 * getSpeed()) + 's';
 
     // Add flipping animation
     coin.classList.remove('heads', 'tails');
@@ -31,7 +66,7 @@ function flipCoin() {
             tailsCount++;
             document.getElementById('tailsCount').textContent = tailsCount;
         }
-    }, 600);
+    }, 1500 * getSpeed());
 }
 
 // Dice Roll
@@ -61,10 +96,12 @@ function updateDiceDisplay() {
 function rollDice() {
     const maxValue = parseInt(document.getElementById('diceType').value);
     const result = document.getElementById('diceResult');
+    const duration = 1400 * getSpeed();
 
     if (maxValue === 6) {
         // 3D Dice roll
         const dice = document.getElementById('dice');
+        dice.style.animationDuration = (1.4 * getSpeed()) + 's';
         dice.classList.add('rolling');
 
         setTimeout(() => {
@@ -72,22 +109,25 @@ function rollDice() {
             const finalValue = Math.floor(Math.random() * 6) + 1;
             dice.style.transform = diceRotations[finalValue];
             result.textContent = `You rolled ${finalValue}!`;
-        }, 800);
+        }, duration);
     } else {
-        // Simple dice roll
+        // Simple dice roll with 3D-style animation
         const diceSimple = document.getElementById('diceSimple');
         const diceValue = document.getElementById('diceValue');
 
+        diceSimple.style.animationDuration = (1.4 * getSpeed()) + 's';
         diceSimple.classList.add('rolling');
 
+        // Number cycling during animation
         let animationCount = 0;
+        const maxCycles = Math.floor(35 * getSpeed());
         const animationInterval = setInterval(() => {
             diceValue.textContent = Math.floor(Math.random() * maxValue) + 1;
             animationCount++;
-            if (animationCount > 12) {
+            if (animationCount > maxCycles) {
                 clearInterval(animationInterval);
             }
-        }, 50);
+        }, 40);
 
         setTimeout(() => {
             diceSimple.classList.remove('rolling');
@@ -95,7 +135,7 @@ function rollDice() {
             const finalValue = Math.floor(Math.random() * maxValue) + 1;
             diceValue.textContent = finalValue;
             result.textContent = `You rolled ${finalValue}!`;
-        }, 600);
+        }, duration);
     }
 }
 
@@ -104,7 +144,6 @@ function generateNumber() {
     const display = document.getElementById('numberDisplay');
     const minInput = document.getElementById('minNumber');
     const maxInput = document.getElementById('maxNumber');
-    const historyEl = document.getElementById('numberHistory');
 
     const min = parseInt(minInput.value) || 1;
     const max = parseInt(maxInput.value) || 100;
@@ -114,13 +153,16 @@ function generateNumber() {
         return;
     }
 
+    const duration = 1600 * getSpeed();
+    const maxCycles = Math.floor(40 * getSpeed());
+
     // Animate through numbers
     display.classList.add('animating');
     let animationCount = 0;
     const animationInterval = setInterval(() => {
         display.textContent = Math.floor(Math.random() * (max - min + 1)) + min;
         animationCount++;
-        if (animationCount > 15) {
+        if (animationCount > maxCycles) {
             clearInterval(animationInterval);
         }
     }, 40);
@@ -131,12 +173,7 @@ function generateNumber() {
         display.classList.remove('animating');
         const finalNumber = Math.floor(Math.random() * (max - min + 1)) + min;
         display.textContent = finalNumber;
-
-        // Add to history
-        numberHistory.unshift(finalNumber);
-        if (numberHistory.length > 5) numberHistory.pop();
-        historyEl.textContent = 'Recent: ' + numberHistory.join(', ');
-    }, 600);
+    }, duration);
 }
 
 // Pick From List
@@ -166,13 +203,16 @@ function pickFromList() {
         return;
     }
 
+    const duration = 1800 * getSpeed();
+    const maxCycles = Math.floor(30 * getSpeed());
+
     // Animate through items
     let animationCount = 0;
     const animationInterval = setInterval(() => {
         const randomItem = items[Math.floor(Math.random() * items.length)];
         pickedValue.textContent = randomItem;
         animationCount++;
-        if (animationCount > 15) {
+        if (animationCount > maxCycles) {
             clearInterval(animationInterval);
         }
     }, 60);
@@ -191,7 +231,7 @@ function pickFromList() {
             items.splice(winnerIndex, 1);
             textarea.value = items.join('\n');
         }
-    }, 900);
+    }, duration);
 }
 
 function clearList() {
@@ -203,6 +243,8 @@ function clearList() {
 function yesOrNo() {
     const display = document.getElementById('yesnoDisplay');
     const isYes = Math.random() < 0.5;
+    const duration = 1600 * getSpeed();
+    const maxCycles = Math.floor(20 * getSpeed());
 
     // Animate
     display.classList.remove('yes', 'no');
@@ -212,7 +254,7 @@ function yesOrNo() {
         display.classList.toggle('yes');
         display.classList.toggle('no');
         animationCount++;
-        if (animationCount > 10) {
+        if (animationCount > maxCycles) {
             clearInterval(animationInterval);
         }
     }, 80);
@@ -223,7 +265,7 @@ function yesOrNo() {
         display.textContent = isYes ? 'YES' : 'NO';
         display.className = 'text-display animating ' + (isYes ? 'yes' : 'no');
         setTimeout(() => display.classList.remove('animating'), 300);
-    }, 800);
+    }, duration);
 }
 
 // Card Draw
@@ -238,6 +280,11 @@ function drawCard() {
     const cardSuitBottom = document.getElementById('cardSuitBottom');
     const cardCenterSuit = document.getElementById('cardCenterSuit');
     const result = document.getElementById('cardResult');
+    const flipDuration = 1 * getSpeed();
+
+    // Set animation duration
+    cardEl.style.transitionDuration = flipDuration + 's';
+    cardEl.style.animationDuration = flipDuration + 's';
 
     // Show back first, then flip
     cardEl.classList.add('showing-back');
@@ -270,8 +317,8 @@ function drawCard() {
 
         setTimeout(() => {
             cardEl.classList.remove('flipping');
-        }, 600);
-    }, 300);
+        }, flipDuration * 1000);
+    }, 500 * getSpeed());
 }
 
 function getSuitName(suit) {
@@ -287,6 +334,8 @@ function getSuitName(suit) {
 function generateLetter() {
     const display = document.getElementById('letterDisplay');
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const duration = 1500 * getSpeed();
+    const maxCycles = Math.floor(30 * getSpeed());
 
     display.classList.add('animating');
 
@@ -294,7 +343,7 @@ function generateLetter() {
     const animationInterval = setInterval(() => {
         display.textContent = letters[Math.floor(Math.random() * letters.length)];
         animationCount++;
-        if (animationCount > 12) {
+        if (animationCount > maxCycles) {
             clearInterval(animationInterval);
         }
     }, 50);
@@ -303,7 +352,7 @@ function generateLetter() {
         clearInterval(animationInterval);
         display.classList.remove('animating');
         display.textContent = letters[Math.floor(Math.random() * letters.length)];
-    }, 400);
+    }, duration);
 }
 
 // Team Generator
@@ -327,22 +376,29 @@ function generateTeams() {
         return;
     }
 
-    // Shuffle names
-    const shuffled = [...names].sort(() => Math.random() - 0.5);
+    const duration = 1200 * getSpeed();
 
-    // Distribute into teams
-    const teams = Array.from({ length: teamCount }, () => []);
-    shuffled.forEach((name, index) => {
-        teams[index % teamCount].push(name);
-    });
+    // Show loading animation
+    resultsContainer.innerHTML = '<span class="result">Generating teams...</span>';
 
-    // Display results
-    resultsContainer.innerHTML = teams.map((team, i) => `
-        <div class="team-result">
-            <div class="team-result-header">Team ${i + 1}</div>
-            <div class="team-result-members">${team.join(', ')}</div>
-        </div>
-    `).join('');
+    setTimeout(() => {
+        // Shuffle names
+        const shuffled = [...names].sort(() => Math.random() - 0.5);
+
+        // Distribute into teams
+        const teams = Array.from({ length: teamCount }, () => []);
+        shuffled.forEach((name, index) => {
+            teams[index % teamCount].push(name);
+        });
+
+        // Display results
+        resultsContainer.innerHTML = teams.map((team, i) => `
+            <div class="team-result">
+                <div class="team-result-header">Team ${i + 1}</div>
+                <div class="team-result-members">${team.join(', ')}</div>
+            </div>
+        `).join('');
+    }, duration);
 }
 
 // Shuffle List
@@ -362,17 +418,24 @@ function shuffleList() {
         return;
     }
 
-    // Fisher-Yates shuffle
-    const shuffled = [...items];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
+    const duration = 1200 * getSpeed();
 
-    lastShuffled = shuffled;
+    // Show loading animation
+    output.innerHTML = '<span class="result">Shuffling...</span>';
 
-    // Display as numbered list
-    output.innerHTML = '<ol>' + shuffled.map(item => `<li>${item}</li>`).join('') + '</ol>';
+    setTimeout(() => {
+        // Fisher-Yates shuffle
+        const shuffled = [...items];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+
+        lastShuffled = shuffled;
+
+        // Display as numbered list
+        output.innerHTML = '<ol>' + shuffled.map(item => `<li>${item}</li>`).join('') + '</ol>';
+    }, duration);
 }
 
 function copyShuffled() {
