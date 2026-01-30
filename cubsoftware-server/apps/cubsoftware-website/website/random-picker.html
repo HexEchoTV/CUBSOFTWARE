@@ -137,10 +137,37 @@
                 <button class="action-btn" onclick="rollDice()">Roll</button>
             </section>
 
+            <!-- Card Draw -->
+            <section class="tool-card" id="cardDraw">
+                <h2>Card Draw</h2>
+                <div class="card-container">
+                    <div class="playing-card" id="card">
+                        <div class="card-front">
+                            <span class="card-corner card-corner-top">
+                                <span class="card-value" id="cardValue">?</span>
+                                <span class="card-suit" id="cardSuit"></span>
+                            </span>
+                            <span class="card-center-suit" id="cardCenterSuit"></span>
+                            <span class="card-corner card-corner-bottom">
+                                <span class="card-value" id="cardValueBottom">?</span>
+                                <span class="card-suit" id="cardSuitBottom"></span>
+                            </span>
+                        </div>
+                        <div class="card-back">
+                            <div class="card-back-design">
+                                <span class="card-brand"><span class="brand-cub">CUB</span><span class="brand-software">SOFTWARE</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="result" id="cardResult">Draw a card!</div>
+                <button class="action-btn" onclick="drawCard()">Draw</button>
+            </section>
+
             <!-- Random Number -->
             <section class="tool-card" id="randomNumber">
                 <h2>Random Number</h2>
-                <div class="number-display" id="numberDisplay">?</div>
+                <div class="text-display" id="numberDisplay">?</div>
                 <div class="number-inputs">
                     <div class="input-group">
                         <label>Min</label>
@@ -157,25 +184,14 @@
             <!-- Yes/No -->
             <section class="tool-card" id="yesNo">
                 <h2>Yes or No?</h2>
-                <div class="yesno-display" id="yesnoDisplay">?</div>
+                <div class="text-display" id="yesnoDisplay">?</div>
                 <button class="action-btn" onclick="yesOrNo()">Decide</button>
-            </section>
-
-            <!-- Card Draw -->
-            <section class="tool-card" id="cardDraw">
-                <h2>Card Draw</h2>
-                <div class="card-display" id="card">
-                    <span class="card-value" id="cardValue">?</span>
-                    <span class="card-suit" id="cardSuit"></span>
-                </div>
-                <div class="result" id="cardResult">Draw a card!</div>
-                <button class="action-btn" onclick="drawCard()">Draw</button>
             </section>
 
             <!-- Letter Generator -->
             <section class="tool-card" id="letterGen">
                 <h2>Random Letter</h2>
-                <div class="letter-display" id="letterDisplay">?</div>
+                <div class="text-display" id="letterDisplay">?</div>
                 <button class="action-btn" onclick="generateLetter()">Generate</button>
             </section>
 

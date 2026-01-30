@@ -221,7 +221,7 @@ function yesOrNo() {
     setTimeout(() => {
         clearInterval(animationInterval);
         display.textContent = isYes ? 'YES' : 'NO';
-        display.className = 'yesno-display animating ' + (isYes ? 'yes' : 'no');
+        display.className = 'text-display animating ' + (isYes ? 'yes' : 'no');
         setTimeout(() => display.classList.remove('animating'), 300);
     }, 800);
 }
@@ -233,23 +233,45 @@ const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'
 function drawCard() {
     const cardEl = document.getElementById('card');
     const cardValue = document.getElementById('cardValue');
+    const cardValueBottom = document.getElementById('cardValueBottom');
     const cardSuit = document.getElementById('cardSuit');
+    const cardSuitBottom = document.getElementById('cardSuitBottom');
+    const cardCenterSuit = document.getElementById('cardCenterSuit');
     const result = document.getElementById('cardResult');
 
-    cardEl.classList.add('drawing');
+    // Show back first, then flip
+    cardEl.classList.add('showing-back');
 
     setTimeout(() => {
-        cardEl.classList.remove('drawing');
         const suit = suits[Math.floor(Math.random() * suits.length)];
         const value = values[Math.floor(Math.random() * values.length)];
         const isRed = suit === '♥' || suit === '♦';
+        const colorClass = isRed ? 'red' : 'black';
 
+        // Update all card elements
         cardValue.textContent = value;
-        cardValue.className = 'card-value ' + (isRed ? 'red' : 'black');
+        cardValue.className = 'card-value ' + colorClass;
+        cardValueBottom.textContent = value;
+        cardValueBottom.className = 'card-value ' + colorClass;
+
         cardSuit.textContent = suit;
-        cardSuit.className = 'card-suit ' + (isRed ? 'red' : 'black');
+        cardSuit.className = 'card-suit ' + colorClass;
+        cardSuitBottom.textContent = suit;
+        cardSuitBottom.className = 'card-suit ' + colorClass;
+
+        cardCenterSuit.textContent = suit;
+        cardCenterSuit.className = 'card-center-suit ' + colorClass;
+
+        // Flip to front
+        cardEl.classList.remove('showing-back');
+        cardEl.classList.add('flipping');
+
         result.textContent = `${value} of ${getSuitName(suit)}`;
-    }, 400);
+
+        setTimeout(() => {
+            cardEl.classList.remove('flipping');
+        }, 600);
+    }, 300);
 }
 
 function getSuitName(suit) {
