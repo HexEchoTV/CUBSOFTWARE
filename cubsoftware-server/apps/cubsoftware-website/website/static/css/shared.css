@@ -242,23 +242,23 @@ a:hover {
     z-index: 1000;
 }
 
-.header-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 40px;
-}
-
-/* Legacy support for header-top class */
+.header-container,
 .header-top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    max-width: 1100px;
+    justify-content: center;
+    gap: 50px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 0 40px;
+    padding: 0 30px;
+    position: relative;
+}
+
+/* Mobile menu button positioning */
+.header-container .mobile-menu-btn,
+.header-top .mobile-menu-btn {
+    position: absolute;
+    right: 30px;
 }
 
 .site-header .logo {

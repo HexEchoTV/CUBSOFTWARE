@@ -36,18 +36,34 @@
 <body>
     <!-- Navigation Header -->
     <header class="site-header">
-        <div class="header-top">
+        <div class="header-container">
             <a href="/" class="logo">
                 <span class="logo-text">
                     <span class="cub">CUB</span><span class="software">SOFTWARE</span>
                 </span>
             </a>
-            <nav class="site-nav">
-                <a href="/">Home</a>
-                <a href="/#apps">Tools</a>
-                <a href="https://questcord.fun" target="_blank">QuestCord</a>
-                <a href="/contact">Contact</a>
+            <nav class="site-nav" id="siteNav">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#apps" class="nav-link">Tools</a>
+                <div class="nav-dropdown">
+                    <button class="nav-link dropdown-toggle">
+                        Our Bots
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="https://questcord.fun" target="_blank">QuestCord</a>
+                        <a href="/cleanme">CleanMe</a>
+                    </div>
+                </div>
+                <a href="/contact" class="nav-link">Contact</a>
             </nav>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
         </div>
     </header>
 
@@ -247,11 +263,15 @@
                 <div class="footer-legal-links">
                     <a href="https://questcord.fun" class="footer-legal-link" target="_blank">QuestCord</a>
                     <span class="footer-separator">|</span>
+                    <a href="/cleanme" class="footer-legal-link">CleanMe</a>
+                    <span class="footer-separator">|</span>
                     <a href="/terms" class="footer-legal-link">Terms of Use</a>
                     <span class="footer-separator">|</span>
                     <a href="/privacy" class="footer-legal-link">Privacy Policy</a>
                     <span class="footer-separator">|</span>
                     <a href="/copyright" class="footer-legal-link">Copyright</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/report" class="footer-legal-link">Report Issue</a>
                     <span class="footer-separator">|</span>
                     <a href="/contact" class="footer-legal-link">Contact</a>
                 </div>
@@ -260,5 +280,25 @@
     </footer>
 
     <script src="/static/js/wheel-spinner.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const nav = document.getElementById('siteNav');
+        if (mobileBtn && nav) {
+            mobileBtn.addEventListener('click', function() {
+                nav.classList.toggle('active');
+                mobileBtn.classList.toggle('active');
+            });
+        }
+        document.querySelectorAll('.dropdown-toggle').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    this.parentElement.classList.toggle('active');
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>
