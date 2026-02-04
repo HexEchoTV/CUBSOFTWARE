@@ -27,8 +27,14 @@ logger = BotLogger('cubsoftware-website', os.environ.get('BOT_API_KEY'))
 app = Flask(__name__,
             static_folder='website/static')
 
-# Secret key for sessions
+# Secret key for sessions - IMPORTANT: Set FLASK_SECRET_KEY in environment for persistence
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32))
+
+# Session configuration
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = True  # Use HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
 
 # Configure Jinja to look in multiple template directories
 app.jinja_loader = ChoiceLoader([
@@ -1923,6 +1929,41 @@ def pm2_dashboard():
     """PM2 Dashboard - Process Monitor & Management"""
     return render_template('pm2-dashboard.html', user=session['pm2_user'])
 
+# OAuth state storage (file-based fallback for session issues)
+OAUTH_STATES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'oauth_states.json')
+
+def load_oauth_states():
+    """Load valid OAuth states from file"""
+    if os.path.exists(OAUTH_STATES_FILE):
+        try:
+            with open(OAUTH_STATES_FILE, 'r') as f:
+                states = json.load(f)
+                # Clean up expired states (older than 10 minutes)
+                now = time.time()
+                states = {k: v for k, v in states.items() if now - v < 600}
+                return states
+        except:
+            pass
+    return {}
+
+def save_oauth_state(state):
+    """Save OAuth state to file"""
+    states = load_oauth_states()
+    states[state] = time.time()
+    os.makedirs(os.path.dirname(OAUTH_STATES_FILE), exist_ok=True)
+    with open(OAUTH_STATES_FILE, 'w') as f:
+        json.dump(states, f)
+
+def verify_oauth_state(state):
+    """Verify and remove OAuth state"""
+    states = load_oauth_states()
+    if state in states:
+        del states[state]
+        with open(OAUTH_STATES_FILE, 'w') as f:
+            json.dump(states, f)
+        return True
+    return False
+
 @app.route('/apps/pm2-dashboard/login')
 def pm2_login():
     """PM2 Dashboard Login Page"""
@@ -1935,14 +1976,19 @@ def pm2_login():
     }
 
     # Build Discord OAuth URL
+    state = secrets.token_urlsafe(16)
     params = {
         'client_id': config['discord_client_id'],
         'redirect_uri': config['discord_redirect_uri'],
         'response_type': 'code',
         'scope': 'identify',
-        'state': secrets.token_urlsafe(16)
+        'state': state
     }
-    session['oauth_state'] = params['state']
+
+    # Store state in both session and file (fallback)
+    session['oauth_state'] = state
+    save_oauth_state(state)
+
     discord_url = f"https://discord.com/api/oauth2/authorize?{urllib.parse.urlencode(params)}"
 
     return render_template('pm2-login.html',
@@ -1959,9 +2005,13 @@ def pm2_callback():
     code = request.args.get('code')
     state = request.args.get('state')
 
-    # Verify state
-    if state != session.get('oauth_state'):
+    # Verify state (check session first, then file-based fallback)
+    session_state = session.get('oauth_state')
+    if state != session_state and not verify_oauth_state(state):
         return redirect(url_for('pm2_login', error='invalid_state'))
+
+    # Clear session state
+    session.pop('oauth_state', None)
 
     config = load_pm2_config()
 
