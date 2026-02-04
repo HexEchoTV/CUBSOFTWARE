@@ -174,6 +174,93 @@ terminal.addCommand('whitelist', {
     }
 });
 
+// Feature management terminal command
+terminal.addCommand('feature', {
+    description: 'Enable/disable website features',
+    usage: 'feature <enable|disable|list> [name]',
+    execute: async (args) => {
+        const action = args[0];
+        const featureName = args.slice(1).join('-');
+
+        const DISABLED_FILE = path.join(WEBSITE_DATA_PATH, 'disabled_features.json');
+
+        function loadDisabled() {
+            try {
+                if (fs.existsSync(DISABLED_FILE)) {
+                    return JSON.parse(fs.readFileSync(DISABLED_FILE, 'utf8'));
+                }
+            } catch (e) {}
+            return [];
+        }
+
+        function saveDisabled(features) {
+            try {
+                fs.mkdirSync(path.dirname(DISABLED_FILE), { recursive: true });
+                fs.writeFileSync(DISABLED_FILE, JSON.stringify(features, null, 2));
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        const allFeatures = [
+            'social-media-saver', 'file-converter', 'pdf-tools', 'image-editor',
+            'qr-generator', 'link-shortener', 'color-picker', 'text-tools',
+            'unit-converter', 'json-formatter', 'timestamp-converter', 'video-compressor',
+            'resume-builder', 'countdown-maker', 'random-picker', 'wheel-spinner',
+            'calculator-suite', 'password-generator', 'timer-tools', 'world-clock',
+            'currency-converter', 'sticky-board', 'encoding-tools', 'diff-checker',
+            'regex-tester', 'code-minifier', 'markdown-editor', 'notepad',
+            'invoice-generator', 'audio-trimmer'
+        ];
+
+        if (!action || !['enable', 'disable', 'list'].includes(action)) {
+            return '❌ Usage: `>feature <enable|disable|list> [name]`\n\nAvailable features:\n`' + allFeatures.join('`, `') + '`';
+        }
+
+        if (action === 'list') {
+            const disabled = loadDisabled();
+            const list = allFeatures.map(f => {
+                const status = disabled.includes(f) ? '🔴' : '🟢';
+                return `${status} ${f}`;
+            }).join('\n');
+            return `**Feature Status:**\n${list}\n\n*${disabled.length} disabled, ${allFeatures.length - disabled.length} enabled*`;
+        }
+
+        if (!featureName) {
+            return '❌ Please specify a feature name.\n\nAvailable: `' + allFeatures.join('`, `') + '`';
+        }
+
+        if (!allFeatures.includes(featureName)) {
+            return `❌ Unknown feature: \`${featureName}\`\n\nAvailable: \`${allFeatures.join('`, `')}\``;
+        }
+
+        const disabled = loadDisabled();
+
+        if (action === 'disable') {
+            if (disabled.includes(featureName)) {
+                return `⚠️ **${featureName}** is already disabled.`;
+            }
+            disabled.push(featureName);
+            if (saveDisabled(disabled)) {
+                return `🔴 **${featureName}** has been **disabled**.`;
+            }
+            return '❌ Failed to save.';
+        }
+
+        if (action === 'enable') {
+            if (!disabled.includes(featureName)) {
+                return `⚠️ **${featureName}** is not disabled.`;
+            }
+            const updated = disabled.filter(f => f !== featureName);
+            if (saveDisabled(updated)) {
+                return `🟢 **${featureName}** has been **enabled**.`;
+            }
+            return '❌ Failed to save.';
+        }
+    }
+});
+
 // Slash commands
 const commands = [
     new SlashCommandBuilder()
@@ -294,6 +381,82 @@ const commands = [
     new SlashCommandBuilder()
         .setName('ip-list')
         .setDescription('List all IP bans')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    // Feature management command
+    new SlashCommandBuilder()
+        .setName('feature')
+        .setDescription('Enable or disable website features')
+        .addSubcommand(sub => sub
+            .setName('disable')
+            .setDescription('Disable a feature')
+            .addStringOption(option =>
+                option.setName('name')
+                    .setDescription('Feature to disable')
+                    .setRequired(true)
+                    .addChoices(
+                        { name: 'Social Media Saver', value: 'social-media-saver' },
+                        { name: 'File Converter', value: 'file-converter' },
+                        { name: 'PDF Tools', value: 'pdf-tools' },
+                        { name: 'Image Editor', value: 'image-editor' },
+                        { name: 'QR Generator', value: 'qr-generator' },
+                        { name: 'Link Shortener', value: 'link-shortener' },
+                        { name: 'Color Picker', value: 'color-picker' },
+                        { name: 'Text Tools', value: 'text-tools' },
+                        { name: 'Unit Converter', value: 'unit-converter' },
+                        { name: 'JSON Formatter', value: 'json-formatter' },
+                        { name: 'Timestamp Converter', value: 'timestamp-converter' },
+                        { name: 'Video Compressor', value: 'video-compressor' },
+                        { name: 'Resume Builder', value: 'resume-builder' },
+                        { name: 'Countdown Maker', value: 'countdown-maker' },
+                        { name: 'Random Picker', value: 'random-picker' },
+                        { name: 'Wheel Spinner', value: 'wheel-spinner' },
+                        { name: 'Calculator Suite', value: 'calculator-suite' },
+                        { name: 'Password Generator', value: 'password-generator' },
+                        { name: 'Timer Tools', value: 'timer-tools' },
+                        { name: 'World Clock', value: 'world-clock' },
+                        { name: 'Currency Converter', value: 'currency-converter' },
+                        { name: 'Sticky Board', value: 'sticky-board' }
+                    )
+            )
+        )
+        .addSubcommand(sub => sub
+            .setName('enable')
+            .setDescription('Enable a feature')
+            .addStringOption(option =>
+                option.setName('name')
+                    .setDescription('Feature to enable')
+                    .setRequired(true)
+                    .addChoices(
+                        { name: 'Social Media Saver', value: 'social-media-saver' },
+                        { name: 'File Converter', value: 'file-converter' },
+                        { name: 'PDF Tools', value: 'pdf-tools' },
+                        { name: 'Image Editor', value: 'image-editor' },
+                        { name: 'QR Generator', value: 'qr-generator' },
+                        { name: 'Link Shortener', value: 'link-shortener' },
+                        { name: 'Color Picker', value: 'color-picker' },
+                        { name: 'Text Tools', value: 'text-tools' },
+                        { name: 'Unit Converter', value: 'unit-converter' },
+                        { name: 'JSON Formatter', value: 'json-formatter' },
+                        { name: 'Timestamp Converter', value: 'timestamp-converter' },
+                        { name: 'Video Compressor', value: 'video-compressor' },
+                        { name: 'Resume Builder', value: 'resume-builder' },
+                        { name: 'Countdown Maker', value: 'countdown-maker' },
+                        { name: 'Random Picker', value: 'random-picker' },
+                        { name: 'Wheel Spinner', value: 'wheel-spinner' },
+                        { name: 'Calculator Suite', value: 'calculator-suite' },
+                        { name: 'Password Generator', value: 'password-generator' },
+                        { name: 'Timer Tools', value: 'timer-tools' },
+                        { name: 'World Clock', value: 'world-clock' },
+                        { name: 'Currency Converter', value: 'currency-converter' },
+                        { name: 'Sticky Board', value: 'sticky-board' }
+                    )
+            )
+        )
+        .addSubcommand(sub => sub
+            .setName('list')
+            .setDescription('List all features and their status')
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 ];
 
@@ -690,6 +853,112 @@ client.on('interactionCreate', async interaction => {
         }
 
         return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    // Feature management command
+    if (interaction.commandName === 'feature') {
+        if (!isOwner) {
+            return interaction.reply({ content: '❌ This command is restricted to bot owners.', ephemeral: true });
+        }
+
+        const sub = interaction.options.getSubcommand();
+        const featureName = interaction.options.getString('name');
+
+        // Load disabled features from file
+        const DISABLED_FILE = path.join(WEBSITE_DATA_PATH, 'disabled_features.json');
+
+        function loadDisabledFeatures() {
+            try {
+                if (fs.existsSync(DISABLED_FILE)) {
+                    return JSON.parse(fs.readFileSync(DISABLED_FILE, 'utf8'));
+                }
+            } catch (e) {
+                console.error('Error loading disabled features:', e);
+            }
+            return [];
+        }
+
+        function saveDisabledFeatures(features) {
+            try {
+                fs.mkdirSync(path.dirname(DISABLED_FILE), { recursive: true });
+                fs.writeFileSync(DISABLED_FILE, JSON.stringify(features, null, 2));
+                return true;
+            } catch (e) {
+                console.error('Error saving disabled features:', e);
+                return false;
+            }
+        }
+
+        if (sub === 'disable') {
+            const disabled = loadDisabledFeatures();
+
+            if (disabled.includes(featureName)) {
+                return interaction.reply({ content: `⚠️ **${featureName}** is already disabled.`, ephemeral: true });
+            }
+
+            disabled.push(featureName);
+
+            if (saveDisabledFeatures(disabled)) {
+                const embed = new EmbedBuilder()
+                    .setColor(0xFF6B6B)
+                    .setTitle('Feature Disabled')
+                    .setDescription(`**${featureName}** has been disabled.`)
+                    .addFields({ name: 'Status', value: '🔴 Disabled', inline: true })
+                    .setTimestamp();
+                return interaction.reply({ embeds: [embed], ephemeral: true });
+            } else {
+                return interaction.reply({ content: '❌ Failed to disable feature.', ephemeral: true });
+            }
+        }
+
+        if (sub === 'enable') {
+            const disabled = loadDisabledFeatures();
+
+            if (!disabled.includes(featureName)) {
+                return interaction.reply({ content: `⚠️ **${featureName}** is not disabled.`, ephemeral: true });
+            }
+
+            const updated = disabled.filter(f => f !== featureName);
+
+            if (saveDisabledFeatures(updated)) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x22c55e)
+                    .setTitle('Feature Enabled')
+                    .setDescription(`**${featureName}** has been enabled.`)
+                    .addFields({ name: 'Status', value: '🟢 Enabled', inline: true })
+                    .setTimestamp();
+                return interaction.reply({ embeds: [embed], ephemeral: true });
+            } else {
+                return interaction.reply({ content: '❌ Failed to enable feature.', ephemeral: true });
+            }
+        }
+
+        if (sub === 'list') {
+            const disabled = loadDisabledFeatures();
+
+            const allFeatures = [
+                'social-media-saver', 'file-converter', 'pdf-tools', 'image-editor',
+                'qr-generator', 'link-shortener', 'color-picker', 'text-tools',
+                'unit-converter', 'json-formatter', 'timestamp-converter', 'video-compressor',
+                'resume-builder', 'countdown-maker', 'random-picker', 'wheel-spinner',
+                'calculator-suite', 'password-generator', 'timer-tools', 'world-clock',
+                'currency-converter', 'sticky-board'
+            ];
+
+            const featureList = allFeatures.map(f => {
+                const status = disabled.includes(f) ? '🔴' : '🟢';
+                return `${status} ${f}`;
+            }).join('\n');
+
+            const embed = new EmbedBuilder()
+                .setColor(0x5865f2)
+                .setTitle('Feature Status')
+                .setDescription(featureList)
+                .setFooter({ text: `${disabled.length} disabled, ${allFeatures.length - disabled.length} enabled` })
+                .setTimestamp();
+
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        }
     }
 });
 
