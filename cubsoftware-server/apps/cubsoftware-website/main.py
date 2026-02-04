@@ -509,6 +509,102 @@ def calculator_suite():
     """Calculator Suite - Basic, Scientific, Mortgage, Tip, BMI, Age, and Percentage calculators"""
     return render_template('calculator-suite.html')
 
+# ==================== PASSWORD GENERATOR ====================
+
+@app.route('/apps/password-generator')
+@app.route('/apps/password-generator/')
+def password_generator():
+    """Password Generator - Generate strong, secure passwords"""
+    return render_template('password-generator.html')
+
+# ==================== TIMER TOOLS ====================
+
+@app.route('/apps/timer-tools')
+@app.route('/apps/timer-tools/')
+def timer_tools():
+    """Timer Tools - Stopwatch, countdown timer, and Pomodoro"""
+    return render_template('timer-tools.html')
+
+# ==================== WORLD CLOCK ====================
+
+@app.route('/apps/world-clock')
+@app.route('/apps/world-clock/')
+def world_clock():
+    """World Clock - View current time across multiple time zones"""
+    return render_template('world-clock.html')
+
+# ==================== CURRENCY CONVERTER ====================
+
+@app.route('/apps/currency-converter')
+@app.route('/apps/currency-converter/')
+def currency_converter():
+    """Currency Converter - Convert between world currencies with live exchange rates"""
+    return render_template('currency-converter.html')
+
+# ==================== ENCODING TOOLS ====================
+
+@app.route('/apps/encoding-tools')
+@app.route('/apps/encoding-tools/')
+def encoding_tools():
+    """Encoding Tools - Hash, Base64, URL encode, HTML entities, encryption"""
+    return render_template('encoding-tools.html')
+
+# ==================== DIFF CHECKER ====================
+
+@app.route('/apps/diff-checker')
+@app.route('/apps/diff-checker/')
+def diff_checker():
+    """Diff Checker - Compare two texts and see the differences"""
+    return render_template('diff-checker.html')
+
+# ==================== REGEX TESTER ====================
+
+@app.route('/apps/regex-tester')
+@app.route('/apps/regex-tester/')
+def regex_tester():
+    """Regex Tester - Test regular expressions in real-time"""
+    return render_template('regex-tester.html')
+
+# ==================== CODE MINIFIER ====================
+
+@app.route('/apps/code-minifier')
+@app.route('/apps/code-minifier/')
+def code_minifier():
+    """Code Minifier - Minify HTML, CSS, and JavaScript"""
+    return render_template('code-minifier.html')
+
+# ==================== MARKDOWN EDITOR ====================
+
+@app.route('/apps/markdown-editor')
+@app.route('/apps/markdown-editor/')
+def markdown_editor():
+    """Markdown Editor - Write and preview Markdown in real-time"""
+    return render_template('markdown-editor.html')
+
+# ==================== NOTE PAD ====================
+
+@app.route('/apps/notepad')
+@app.route('/apps/notepad/')
+def notepad():
+    """Note Pad - Simple, distraction-free note taking"""
+    return render_template('notepad.html')
+
+# ==================== INVOICE GENERATOR ====================
+
+@app.route('/apps/invoice-generator')
+@app.route('/apps/invoice-generator/')
+def invoice_generator():
+    """Invoice Generator - Create professional invoices and export to PDF"""
+    return render_template('invoice-generator.html')
+
+# ==================== AUDIO TRIMMER ====================
+
+@app.route('/apps/audio-trimmer')
+@app.route('/apps/audio-trimmer/')
+def audio_trimmer():
+    """Audio Trimmer - Trim, cut, and edit audio files"""
+    return render_template('audio-trimmer.html')
+
 # ==================== KERAPLAST CALCULATOR ====================
 
 @app.route('/keraplast')

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#5865f2">
+    <title>Sticky Board - Virtual Whiteboard with Sticky Notes | Free</title>
+
+    <meta name="description" content="Create a virtual whiteboard with customizable sticky notes. Drag, resize, and customize colors. Share your board with anyone.">
+    <meta name="keywords" content="sticky notes, whiteboard, virtual board, note taking, collaboration">
+
+    <link rel="icon" type="image/png" href="/static/images/company-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@400;500;600;700&family=Caveat:wght@400;700&family=Patrick+Hand&family=Indie+Flower&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <link rel="stylesheet" href="/static/css/sticky-board.css">
+</head>
+<body>
+    <div class="board-wrapper">
+        <!-- Board Header -->
+        <div class="board-header">
+            <div class="brand">
+                <a href="/" class="brand-link">
+                    <span class="brand-logo">CUB</span>
+                    <span class="brand-text">SOFTWARE</span>
+                </a>
+                <span class="brand-divider">|</span>
+                <span class="board-title">Sticky Board</span>
+            </div>
+
+            <div class="header-actions" id="headerActions">
+                <button class="header-btn" id="addNoteBtn" title="Add Note">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add Note</span>
+                </button>
+                <button class="header-btn" id="clearBoardBtn" title="Clear Board">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Clear</span>
+                </button>
+                <button class="header-btn primary" id="shareBtn" title="Share Board">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                    <span>Share</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- View Only Banner -->
+        <div class="view-only-banner" id="viewOnlyBanner" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>View Only Mode - You can view this board but cannot make changes</span>
+            <a href="/apps/sticky-board" class="create-own-btn">Create Your Own Board</a>
+        </div>
+
+        <!-- The Board -->
+        <div class="board" id="board">
+            <!-- Notes will be added here dynamically -->
+        </div>
+
+        <!-- Note Editor Modal -->
+        <div class="modal-overlay" id="noteEditorModal" style="display: none;">
+            <div class="modal-content note-editor">
+                <div class="modal-header">
+                    <h3 id="editorTitle">Edit Note</h3>
+                    <button class="modal-close" id="closeEditorBtn">&times;</button>
+                </div>
+                <div class="editor-body">
+                    <textarea id="noteText" placeholder="Write your note here..."></textarea>
+                    <div class="editor-options">
+                        <div class="option-group">
+                            <label>Color</label>
+                            <div class="color-picker" id="colorPicker">
+                                <button class="color-btn active" data-color="#fff740" style="background: #fff740;"></button>
+                                <button class="color-btn" data-color="#ff7eb9" style="background: #ff7eb9;"></button>
+                                <button class="color-btn" data-color="#7afcff" style="background: #7afcff;"></button>
+                                <button class="color-btn" data-color="#a8ff78" style="background: #a8ff78;"></button>
+                                <button class="color-btn" data-color="#ffa07a" style="background: #ffa07a;"></button>
+                                <button class="color-btn" data-color="#dda0dd" style="background: #dda0dd;"></button>
+                                <button class="color-btn" data-color="#ffffff" style="background: #ffffff;"></button>
+                                <button class="color-btn" data-color="#b8b8b8" style="background: #b8b8b8;"></button>
+                            </div>
+                        </div>
+                        <div class="option-group">
+                            <label>Font</label>
+                            <select id="fontPicker">
+                                <option value="Poppins">Poppins</option>
+                                <option value="Caveat">Caveat (Handwritten)</option>
+                                <option value="Patrick Hand">Patrick Hand</option>
+                                <option value="Indie Flower">Indie Flower</option>
+                                <option value="monospace">Monospace</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label>Font Size</label>
+                            <select id="fontSizePicker">
+                                <option value="12">Small (12px)</option>
+                                <option value="14" selected>Medium (14px)</option>
+                                <option value="16">Large (16px)</option>
+                                <option value="20">Extra Large (20px)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-delete" id="deleteNoteBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Delete
+                    </button>
+                    <button class="btn-save" id="saveNoteBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share Modal -->
+        <div class="modal-overlay" id="shareModal" style="display: none;">
+            <div class="modal-content share-modal">
+                <div class="modal-header">
+                    <h3>Share Your Board</h3>
+                    <button class="modal-close" id="closeShareBtn">&times;</button>
+                </div>
+                <div class="share-body">
+                    <p>Anyone with this link can view your board (read-only):</p>
+                    <div class="share-link-container">
+                        <input type="text" id="shareLink" readonly>
+                        <button class="btn-copy" id="copyLinkBtn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <p class="share-note">Note: The link contains your board data. If you add or change notes, generate a new link to share updates.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    <script src="/static/js/sticky-board.js"></script>
+</body>
+</html>
