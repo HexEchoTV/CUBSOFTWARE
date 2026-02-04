@@ -305,6 +305,15 @@
     color: var(--primary);
 }
 
+.recent-item-actions button.delete-btn {
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.recent-item-actions button.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
 /* Info Section */
 .info-section {
     background: var(--surface-color);

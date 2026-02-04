@@ -160,7 +160,7 @@ function loadRecentLinks() {
     recentList.innerHTML = recent.map(item => {
         const shortUrl = 'https://cubsw.link/' + item.code;
         return `
-            <div class="recent-item">
+            <div class="recent-item" data-code="${item.code}">
                 <div class="recent-item-info">
                     <div class="recent-item-short">${shortUrl}</div>
                     <div class="recent-item-long">${escapeHtml(item.longUrl)}</div>
@@ -168,11 +168,43 @@ function loadRecentLinks() {
                 <div class="recent-item-actions">
                     <button onclick="copyLink('${shortUrl}')">Copy</button>
                     <button onclick="window.open('${shortUrl}', '_blank')">Visit</button>
+                    <button onclick="deleteLink('${item.code}')" class="delete-btn">Delete</button>
                 </div>
             </div>
         `;
     }).join('');
 }
+
+// Delete a specific link
+window.deleteLink = async function(code) {
+    if (!confirm('Are you sure you want to delete this link?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/links/${code}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to delete link');
+        }
+
+        // Remove from localStorage
+        const recent = JSON.parse(localStorage.getItem('recentLinks') || '[]');
+        const filtered = recent.filter(item => item.code !== code);
+        localStorage.setItem('recentLinks', JSON.stringify(filtered));
+
+        // Reload the list
+        loadRecentLinks();
+        showToast('Link deleted!');
+
+    } catch (error) {
+        showToast(error.message);
+    }
+};
 
 // Copy link
 window.copyLink = function(url) {

@@ -40,6 +40,159 @@ app.jinja_loader = ChoiceLoader([
 # StreamerBot docs path (relative to main.py)
 STREAMERBOT_DOCS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..', 'streamerbot-docs')
 
+# ==================== IP BAN SYSTEM ====================
+
+IP_BANS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'ip_bans.json')
+
+def load_ip_bans():
+    """Load IP bans from file"""
+    if os.path.exists(IP_BANS_FILE):
+        try:
+            with open(IP_BANS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {'global': [], 'features': {}, 'temp': []}
+
+def save_ip_bans(data):
+    """Save IP bans to file"""
+    os.makedirs(os.path.dirname(IP_BANS_FILE), exist_ok=True)
+    with open(IP_BANS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def check_ip_ban(ip, feature=None):
+    """
+    Check if an IP is banned
+    Returns: (is_banned, ban_type, reason, expires_at)
+    """
+    bans = load_ip_bans()
+    current_time = time.time()
+
+    # Check global bans first
+    for ban in bans.get('global', []):
+        if ban['ip'] == ip:
+            return (True, 'global', ban.get('reason', 'No reason'), None)
+
+    # Check temporary bans
+    for ban in bans.get('temp', []):
+        if ban['ip'] == ip:
+            if current_time < ban.get('expires', 0):
+                # Check if temp ban is for specific feature or global
+                if ban.get('feature'):
+                    if feature and ban['feature'] == feature:
+                        return (True, 'temp_feature', ban.get('reason', 'Temporary ban'), ban['expires'])
+                else:
+                    return (True, 'temp_global', ban.get('reason', 'Temporary ban'), ban['expires'])
+
+    # Check feature-specific bans
+    if feature and feature in bans.get('features', {}):
+        for ban in bans['features'][feature]:
+            if ban['ip'] == ip:
+                return (True, 'feature', ban.get('reason', 'Feature ban'), None)
+
+    return (False, None, None, None)
+
+def clean_expired_temp_bans():
+    """Remove expired temporary bans"""
+    bans = load_ip_bans()
+    current_time = time.time()
+    original_count = len(bans.get('temp', []))
+    bans['temp'] = [b for b in bans.get('temp', []) if b.get('expires', 0) > current_time]
+    if len(bans['temp']) != original_count:
+        save_ip_bans(bans)
+
+# Clean expired bans periodically (call this in background or on each request)
+def maybe_clean_bans():
+    """Clean bans occasionally (1 in 100 requests)"""
+    if secrets.randbelow(100) == 0:
+        clean_expired_temp_bans()
+
+# Decorator to check IP bans before route handlers
+def check_ban(feature=None):
+    """Decorator to check if IP is banned for a feature or globally"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            maybe_clean_bans()
+            ip = get_client_ip()
+            is_banned, ban_type, reason, expires = check_ip_ban(ip, feature)
+
+            if is_banned:
+                if request.is_json or request.path.startswith('/api/'):
+                    return jsonify({
+                        'error': 'Access denied',
+                        'reason': reason,
+                        'ban_type': ban_type,
+                        'expires': expires
+                    }), 403
+                else:
+                    return render_template('banned.html',
+                                         reason=reason,
+                                         ban_type=ban_type,
+                                         expires=expires), 403
+
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+# ==================== RATE LIMITING ====================
+
+# Global rate limiting storage
+rate_limits = {}  # ip -> {feature -> [timestamps]}
+RATE_LIMIT_CONFIGS = {
+    'default': {'requests': 60, 'window': 60},  # 60 requests per minute
+    'api': {'requests': 30, 'window': 60},  # 30 API requests per minute
+    'download': {'requests': 10, 'window': 60},  # 10 downloads per minute
+    'shorten': {'requests': 10, 'window': 60},  # 10 shortens per minute
+}
+
+def check_rate_limit(ip, feature='default'):
+    """Check if IP is rate limited. Returns (allowed, retry_after)"""
+    config = RATE_LIMIT_CONFIGS.get(feature, RATE_LIMIT_CONFIGS['default'])
+    max_requests = config['requests']
+    window = config['window']
+
+    now = time.time()
+    key = f"{ip}:{feature}"
+
+    if key not in rate_limits:
+        rate_limits[key] = []
+
+    # Clean old timestamps
+    rate_limits[key] = [t for t in rate_limits[key] if now - t < window]
+
+    if len(rate_limits[key]) >= max_requests:
+        oldest = rate_limits[key][0]
+        retry_after = window - (now - oldest)
+        return (False, retry_after)
+
+    rate_limits[key].append(now)
+    return (True, 0)
+
+def rate_limit(feature='default'):
+    """Decorator to apply rate limiting"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            ip = get_client_ip()
+            allowed, retry_after = check_rate_limit(ip, feature)
+
+            if not allowed:
+                if request.is_json or request.path.startswith('/api/'):
+                    response = jsonify({
+                        'error': 'Rate limit exceeded',
+                        'retry_after': int(retry_after)
+                    })
+                    response.status_code = 429
+                    response.headers['Retry-After'] = str(int(retry_after))
+                    return response
+                else:
+                    return f'Rate limit exceeded. Please try again in {int(retry_after)} seconds.', 429
+
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 # ==================== MAIN WEBSITE ROUTES ====================
 
 @app.route('/')
@@ -279,8 +432,31 @@ def update_countdown(countdown_id):
 
 # ==================== LINK SHORTENER ====================
 
-# Storage for shortened links (in production, use a database)
+# Storage for shortened links
 LINKS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'shortened_links.json')
+LINKS_AUDIT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'links_audit.json')
+BANNED_IPS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'banned_ips.json')
+
+# Discord webhook for link notifications (set in environment)
+LINKS_WEBHOOK_URL = os.environ.get('LINKS_DISCORD_WEBHOOK', '')
+
+# Rate limiting for link creation
+link_rate_limits = {}  # IP -> [timestamps]
+LINK_RATE_LIMIT = 10  # max links per minute
+LINK_RATE_WINDOW = 60  # seconds
+
+def get_client_ip():
+    """Get the real client IP address"""
+    # Check for Cloudflare header first
+    if request.headers.get('CF-Connecting-IP'):
+        return request.headers.get('CF-Connecting-IP')
+    # Check for X-Forwarded-For (behind proxy)
+    if request.headers.get('X-Forwarded-For'):
+        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    # Check for X-Real-IP
+    if request.headers.get('X-Real-IP'):
+        return request.headers.get('X-Real-IP')
+    return request.remote_addr
 
 def load_links():
     """Load shortened links from file"""
@@ -294,6 +470,90 @@ def save_links(links):
     os.makedirs(os.path.dirname(LINKS_FILE), exist_ok=True)
     with open(LINKS_FILE, 'w') as f:
         json.dump(links, f, indent=2)
+
+def load_links_audit():
+    """Load links audit log (persists even after deletion)"""
+    if os.path.exists(LINKS_AUDIT_FILE):
+        with open(LINKS_AUDIT_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_links_audit(audit):
+    """Save links audit log"""
+    os.makedirs(os.path.dirname(LINKS_AUDIT_FILE), exist_ok=True)
+    with open(LINKS_AUDIT_FILE, 'w') as f:
+        json.dump(audit, f, indent=2)
+
+def add_to_audit(short_code, original_url, ip_address, action='created'):
+    """Add an entry to the audit log"""
+    audit = load_links_audit()
+    if short_code not in audit:
+        audit[short_code] = {
+            'original_url': original_url,
+            'ip_address': ip_address,
+            'created_at': time.time(),
+            'history': []
+        }
+    audit[short_code]['history'].append({
+        'action': action,
+        'timestamp': time.time(),
+        'ip': ip_address
+    })
+    save_links_audit(audit)
+
+def load_banned_ips():
+    """Load banned IPs list"""
+    if os.path.exists(BANNED_IPS_FILE):
+        with open(BANNED_IPS_FILE, 'r') as f:
+            return json.load(f)
+    return {'ips': [], 'reasons': {}}
+
+def save_banned_ips(data):
+    """Save banned IPs list"""
+    os.makedirs(os.path.dirname(BANNED_IPS_FILE), exist_ok=True)
+    with open(BANNED_IPS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def is_ip_banned(ip):
+    """Check if an IP is banned"""
+    banned = load_banned_ips()
+    return ip in banned.get('ips', [])
+
+def check_link_rate_limit(ip):
+    """Check if IP has exceeded rate limit for link creation"""
+    now = time.time()
+    if ip not in link_rate_limits:
+        link_rate_limits[ip] = []
+
+    # Clean old timestamps
+    link_rate_limits[ip] = [t for t in link_rate_limits[ip] if now - t < LINK_RATE_WINDOW]
+
+    if len(link_rate_limits[ip]) >= LINK_RATE_LIMIT:
+        return False
+
+    link_rate_limits[ip].append(now)
+    return True
+
+def send_link_webhook(short_code, original_url, ip_address, action='created'):
+    """Send notification to Discord webhook"""
+    if not LINKS_WEBHOOK_URL:
+        return
+
+    try:
+        color = 0x00FF00 if action == 'created' else 0xFF0000  # Green for create, red for delete
+        embed = {
+            'title': f'Link {action.title()}',
+            'color': color,
+            'fields': [
+                {'name': 'Short Link', 'value': f'https://cubsw.link/{short_code}', 'inline': True},
+                {'name': 'Destination', 'value': original_url[:200] + ('...' if len(original_url) > 200 else ''), 'inline': False},
+                {'name': 'IP Address', 'value': f'||{ip_address}||', 'inline': True}
+            ],
+            'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        }
+        requests.post(LINKS_WEBHOOK_URL, json={'embeds': [embed]}, timeout=5)
+    except Exception as e:
+        print(f'Failed to send link webhook: {e}')
 
 def generate_short_code(url):
     """Generate a short code for a URL"""
@@ -309,6 +569,16 @@ def link_shortener():
 @app.route('/api/shorten', methods=['POST'])
 def shorten_url():
     """API endpoint to shorten a URL"""
+    ip_address = get_client_ip()
+
+    # Check if IP is banned
+    if is_ip_banned(ip_address):
+        return jsonify({'error': 'Your IP has been banned from creating links'}), 403
+
+    # Check rate limit
+    if not check_link_rate_limit(ip_address):
+        return jsonify({'error': 'Rate limit exceeded. Please wait before creating more links.'}), 429
+
     data = request.get_json()
     if not data or 'url' not in data:
         return jsonify({'error': 'URL is required'}), 400
@@ -341,13 +611,20 @@ def shorten_url():
         while short_code in links:
             short_code = generate_short_code(original_url + str(time.time()))
 
-    # Save the link
+    # Save the link with IP tracking
     links[short_code] = {
         'url': original_url,
         'created': time.time(),
-        'clicks': 0
+        'clicks': 0,
+        'ip': ip_address
     }
     save_links(links)
+
+    # Add to audit log
+    add_to_audit(short_code, original_url, ip_address, 'created')
+
+    # Send Discord notification
+    send_link_webhook(short_code, original_url, ip_address, 'created')
 
     # Return the shortened URL using the short domain
     short_url = f"https://cubsw.link/{short_code}"
@@ -356,6 +633,93 @@ def shorten_url():
         'shortCode': short_code,
         'originalUrl': original_url
     })
+
+@app.route('/api/links', methods=['GET'])
+def get_user_links():
+    """Get links created by the current user (based on localStorage codes sent)"""
+    codes = request.args.get('codes', '').split(',')
+    codes = [c.strip() for c in codes if c.strip()]
+
+    if not codes:
+        return jsonify({'links': []})
+
+    links = load_links()
+    user_links = []
+
+    for code in codes:
+        if code in links:
+            user_links.append({
+                'code': code,
+                'url': links[code]['url'],
+                'created': links[code]['created'],
+                'clicks': links[code].get('clicks', 0)
+            })
+
+    return jsonify({'links': user_links})
+
+@app.route('/api/links/<code>', methods=['DELETE'])
+def delete_link(code):
+    """Delete a specific link"""
+    ip_address = get_client_ip()
+    links = load_links()
+
+    if code not in links:
+        return jsonify({'error': 'Link not found'}), 404
+
+    # Only allow deletion by the creator (same IP) or if IP tracking wasn't available
+    link_ip = links[code].get('ip')
+    if link_ip and link_ip != ip_address:
+        return jsonify({'error': 'You can only delete links you created'}), 403
+
+    original_url = links[code]['url']
+    del links[code]
+    save_links(links)
+
+    # Add to audit log
+    add_to_audit(code, original_url, ip_address, 'deleted')
+
+    # Send Discord notification
+    send_link_webhook(code, original_url, ip_address, 'deleted')
+
+    return jsonify({'success': True, 'message': 'Link deleted'})
+
+@app.route('/api/link-info/<code>', methods=['GET'])
+def get_link_info(code):
+    """Get information about a specific link (for admin purposes)"""
+    # This endpoint should be protected - check for admin API key
+    api_key = request.headers.get('X-API-Key')
+    expected_key = os.environ.get('ADMIN_API_KEY', '')
+
+    if not expected_key or api_key != expected_key:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    # Check active links
+    links = load_links()
+    if code in links:
+        return jsonify({
+            'found': True,
+            'active': True,
+            'code': code,
+            'url': links[code]['url'],
+            'created': links[code]['created'],
+            'clicks': links[code].get('clicks', 0),
+            'ip': links[code].get('ip', 'Unknown')
+        })
+
+    # Check audit log for deleted links
+    audit = load_links_audit()
+    if code in audit:
+        return jsonify({
+            'found': True,
+            'active': False,
+            'code': code,
+            'url': audit[code]['original_url'],
+            'created': audit[code]['created_at'],
+            'ip': audit[code]['ip_address'],
+            'history': audit[code]['history']
+        })
+
+    return jsonify({'found': False, 'error': 'Link not found in any records'}), 404
 
 @app.route('/s/<code>')
 def redirect_short_url(code):
@@ -604,6 +968,677 @@ def invoice_generator():
 def audio_trimmer():
     """Audio Trimmer - Trim, cut, and edit audio files"""
     return render_template('audio-trimmer.html')
+
+# ==================== STICKY BOARD ====================
+
+@app.route('/apps/sticky-board')
+@app.route('/apps/sticky-board/')
+def sticky_board():
+    """Sticky Board - Virtual whiteboard with draggable sticky notes"""
+    return render_template('sticky-board.html')
+
+# ==================== CLEANME WEBSITE ====================
+
+# CleanMe Data Storage
+CLEANME_SERVERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'cleanme_servers.json')
+CLEANME_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'cleanme_config.json')
+
+# Discord OAuth for CleanMe
+CLEANME_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID', '')
+CLEANME_CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET', '')
+CLEANME_REDIRECT_URI = os.environ.get('CLEANME_REDIRECT_URI', 'https://cubsoftware.site/cleanme/auth/callback')
+
+def load_cleanme_servers():
+    """Load CleanMe server listings"""
+    if os.path.exists(CLEANME_SERVERS_FILE):
+        try:
+            with open(CLEANME_SERVERS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {'servers': {}, 'featured': [], 'votes': {}}
+
+def save_cleanme_servers(data):
+    """Save CleanMe server listings"""
+    os.makedirs(os.path.dirname(CLEANME_SERVERS_FILE), exist_ok=True)
+    with open(CLEANME_SERVERS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def load_cleanme_config():
+    """Load CleanMe configuration"""
+    if os.path.exists(CLEANME_CONFIG_FILE):
+        try:
+            with open(CLEANME_CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {'featured_servers': [], 'bot_token': os.environ.get('CLEANME_BOT_TOKEN', '')}
+
+def save_cleanme_config(config):
+    """Save CleanMe configuration"""
+    os.makedirs(os.path.dirname(CLEANME_CONFIG_FILE), exist_ok=True)
+    with open(CLEANME_CONFIG_FILE, 'w') as f:
+        json.dump(config, f, indent=2)
+
+def cleanme_auth_required(f):
+    """Decorator to require CleanMe authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'cleanme_user' not in session:
+            if request.is_json or request.path.startswith('/cleanme/api/'):
+                return jsonify({'error': 'Authentication required'}), 401
+            return redirect(url_for('cleanme_auth'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# CleanMe Page Routes
+@app.route('/cleanme')
+@app.route('/cleanme/')
+def cleanme_home():
+    """CleanMe - Discord Server Template Sharing"""
+    data = load_cleanme_servers()
+    config = load_cleanme_config()
+
+    # Calculate stats
+    total_servers = len(data.get('servers', {}))
+    total_copies = sum(s.get('copies', 0) for s in data.get('servers', {}).values())
+    total_votes = sum(s.get('votes', 0) for s in data.get('servers', {}).values())
+
+    # Get featured servers
+    featured_ids = config.get('featured_servers', [])
+    featured_servers = []
+    for server_id in featured_ids[:6]:
+        if server_id in data.get('servers', {}):
+            server = data['servers'][server_id].copy()
+            server['server_id'] = server_id
+            server['roles_count'] = server.get('role_count', 0)
+            server['channels_count'] = server.get('channel_count', 0)
+            featured_servers.append(server)
+
+    # Get popular servers (top 6 by votes)
+    all_servers = []
+    for server_id, server in data.get('servers', {}).items():
+        server_copy = server.copy()
+        server_copy['server_id'] = server_id
+        server_copy['roles_count'] = server.get('role_count', 0)
+        server_copy['channels_count'] = server.get('channel_count', 0)
+        all_servers.append(server_copy)
+
+    popular_servers = sorted(all_servers, key=lambda x: x.get('votes', 0), reverse=True)[:6]
+
+    # Get latest servers (6 most recent)
+    latest_servers = sorted(all_servers, key=lambda x: x.get('created', 0), reverse=True)[:6]
+
+    # Add "added ago" text for latest
+    for server in latest_servers:
+        created = server.get('created', 0)
+        if created:
+            diff = time.time() - created
+            if diff < 3600:
+                server['added_ago'] = f"{int(diff / 60)} minutes ago"
+            elif diff < 86400:
+                server['added_ago'] = f"{int(diff / 3600)} hours ago"
+            else:
+                server['added_ago'] = f"{int(diff / 86400)} days ago"
+        else:
+            server['added_ago'] = "recently"
+
+    # Get user from session
+    cleanme_user = session.get('cleanme_user')
+
+    return render_template('cleanme.html',
+        cleanme_user=cleanme_user,
+        stats={
+            'total_servers': total_servers,
+            'total_copies': total_copies,
+            'total_votes': total_votes
+        },
+        featured_servers=featured_servers,
+        popular_servers=popular_servers,
+        latest_servers=latest_servers,
+        bot_client_id=os.environ.get('CLEANME_BOT_CLIENT_ID', '')
+    )
+
+@app.route('/cleanme/browse')
+@app.route('/cleanme/browse/')
+def cleanme_browse():
+    """CleanMe - Browse server templates"""
+    search = request.args.get('search', '')
+    category = request.args.get('category', '')
+    sort = request.args.get('sort', 'popular')
+    return render_template('cleanme-browse.html', search=search, category=category, sort=sort)
+
+@app.route('/cleanme/server/<server_id>')
+def cleanme_server(server_id):
+    """CleanMe - View server template details"""
+    return render_template('cleanme-server.html', server_id=server_id)
+
+@app.route('/cleanme/submit')
+@app.route('/cleanme/submit/')
+def cleanme_submit():
+    """CleanMe - Submit a server template"""
+    return render_template('cleanme-submit.html')
+
+@app.route('/cleanme/dashboard')
+@app.route('/cleanme/dashboard/')
+def cleanme_dashboard():
+    """CleanMe - User dashboard"""
+    return render_template('cleanme-dashboard.html')
+
+# CleanMe OAuth Routes
+@app.route('/cleanme/auth/discord')
+def cleanme_auth():
+    """Initiate Discord OAuth for CleanMe"""
+    config = load_pm2_config()
+    params = {
+        'client_id': config.get('discord_client_id', CLEANME_CLIENT_ID),
+        'redirect_uri': CLEANME_REDIRECT_URI,
+        'response_type': 'code',
+        'scope': 'identify guilds',
+        'state': secrets.token_urlsafe(16)
+    }
+    session['cleanme_oauth_state'] = params['state']
+    discord_url = f"https://discord.com/api/oauth2/authorize?{urllib.parse.urlencode(params)}"
+    return redirect(discord_url)
+
+@app.route('/cleanme/auth/callback')
+def cleanme_callback():
+    """Discord OAuth callback for CleanMe"""
+    error = request.args.get('error')
+    if error:
+        return redirect('/cleanme?error=auth_failed')
+
+    code = request.args.get('code')
+    state = request.args.get('state')
+
+    if state != session.get('cleanme_oauth_state'):
+        return redirect('/cleanme?error=invalid_state')
+
+    config = load_pm2_config()
+
+    try:
+        # Exchange code for access token
+        token_response = requests.post('https://discord.com/api/oauth2/token', data={
+            'client_id': config.get('discord_client_id', CLEANME_CLIENT_ID),
+            'client_secret': config.get('discord_client_secret', CLEANME_CLIENT_SECRET),
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': CLEANME_REDIRECT_URI
+        }, headers={
+            'Content-Type': 'application/x-www-form-urlencoded'
+        })
+
+        if token_response.status_code != 200:
+            return redirect('/cleanme?error=auth_failed')
+
+        token_data = token_response.json()
+        access_token = token_data['access_token']
+
+        # Get user info
+        user_response = requests.get('https://discord.com/api/users/@me', headers={
+            'Authorization': f'Bearer {access_token}'
+        })
+
+        if user_response.status_code != 200:
+            return redirect('/cleanme?error=auth_failed')
+
+        user_data = user_response.json()
+
+        # Get user's guilds (for ownership verification)
+        guilds_response = requests.get('https://discord.com/api/users/@me/guilds', headers={
+            'Authorization': f'Bearer {access_token}'
+        })
+
+        guilds = []
+        if guilds_response.status_code == 200:
+            guilds = guilds_response.json()
+
+        # Build avatar URL
+        avatar_hash = user_data.get('avatar')
+        if avatar_hash:
+            avatar_url = f"https://cdn.discordapp.com/avatars/{user_data['id']}/{avatar_hash}.png"
+        else:
+            avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
+
+        # Store user in session
+        user_info = {
+            'id': user_data['id'],
+            'username': user_data['username'],
+            'discriminator': user_data.get('discriminator', '0'),
+            'avatar': avatar_url,
+            'guilds': [g['id'] for g in guilds if (g.get('permissions', 0) & 0x8) == 0x8]  # Admin guilds
+        }
+
+        session['cleanme_user'] = user_info
+        session['cleanme_token'] = access_token
+
+        # Set cookie for frontend
+        response = redirect('/cleanme/dashboard')
+        response.set_cookie('cleanme_user', urllib.parse.quote(json.dumps({
+            'id': user_info['id'],
+            'username': user_info['username'],
+            'avatar': user_info['avatar']
+        })), max_age=7*24*60*60, httponly=False, samesite='Lax')
+
+        return response
+
+    except Exception as e:
+        print(f"CleanMe OAuth error: {e}")
+        return redirect('/cleanme?error=auth_failed')
+
+@app.route('/cleanme/auth/logout')
+def cleanme_logout():
+    """Logout from CleanMe"""
+    session.pop('cleanme_user', None)
+    session.pop('cleanme_token', None)
+    response = redirect('/cleanme')
+    response.delete_cookie('cleanme_user')
+    response.delete_cookie('cleanme_token')
+    return response
+
+# CleanMe API Routes
+@app.route('/cleanme/api/servers/featured')
+def cleanme_get_featured():
+    """Get featured server templates"""
+    data = load_cleanme_servers()
+    config = load_cleanme_config()
+    featured_ids = config.get('featured_servers', [])
+
+    featured = []
+    for server_id in featured_ids:
+        if server_id in data['servers']:
+            server = data['servers'][server_id].copy()
+            server['id'] = server_id
+            featured.append(server)
+
+    return jsonify(featured[:6])
+
+@app.route('/cleanme/api/servers/popular')
+def cleanme_get_popular():
+    """Get popular server templates (sorted by votes)"""
+    data = load_cleanme_servers()
+
+    servers = []
+    for server_id, server in data['servers'].items():
+        server_copy = server.copy()
+        server_copy['id'] = server_id
+        servers.append(server_copy)
+
+    # Sort by votes
+    servers.sort(key=lambda x: x.get('votes', 0), reverse=True)
+
+    return jsonify(servers[:6])
+
+@app.route('/cleanme/api/servers/latest')
+def cleanme_get_latest():
+    """Get latest server templates"""
+    data = load_cleanme_servers()
+
+    servers = []
+    for server_id, server in data['servers'].items():
+        server_copy = server.copy()
+        server_copy['id'] = server_id
+        servers.append(server_copy)
+
+    # Sort by created time
+    servers.sort(key=lambda x: x.get('created', 0), reverse=True)
+
+    return jsonify(servers[:6])
+
+@app.route('/cleanme/api/servers')
+def cleanme_get_servers():
+    """Get paginated server templates with search/filter"""
+    data = load_cleanme_servers()
+
+    search = request.args.get('search', '').lower()
+    category = request.args.get('category', '')
+    sort = request.args.get('sort', 'popular')
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 12))
+
+    servers = []
+    for server_id, server in data['servers'].items():
+        # Filter by search
+        if search and search not in server.get('name', '').lower() and search not in server.get('description', '').lower():
+            continue
+        # Filter by category
+        if category and server.get('category', '') != category:
+            continue
+
+        server_copy = server.copy()
+        server_copy['id'] = server_id
+        servers.append(server_copy)
+
+    # Sort
+    if sort == 'popular' or sort == 'votes':
+        servers.sort(key=lambda x: x.get('votes', 0), reverse=True)
+    elif sort == 'latest':
+        servers.sort(key=lambda x: x.get('created', 0), reverse=True)
+    elif sort == 'copies':
+        servers.sort(key=lambda x: x.get('copies', 0), reverse=True)
+
+    # Paginate
+    total = len(servers)
+    start = (page - 1) * limit
+    end = start + limit
+    paginated = servers[start:end]
+
+    return jsonify({
+        'servers': paginated,
+        'total': total,
+        'page': page,
+        'limit': limit,
+        'total_pages': (total + limit - 1) // limit
+    })
+
+@app.route('/cleanme/api/servers/<server_id>')
+def cleanme_get_server(server_id):
+    """Get a specific server template"""
+    data = load_cleanme_servers()
+
+    if server_id not in data['servers']:
+        return jsonify({'error': 'Server not found'}), 404
+
+    server = data['servers'][server_id].copy()
+    server['id'] = server_id
+
+    return jsonify(server)
+
+@app.route('/cleanme/api/servers', methods=['POST'])
+@cleanme_auth_required
+def cleanme_create_server():
+    """Create a new server listing"""
+    user = session.get('cleanme_user')
+    req_data = request.get_json()
+
+    if not req_data:
+        return jsonify({'error': 'Request data required'}), 400
+
+    server_id = req_data.get('server_id', '').strip()
+    description = req_data.get('description', '').strip()
+    category = req_data.get('category', 'other')
+    tags = req_data.get('tags', '')
+
+    if not server_id or len(server_id) < 17:
+        return jsonify({'error': 'Valid server ID required'}), 400
+
+    # Check if server already listed
+    data = load_cleanme_servers()
+    if server_id in data['servers']:
+        return jsonify({'error': 'This server is already listed'}), 400
+
+    # TODO: Fetch server info from Discord API via bot
+    # For now, create placeholder entry
+    server_entry = {
+        'name': f'Server {server_id}',
+        'description': description,
+        'category': category,
+        'tags': [t.strip() for t in tags.split(',')[:5] if t.strip()],
+        'icon': None,
+        'owner': {
+            'id': user['id'],
+            'username': user['username'],
+            'avatar': user['avatar']
+        },
+        'channel_count': 0,
+        'role_count': 0,
+        'category_count': 0,
+        'channels': [],
+        'roles': [],
+        'categories': [],
+        'votes': 0,
+        'copies': 0,
+        'created': time.time()
+    }
+
+    data['servers'][server_id] = server_entry
+    save_cleanme_servers(data)
+
+    return jsonify({
+        'success': True,
+        'server_id': server_id,
+        'message': 'Server submitted successfully'
+    })
+
+@app.route('/cleanme/api/servers/<server_id>', methods=['DELETE'])
+@cleanme_auth_required
+def cleanme_delete_server(server_id):
+    """Delete a server listing"""
+    user = session.get('cleanme_user')
+    data = load_cleanme_servers()
+
+    if server_id not in data['servers']:
+        return jsonify({'error': 'Server not found'}), 404
+
+    # Check ownership
+    server = data['servers'][server_id]
+    if server['owner']['id'] != user['id']:
+        return jsonify({'error': 'You can only delete your own servers'}), 403
+
+    del data['servers'][server_id]
+    save_cleanme_servers(data)
+
+    return jsonify({'success': True, 'message': 'Server deleted'})
+
+@app.route('/cleanme/api/servers/<server_id>/vote', methods=['POST'])
+@cleanme_auth_required
+def cleanme_vote_server(server_id):
+    """Vote for a server template"""
+    user = session.get('cleanme_user')
+    data = load_cleanme_servers()
+
+    if server_id not in data['servers']:
+        return jsonify({'error': 'Server not found'}), 404
+
+    # Check if user already voted
+    vote_key = f"{user['id']}:{server_id}"
+    if vote_key in data.get('votes', {}):
+        return jsonify({'error': 'You already voted for this server'}), 400
+
+    # Record vote
+    if 'votes' not in data:
+        data['votes'] = {}
+    data['votes'][vote_key] = time.time()
+
+    # Increment vote count
+    data['servers'][server_id]['votes'] = data['servers'][server_id].get('votes', 0) + 1
+
+    save_cleanme_servers(data)
+
+    return jsonify({
+        'success': True,
+        'votes': data['servers'][server_id]['votes']
+    })
+
+@app.route('/cleanme/api/my-servers')
+@cleanme_auth_required
+def cleanme_my_servers():
+    """Get current user's server listings"""
+    user = session.get('cleanme_user')
+    data = load_cleanme_servers()
+
+    servers = []
+    for server_id, server in data['servers'].items():
+        if server['owner']['id'] == user['id']:
+            server_copy = server.copy()
+            server_copy['id'] = server_id
+            servers.append(server_copy)
+
+    return jsonify(servers)
+
+@app.route('/cleanme/api/preview/<server_id>')
+def cleanme_preview_server(server_id):
+    """Preview server info (fetched from Discord via bot)"""
+    # This would normally call the Discord API via the bot
+    # For now, return placeholder
+    return jsonify({
+        'error': 'Bot integration required. Make sure CleanMe bot is in the server.'
+    })
+
+# Admin API for managing featured servers
+@app.route('/cleanme/api/admin/featured', methods=['POST'])
+def cleanme_set_featured():
+    """Set featured servers (admin only)"""
+    api_key = request.headers.get('X-API-Key')
+    expected_key = os.environ.get('ADMIN_API_KEY', '')
+
+    if not expected_key or api_key != expected_key:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    server_ids = data.get('server_ids', [])
+
+    config = load_cleanme_config()
+    config['featured_servers'] = server_ids
+    save_cleanme_config(config)
+
+    return jsonify({'success': True, 'featured': server_ids})
+
+# Bot API for updating server info
+@app.route('/cleanme/api/bot/update-server', methods=['POST'])
+def cleanme_bot_update_server():
+    """Update server info from bot"""
+    api_key = request.headers.get('X-API-Key')
+    expected_key = os.environ.get('ADMIN_API_KEY', '')
+
+    if not expected_key or api_key != expected_key:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    req_data = request.get_json()
+    server_id = req_data.get('server_id')
+
+    if not server_id:
+        return jsonify({'error': 'Server ID required'}), 400
+
+    data = load_cleanme_servers()
+
+    if server_id not in data['servers']:
+        return jsonify({'error': 'Server not found'}), 404
+
+    # Update server info
+    update_fields = ['name', 'icon', 'channel_count', 'role_count', 'category_count',
+                     'channels', 'roles', 'categories']
+
+    for field in update_fields:
+        if field in req_data:
+            data['servers'][server_id][field] = req_data[field]
+
+    save_cleanme_servers(data)
+
+    return jsonify({'success': True, 'message': 'Server info updated'})
+
+# Bot API for recording copies
+@app.route('/cleanme/api/bot/record-copy', methods=['POST'])
+def cleanme_bot_record_copy():
+    """Record a server copy from bot"""
+    api_key = request.headers.get('X-API-Key')
+    expected_key = os.environ.get('ADMIN_API_KEY', '')
+
+    if not expected_key or api_key != expected_key:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    req_data = request.get_json()
+    server_id = req_data.get('server_id')
+
+    if not server_id:
+        return jsonify({'error': 'Server ID required'}), 400
+
+    data = load_cleanme_servers()
+
+    if server_id not in data['servers']:
+        return jsonify({'error': 'Server not found'}), 404
+
+    data['servers'][server_id]['copies'] = data['servers'][server_id].get('copies', 0) + 1
+    save_cleanme_servers(data)
+
+    return jsonify({'success': True, 'copies': data['servers'][server_id]['copies']})
+
+# ==================== REPORT SYSTEM ====================
+
+REPORTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'reports.json')
+REPORTS_WEBHOOK_URL = os.environ.get('REPORTS_DISCORD_WEBHOOK', '')
+
+def load_reports():
+    """Load reports from file"""
+    if os.path.exists(REPORTS_FILE):
+        with open(REPORTS_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_reports(reports):
+    """Save reports to file"""
+    os.makedirs(os.path.dirname(REPORTS_FILE), exist_ok=True)
+    with open(REPORTS_FILE, 'w') as f:
+        json.dump(reports, f, indent=2)
+
+@app.route('/report')
+@app.route('/report/')
+def report_page():
+    """Report Page - Report inappropriate content"""
+    return render_template('report.html')
+
+@app.route('/api/report', methods=['POST'])
+def submit_report():
+    """API endpoint to submit a report"""
+    ip_address = get_client_ip()
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Report data required'}), 400
+
+    report_type = data.get('type', 'general')
+    subject = data.get('subject', '').strip()
+    description = data.get('description', '').strip()
+    url = data.get('url', '').strip()
+    contact = data.get('contact', '').strip()
+
+    if not description:
+        return jsonify({'error': 'Description is required'}), 400
+
+    # Create report
+    report = {
+        'id': hashlib.md5(f"{time.time()}{ip_address}".encode()).hexdigest()[:12],
+        'type': report_type,
+        'subject': subject,
+        'description': description,
+        'url': url,
+        'contact': contact,
+        'ip': ip_address,
+        'timestamp': time.time(),
+        'status': 'pending'
+    }
+
+    # Save report
+    reports = load_reports()
+    reports.append(report)
+    save_reports(reports)
+
+    # Send to Discord webhook
+    if REPORTS_WEBHOOK_URL:
+        try:
+            embed = {
+                'title': f'New Report: {report_type.title()}',
+                'color': 0xFF6B6B,
+                'fields': [
+                    {'name': 'Report ID', 'value': report['id'], 'inline': True},
+                    {'name': 'Type', 'value': report_type, 'inline': True},
+                    {'name': 'Subject', 'value': subject or 'N/A', 'inline': False},
+                    {'name': 'Description', 'value': description[:500] + ('...' if len(description) > 500 else ''), 'inline': False},
+                    {'name': 'URL', 'value': url or 'N/A', 'inline': False},
+                    {'name': 'Contact', 'value': contact or 'N/A', 'inline': True},
+                    {'name': 'IP', 'value': f'||{ip_address}||', 'inline': True}
+                ],
+                'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+            }
+            # Tag the admin user (378501056008683530) when a report is submitted
+            requests.post(REPORTS_WEBHOOK_URL, json={
+                'content': '<@378501056008683530> New report submitted!',
+                'embeds': [embed]
+            }, timeout=5)
+        except Exception as e:
+            print(f'Failed to send report webhook: {e}')
+
+    return jsonify({'success': True, 'reportId': report['id']})
 
 # ==================== KERAPLAST CALCULATOR ====================
 
