@@ -238,8 +238,19 @@ a:hover {
     padding: 15px 30px;
     background: rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid var(--border-color);
+    position: relative;
+    z-index: 1000;
 }
 
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Legacy support for header-top class */
 .header-top {
     display: flex;
     align-items: center;
@@ -256,7 +267,12 @@ a:hover {
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0;
+}
+
+.site-header .logo .logo-text {
+    display: flex;
+    align-items: center;
 }
 
 .site-header .logo .cub {
@@ -275,27 +291,164 @@ a:hover {
     opacity: 0.9;
 }
 
+/* Brand Group (CUBSOFTWARE / SubBrand) */
+.brand-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.brand-divider {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 1.2rem;
+    font-weight: 300;
+}
+
+.sub-brand {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.sub-brand:hover {
+    opacity: 0.8;
+    color: var(--primary-color);
+}
+
 .site-nav {
     display: flex;
     gap: 5px;
     align-items: center;
 }
 
-.site-nav a {
+.site-nav a,
+.site-nav .nav-link {
     color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
     padding: 8px 16px;
     border-radius: 6px;
     transition: all 0.2s ease;
+    text-decoration: none;
 }
 
-.site-nav a:hover {
+.site-nav a:hover,
+.site-nav .nav-link:hover {
     color: #ffffff;
 }
 
-.site-nav a.active {
+.site-nav a.active,
+.site-nav .nav-link.active {
     color: var(--primary-color);
+}
+
+/* Dropdown Navigation */
+.nav-dropdown {
+    position: relative;
+}
+
+.nav-dropdown .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.nav-dropdown .dropdown-toggle:hover {
+    color: #ffffff;
+}
+
+.nav-dropdown .dropdown-toggle svg {
+    transition: transform 0.2s ease;
+}
+
+.nav-dropdown:hover .dropdown-toggle svg,
+.nav-dropdown.active .dropdown-toggle svg {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 160px;
+    background: rgba(20, 20, 30, 0.98);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+}
+
+.nav-dropdown:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-menu a {
+    display: block;
+    padding: 10px 16px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+    background: rgba(88, 101, 242, 0.15);
+    color: #ffffff;
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    gap: 5px;
+}
+
+.mobile-menu-btn span {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: #ffffff;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.mobile-menu-btn.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.mobile-menu-btn.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
 }
 
 /* ==================== FOOTER ==================== */
@@ -349,23 +502,95 @@ a:hover {
         padding: 12px 20px;
     }
 
+    .header-container,
     .header-top {
-        flex-direction: column;
-        gap: 12px;
+        flex-wrap: wrap;
     }
 
     .site-header .logo {
         font-size: 1.3rem;
     }
 
-    .site-nav {
-        flex-wrap: wrap;
-        justify-content: center;
+    .mobile-menu-btn {
+        display: flex;
     }
 
-    .site-nav a {
-        font-size: 0.85rem;
-        padding: 6px 12px;
+    .site-nav {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        background: rgba(10, 10, 20, 0.98);
+        border-top: 1px solid var(--border-color);
+        padding: 15px;
+        gap: 5px;
+    }
+
+    .site-nav.active {
+        display: flex;
+    }
+
+    .site-nav a,
+    .site-nav .nav-link {
+        font-size: 0.95rem;
+        padding: 12px 16px;
+        border-radius: 8px;
+    }
+
+    .site-nav a:hover,
+    .site-nav .nav-link:hover {
+        background: rgba(88, 101, 242, 0.15);
+    }
+
+    /* Mobile dropdown */
+    .nav-dropdown {
+        width: 100%;
+    }
+
+    .nav-dropdown .dropdown-toggle {
+        width: 100%;
+        justify-content: space-between;
+        padding: 12px 16px;
+    }
+
+    .dropdown-menu {
+        position: static;
+        opacity: 1;
+        visibility: hidden;
+        max-height: 0;
+        overflow: hidden;
+        transform: none;
+        background: rgba(30, 30, 50, 0.5);
+        border: none;
+        border-radius: 0;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+    }
+
+    .nav-dropdown.active .dropdown-menu {
+        visibility: visible;
+        max-height: 200px;
+        padding: 8px 0;
+    }
+
+    .nav-dropdown:hover .dropdown-menu {
+        opacity: 1;
+        visibility: hidden;
+        max-height: 0;
+        padding: 0;
+    }
+
+    .nav-dropdown.active:hover .dropdown-menu {
+        visibility: visible;
+        max-height: 200px;
+        padding: 8px 0;
+    }
+
+    .dropdown-menu a {
+        padding: 10px 24px;
     }
 }
 
@@ -374,9 +599,10 @@ a:hover {
         font-size: 1.2rem;
     }
 
-    .site-nav a {
-        font-size: 0.8rem;
-        padding: 5px 10px;
+    .site-nav a,
+    .site-nav .nav-link {
+        font-size: 0.9rem;
+        padding: 10px 14px;
     }
 
     .footer-separator {

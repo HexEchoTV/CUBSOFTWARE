@@ -144,6 +144,7 @@ RATE_LIMIT_CONFIGS = {
     'api': {'requests': 30, 'window': 60},  # 30 API requests per minute
     'download': {'requests': 10, 'window': 60},  # 10 downloads per minute
     'shorten': {'requests': 10, 'window': 60},  # 10 shortens per minute
+    'report': {'requests': 3, 'window': 300},  # 3 reports per 5 minutes to prevent spam
 }
 
 def check_rate_limit(ip, feature='default'):
@@ -971,11 +972,213 @@ def audio_trimmer():
 
 # ==================== STICKY BOARD ====================
 
+# Storage for shared sticky boards
+STICKY_BOARDS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'sticky_boards.json')
+
+def load_sticky_boards():
+    """Load shared sticky boards"""
+    if os.path.exists(STICKY_BOARDS_FILE):
+        try:
+            with open(STICKY_BOARDS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+def save_sticky_boards(boards):
+    """Save shared sticky boards"""
+    os.makedirs(os.path.dirname(STICKY_BOARDS_FILE), exist_ok=True)
+    with open(STICKY_BOARDS_FILE, 'w') as f:
+        json.dump(boards, f)
+
+def generate_board_id():
+    """Generate a unique board ID"""
+    import random
+    return ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=8))
+
 @app.route('/apps/sticky-board')
 @app.route('/apps/sticky-board/')
 def sticky_board():
     """Sticky Board - Virtual whiteboard with draggable sticky notes"""
     return render_template('sticky-board.html')
+
+@app.route('/apps/sticky-board/b/<board_id>')
+def view_sticky_board(board_id):
+    """View a shared sticky board"""
+    boards = load_sticky_boards()
+    if board_id not in boards:
+        return render_template('404.html'), 404
+    return render_template('sticky-board.html', board_id=board_id, view_only=True)
+
+@app.route('/api/sticky-board/save', methods=['POST'])
+def save_sticky_board():
+    """Save a sticky board and get a short link"""
+    data = request.get_json()
+    if not data or 'notes' not in data:
+        return jsonify({'error': 'Board data required'}), 400
+
+    boards = load_sticky_boards()
+
+    # Generate unique ID
+    board_id = generate_board_id()
+    while board_id in boards:
+        board_id = generate_board_id()
+
+    # Save the board
+    boards[board_id] = {
+        'notes': data['notes'],
+        'created': time.time(),
+        'views': 0
+    }
+    save_sticky_boards(boards)
+
+    # Return the share URL
+    share_url = f"{request.host_url}apps/sticky-board/b/{board_id}"
+    return jsonify({
+        'shareUrl': share_url,
+        'boardId': board_id
+    })
+
+@app.route('/api/sticky-board/<board_id>')
+def get_sticky_board(board_id):
+    """Get sticky board data"""
+    boards = load_sticky_boards()
+    if board_id not in boards:
+        return jsonify({'error': 'Board not found'}), 404
+
+    # Increment view count
+    boards[board_id]['views'] = boards[board_id].get('views', 0) + 1
+    save_sticky_boards(boards)
+
+    return jsonify(boards[board_id])
+
+# ==================== FEATURE DISABLE SYSTEM ====================
+
+FEATURES_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'features_config.json')
+
+# Map of feature names to route paths
+FEATURE_ROUTES = {
+    'social-media-saver': '/apps/social-media-saver',
+    'file-converter': '/apps/file-converter',
+    'image-editor': '/apps/image-editor',
+    'pdf-tools': '/apps/pdf-tools',
+    'qr-generator': '/apps/qr-generator',
+    'text-tools': '/apps/text-tools',
+    'color-picker': '/apps/color-picker',
+    'cubvault': '/apps/cubvault',
+    'unit-converter': '/apps/unit-converter',
+    'timestamp-converter': '/apps/timestamp-converter',
+    'countdown-maker': '/apps/countdown-maker',
+    'link-shortener': '/apps/link-shortener',
+    'video-compressor': '/apps/video-compressor',
+    'resume-builder': '/apps/resume-builder',
+    'json-formatter': '/apps/json-formatter',
+    'wheel-spinner': '/apps/wheel-spinner',
+    'random-picker': '/apps/random-picker',
+    'calculator-suite': '/apps/calculator-suite',
+    'password-generator': '/apps/password-generator',
+    'timer-tools': '/apps/timer-tools',
+    'world-clock': '/apps/world-clock',
+    'currency-converter': '/apps/currency-converter',
+    'encoding-tools': '/apps/encoding-tools',
+    'diff-checker': '/apps/diff-checker',
+    'regex-tester': '/apps/regex-tester',
+    'code-minifier': '/apps/code-minifier',
+    'markdown-editor': '/apps/markdown-editor',
+    'notepad': '/apps/notepad',
+    'invoice-generator': '/apps/invoice-generator',
+    'audio-trimmer': '/apps/audio-trimmer',
+    'sticky-board': '/apps/sticky-board',
+    'streamerbot-commands': '/apps/streamerbot-commands',
+}
+
+def load_features_config():
+    """Load features config"""
+    if os.path.exists(FEATURES_CONFIG_FILE):
+        try:
+            with open(FEATURES_CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {'disabled': []}
+
+def save_features_config(config):
+    """Save features config"""
+    os.makedirs(os.path.dirname(FEATURES_CONFIG_FILE), exist_ok=True)
+    with open(FEATURES_CONFIG_FILE, 'w') as f:
+        json.dump(config, f, indent=2)
+
+def is_feature_disabled(feature_name):
+    """Check if a feature is disabled"""
+    config = load_features_config()
+    return feature_name in config.get('disabled', [])
+
+# API endpoints for feature management (bot uses these)
+@app.route('/api/features/list')
+def list_features():
+    """List all features and their status"""
+    config = load_features_config()
+    disabled = config.get('disabled', [])
+
+    features = []
+    for name in FEATURE_ROUTES.keys():
+        features.append({
+            'name': name,
+            'path': FEATURE_ROUTES[name],
+            'enabled': name not in disabled
+        })
+
+    return jsonify({'features': features})
+
+@app.route('/api/features/disable', methods=['POST'])
+def disable_feature():
+    """Disable a feature (requires API key)"""
+    api_key = request.headers.get('X-API-Key')
+    expected_key = os.environ.get('ADMIN_API_KEY', '')
+
+    if not expected_key or api_key != expected_key:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    feature = data.get('feature', '').lower().replace(' ', '-')
+
+    if feature not in FEATURE_ROUTES:
+        return jsonify({'error': f'Unknown feature: {feature}', 'available': list(FEATURE_ROUTES.keys())}), 400
+
+    config = load_features_config()
+    if feature not in config['disabled']:
+        config['disabled'].append(feature)
+        save_features_config(config)
+
+    return jsonify({'success': True, 'message': f'{feature} has been disabled'})
+
+@app.route('/api/features/enable', methods=['POST'])
+def enable_feature():
+    """Enable a feature (requires API key)"""
+    api_key = request.headers.get('X-API-Key')
+    expected_key = os.environ.get('ADMIN_API_KEY', '')
+
+    if not expected_key or api_key != expected_key:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    feature = data.get('feature', '').lower().replace(' ', '-')
+
+    if feature not in FEATURE_ROUTES:
+        return jsonify({'error': f'Unknown feature: {feature}', 'available': list(FEATURE_ROUTES.keys())}), 400
+
+    config = load_features_config()
+    if feature in config['disabled']:
+        config['disabled'].remove(feature)
+        save_features_config(config)
+
+    return jsonify({'success': True, 'message': f'{feature} has been enabled'})
+
+@app.route('/api/features/status')
+def get_features_status():
+    """Get disabled features list (for index page)"""
+    config = load_features_config()
+    return jsonify({'disabled': config.get('disabled', [])})
 
 # ==================== CLEANME WEBSITE ====================
 
@@ -1556,7 +1759,8 @@ def cleanme_bot_record_copy():
 # ==================== REPORT SYSTEM ====================
 
 REPORTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'reports.json')
-REPORTS_WEBHOOK_URL = os.environ.get('REPORTS_DISCORD_WEBHOOK', '')
+BOT_REPORT_URL = 'http://127.0.0.1:3847/report'
+BOT_API_KEY = os.environ.get('BOT_API_KEY', '')
 
 def load_reports():
     """Load reports from file"""
@@ -1578,9 +1782,13 @@ def report_page():
     return render_template('report.html')
 
 @app.route('/api/report', methods=['POST'])
+@rate_limit('report')
 def submit_report():
     """API endpoint to submit a report"""
     ip_address = get_client_ip()
+    user_agent = request.headers.get('User-Agent', 'Unknown')
+    accept_language = request.headers.get('Accept-Language', 'Unknown')
+    referer = request.headers.get('Referer', 'Direct')
 
     data = request.get_json()
     if not data:
@@ -1591,11 +1799,13 @@ def submit_report():
     description = data.get('description', '').strip()
     url = data.get('url', '').strip()
     contact = data.get('contact', '').strip()
+    # Client-side fingerprint (if provided by frontend)
+    fingerprint = data.get('fingerprint', 'N/A')
 
     if not description:
         return jsonify({'error': 'Description is required'}), 400
 
-    # Create report
+    # Create report with tracking info
     report = {
         'id': hashlib.md5(f"{time.time()}{ip_address}".encode()).hexdigest()[:12],
         'type': report_type,
@@ -1604,6 +1814,10 @@ def submit_report():
         'url': url,
         'contact': contact,
         'ip': ip_address,
+        'user_agent': user_agent,
+        'accept_language': accept_language,
+        'referer': referer,
+        'fingerprint': fingerprint,
         'timestamp': time.time(),
         'status': 'pending'
     }
@@ -1613,30 +1827,15 @@ def submit_report():
     reports.append(report)
     save_reports(reports)
 
-    # Send to Discord webhook
-    if REPORTS_WEBHOOK_URL:
+    # Send to Discord via CubSoftware Bot
+    if BOT_API_KEY:
         try:
-            embed = {
-                'title': f'New Report: {report_type.title()}',
-                'color': 0xFF6B6B,
-                'fields': [
-                    {'name': 'Report ID', 'value': report['id'], 'inline': True},
-                    {'name': 'Type', 'value': report_type, 'inline': True},
-                    {'name': 'Subject', 'value': subject or 'N/A', 'inline': False},
-                    {'name': 'Description', 'value': description[:500] + ('...' if len(description) > 500 else ''), 'inline': False},
-                    {'name': 'URL', 'value': url or 'N/A', 'inline': False},
-                    {'name': 'Contact', 'value': contact or 'N/A', 'inline': True},
-                    {'name': 'IP', 'value': f'||{ip_address}||', 'inline': True}
-                ],
-                'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-            }
-            # Tag the admin user (378501056008683530) when a report is submitted
-            requests.post(REPORTS_WEBHOOK_URL, json={
-                'content': '<@378501056008683530> New report submitted!',
-                'embeds': [embed]
+            requests.post(BOT_REPORT_URL, json={
+                'apiKey': BOT_API_KEY,
+                'report': report
             }, timeout=5)
         except Exception as e:
-            print(f'Failed to send report webhook: {e}')
+            print(f'Failed to send report to bot: {e}')
 
     return jsonify({'success': True, 'reportId': report['id']})
 
@@ -1710,6 +1909,12 @@ def pm2_auth_required(f):
             return redirect(url_for('pm2_login', error='not_whitelisted'))
         return f(*args, **kwargs)
     return decorated_function
+
+@app.route('/admin')
+@app.route('/admin/')
+def admin_redirect():
+    """Redirect /admin to PM2 Dashboard"""
+    return redirect(url_for('pm2_dashboard'))
 
 @app.route('/apps/pm2-dashboard')
 @app.route('/apps/pm2-dashboard/')

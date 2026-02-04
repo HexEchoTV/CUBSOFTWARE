@@ -271,12 +271,42 @@
         const submitBtn = document.getElementById('submitBtn');
         const toast = document.getElementById('toast');
 
+        // Generate browser fingerprint for abuse tracking
+        function generateFingerprint() {
+            const data = [
+                navigator.userAgent,
+                navigator.language,
+                screen.width + 'x' + screen.height,
+                screen.colorDepth,
+                new Date().getTimezoneOffset(),
+                navigator.hardwareConcurrency || 'unknown',
+                navigator.deviceMemory || 'unknown',
+                navigator.platform,
+                !!window.sessionStorage,
+                !!window.localStorage,
+                !!window.indexedDB,
+                typeof window.openDatabase,
+                navigator.doNotTrack || 'unset',
+                Intl.DateTimeFormat().resolvedOptions().timeZone
+            ].join('|');
+
+            // Simple hash function
+            let hash = 0;
+            for (let i = 0; i < data.length; i++) {
+                const char = data.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash).toString(16).padStart(8, '0');
+        }
+
         submitBtn.addEventListener('click', async () => {
             const type = document.getElementById('reportType').value;
             const subject = document.getElementById('reportSubject').value.trim();
             const url = document.getElementById('reportUrl').value.trim();
             const description = document.getElementById('reportDescription').value.trim();
             const contact = document.getElementById('reportContact').value.trim();
+            const fingerprint = generateFingerprint();
 
             if (!description) {
                 showToast('Please provide a description');
@@ -290,7 +320,7 @@
                 const response = await fetch('/api/report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, subject, url, description, contact })
+                    body: JSON.stringify({ type, subject, url, description, contact, fingerprint })
                 });
 
                 const data = await response.json();

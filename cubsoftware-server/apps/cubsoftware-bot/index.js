@@ -23,7 +23,8 @@ const projectChannels = {
     'cubsoftware-website': '1466190584372003092',
     'questcord-website': '1466190431485427856',
     'cleanme-bot': '1466190746401902855',
-    'links': config.linksLogChannelId
+    'links': config.linksLogChannelId,
+    'reports': '1468610071494656226'
 };
 
 // Path to website data files (for direct file access)
@@ -760,6 +761,69 @@ function startLogServer() {
             res.json({ success: true });
         } catch (err) {
             console.error('Log server error:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // Report endpoint - for user-submitted reports
+    app.post('/report', async (req, res) => {
+        const { apiKey, report } = req.body;
+
+        // Verify API key
+        if (apiKey !== config.apiKey) {
+            return res.status(401).json({ error: 'Invalid API key' });
+        }
+
+        if (!report) {
+            return res.status(400).json({ error: 'Missing report data' });
+        }
+
+        const channelId = projectChannels['reports'];
+        if (!channelId) {
+            return res.status(400).json({ error: 'Reports channel not configured' });
+        }
+
+        try {
+            const channel = await client.channels.fetch(channelId).catch(() => null);
+            if (!channel) {
+                return res.status(500).json({ error: 'Channel not found' });
+            }
+
+            // Main report embed
+            const reportEmbed = new EmbedBuilder()
+                .setTitle(`New Report: ${(report.type || 'general').charAt(0).toUpperCase() + (report.type || 'general').slice(1)}`)
+                .setColor(0xFF6B6B)
+                .addFields(
+                    { name: 'Report ID', value: report.id || 'N/A', inline: true },
+                    { name: 'Type', value: report.type || 'general', inline: true },
+                    { name: 'Subject', value: report.subject || 'N/A', inline: false },
+                    { name: 'Description', value: (report.description || 'N/A').substring(0, 1000), inline: false },
+                    { name: 'URL', value: report.url || 'N/A', inline: false },
+                    { name: 'Contact', value: report.contact || 'N/A', inline: true }
+                )
+                .setTimestamp();
+
+            // Tracking info embed
+            const trackingEmbed = new EmbedBuilder()
+                .setTitle('User Tracking Information')
+                .setColor(0x5865F2)
+                .addFields(
+                    { name: 'IP Address', value: `\`${report.ip || 'Unknown'}\``, inline: true },
+                    { name: 'Fingerprint', value: `\`${report.fingerprint || 'N/A'}\``, inline: true },
+                    { name: 'User Agent', value: `\`\`\`${(report.user_agent || 'Unknown').substring(0, 200)}\`\`\``, inline: false },
+                    { name: 'Language', value: report.accept_language || 'Unknown', inline: true },
+                    { name: 'Referer', value: (report.referer || 'Direct').substring(0, 100), inline: true }
+                );
+
+            // Send with admin ping
+            await channel.send({
+                content: `<@378501056008683530> New report submitted!`,
+                embeds: [reportEmbed, trackingEmbed]
+            });
+
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Report server error:', err);
             res.status(500).json({ error: err.message });
         }
     });

@@ -19,16 +19,22 @@
 <body>
     <div class="main-container">
         <!-- Header -->
-        <header class="cleanme-header">
-            <div class="header-content">
-                <a href="/cleanme" class="logo">
-                    <span class="logo-icon">🧹</span>
-                    <span class="logo-text">CleanMe</span>
-                </a>
-                <nav class="nav-links">
+        <header class="site-header cleanme-header">
+            <div class="header-container">
+                <div class="brand-group">
+                    <a href="/" class="logo">
+                        <span class="logo-text">
+                            <span class="cub">CUB</span><span class="software">SOFTWARE</span>
+                        </span>
+                    </a>
+                    <span class="brand-divider">/</span>
+                    <a href="/cleanme" class="sub-brand">CleanMe</a>
+                </div>
+                <nav class="site-nav" id="siteNav">
                     <a href="/cleanme" class="nav-link active">Home</a>
                     <a href="/cleanme/browse" class="nav-link">Browse</a>
                     <a href="/cleanme/submit" class="nav-link">Submit Server</a>
+                    <a href="/" class="nav-link">Back to Tools</a>
                 </nav>
                 <div class="auth-section">
                     {% if cleanme_user %}
@@ -49,12 +55,10 @@
                     </a>
                     {% endif %}
                 </div>
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </button>
             </div>
         </header>
@@ -292,28 +296,46 @@
         </section>
 
         <!-- Footer -->
-        <footer class="cleanme-footer">
+        <footer class="footer">
             <div class="container">
                 <div class="footer-content">
-                    <div class="footer-brand">
-                        <span class="logo-icon">🧹</span>
-                        <span class="logo-text">CleanMe</span>
-                        <p>A CUB SOFTWARE project</p>
+                    <div class="footer-text">
+                        &copy; 2026 CUB SOFTWARE. Made with love by
+                        <a href="https://discord.com/users/378501056008683530" target="_blank" rel="noopener noreferrer" class="footer-link">CUB</a>
                     </div>
-                    <div class="footer-links">
-                        <a href="https://cubsoftware.site">CUB SOFTWARE</a>
-                        <a href="/terms">Terms</a>
-                        <a href="/privacy">Privacy</a>
-                        <a href="/contact">Contact</a>
+                    <div class="footer-legal-links">
+                        <a href="https://questcord.fun" class="footer-legal-link" target="_blank">QuestCord</a>
+                        <span class="footer-separator">|</span>
+                        <a href="/cleanme" class="footer-legal-link">CleanMe</a>
+                        <span class="footer-separator">|</span>
+                        <a href="/terms" class="footer-legal-link">Terms of Use</a>
+                        <span class="footer-separator">|</span>
+                        <a href="/privacy" class="footer-legal-link">Privacy Policy</a>
+                        <span class="footer-separator">|</span>
+                        <a href="/copyright" class="footer-legal-link">Copyright</a>
+                        <span class="footer-separator">|</span>
+                        <a href="/report" class="footer-legal-link">Report Issue</a>
+                        <span class="footer-separator">|</span>
+                        <a href="/contact" class="footer-legal-link">Contact</a>
                     </div>
-                </div>
-                <div class="footer-bottom">
-                    <p>&copy; 2026 CUB SOFTWARE. Made with love by <a href="https://discord.com/users/378501056008683530" target="_blank">CUB</a></p>
                 </div>
             </div>
         </footer>
     </div>
 
     <script src="/static/js/cleanme.js"></script>
+    <script>
+    // Mobile menu toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const nav = document.getElementById('siteNav');
+        if (mobileBtn && nav) {
+            mobileBtn.addEventListener('click', function() {
+                nav.classList.toggle('active');
+                mobileBtn.classList.toggle('active');
+            });
+        }
+    });
+    </script>
 </body>
 </html>

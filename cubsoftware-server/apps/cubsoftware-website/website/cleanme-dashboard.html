@@ -16,17 +16,22 @@
 </head>
 <body data-page="dashboard">
     <!-- Header -->
-    <header class="cleanme-header">
+    <header class="site-header cleanme-header">
         <div class="header-container">
-            <a href="/cleanme" class="logo">
-                <img src="/static/images/cleanme-logo.png" alt="CleanMe">
-                <span>CleanMe</span>
-            </a>
-            <nav class="nav-links">
-                <a href="/cleanme">Home</a>
-                <a href="/cleanme/browse">Browse</a>
-                <a href="/cleanme/submit">Submit</a>
-                <a href="/cleanme/dashboard" class="active">Dashboard</a>
+            <div class="brand-group">
+                <a href="/" class="logo">
+                    <span class="logo-text">
+                        <span class="cub">CUB</span><span class="software">SOFTWARE</span>
+                    </span>
+                </a>
+                <span class="brand-divider">/</span>
+                <a href="/cleanme" class="sub-brand">CleanMe</a>
+            </div>
+            <nav class="site-nav" id="siteNav">
+                <a href="/cleanme" class="nav-link">Home</a>
+                <a href="/cleanme/browse" class="nav-link">Browse</a>
+                <a href="/cleanme/submit" class="nav-link">Submit</a>
+                <a href="/" class="nav-link">Back to Tools</a>
             </nav>
             <div class="header-actions">
                 <button class="login-btn">
@@ -47,7 +52,7 @@
                     </div>
                 </div>
             </div>
-            <button class="mobile-menu-btn">
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -127,24 +132,45 @@
     </main>
 
     <!-- Footer -->
-    <footer class="cleanme-footer">
-        <div class="footer-container">
-            <div class="footer-brand">
-                <img src="/static/images/cleanme-logo.png" alt="CleanMe">
-                <span>CleanMe</span>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-text">
+                    &copy; 2026 CUB SOFTWARE. Made with love by
+                    <a href="https://discord.com/users/378501056008683530" target="_blank" rel="noopener noreferrer" class="footer-link">CUB</a>
+                </div>
+                <div class="footer-legal-links">
+                    <a href="https://questcord.fun" class="footer-legal-link" target="_blank">QuestCord</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/cleanme" class="footer-legal-link">CleanMe</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/terms" class="footer-legal-link">Terms of Use</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/privacy" class="footer-legal-link">Privacy Policy</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/copyright" class="footer-legal-link">Copyright</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/report" class="footer-legal-link">Report Issue</a>
+                    <span class="footer-separator">|</span>
+                    <a href="/contact" class="footer-legal-link">Contact</a>
+                </div>
             </div>
-            <div class="footer-links">
-                <a href="/cleanme">Home</a>
-                <a href="/cleanme/browse">Browse</a>
-                <a href="https://discord.gg/cubsoftware" target="_blank">Discord</a>
-                <a href="/">CUB SOFTWARE</a>
-            </div>
-            <p class="footer-copyright">&copy; 2025 CUB SOFTWARE. All rights reserved.</p>
         </div>
     </footer>
 
     <script src="/static/js/cleanme.js"></script>
     <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const nav = document.getElementById('siteNav');
+            if (mobileBtn && nav) {
+                mobileBtn.addEventListener('click', function() {
+                    nav.classList.toggle('active');
+                    mobileBtn.classList.toggle('active');
+                });
+            }
+        });
         // Show dashboard content if logged in
         document.addEventListener('DOMContentLoaded', () => {
             const userCookie = document.cookie.split('; ').find(row => row.startsWith('cleanme_user='));

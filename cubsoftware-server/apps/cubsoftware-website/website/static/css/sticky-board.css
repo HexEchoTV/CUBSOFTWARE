@@ -4,14 +4,12 @@
     box-sizing: border-box;
 }
 
+/* Override body for sticky board */
 body {
-    margin: 0;
-    padding: 0;
     overflow: hidden;
-    background: #1a1a2e;
 }
 
-.board-wrapper {
+.main-container {
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -19,64 +17,76 @@ body {
     overflow: hidden;
 }
 
-/* Board Header */
-.board-header {
+/* Board Controls Bar */
+.board-controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #16162a 0%, #1a1a2e 100%);
+    background: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
     z-index: 100;
     flex-shrink: 0;
 }
 
-.brand {
+.controls-left {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
-.brand-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-}
-
-.brand-logo {
-    font-family: 'Orbitron', monospace;
+.page-title {
+    font-family: 'Poppins', sans-serif;
     font-size: 1.25rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.brand-text {
-    font-family: 'Orbitron', monospace;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--text-muted);
-}
-
-.brand-divider {
-    color: var(--border-color);
-}
-
-.board-title {
-    color: var(--text-light);
     font-weight: 600;
+    color: var(--text-light);
+    margin: 0;
 }
 
-.header-actions {
+.controls-center {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--dark-bg);
+    border-radius: 8px;
+    padding: 0.25rem 0.5rem;
+}
+
+.zoom-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.zoom-btn:hover {
+    background: var(--surface-color);
+    color: var(--primary);
+}
+
+.zoom-level {
+    min-width: 50px;
+    text-align: center;
+    color: var(--text-light);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.controls-right {
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
-.header-btn {
+.control-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -85,23 +95,24 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-muted);
+    font-family: 'Poppins', sans-serif;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.header-btn:hover {
+.control-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
 }
 
-.header-btn.primary {
+.control-btn.primary {
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     border: none;
     color: white;
 }
 
-.header-btn.primary:hover {
+.control-btn.primary:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
 }
@@ -116,6 +127,7 @@ body {
     background: rgba(88, 101, 242, 0.1);
     border-bottom: 1px solid var(--primary);
     color: var(--text-light);
+    font-family: 'Poppins', sans-serif;
     font-size: 0.9rem;
     flex-shrink: 0;
 }
@@ -134,17 +146,30 @@ body {
     background: var(--secondary);
 }
 
-/* The Board */
-.board {
+/* The Board Container (handles overflow and pan) */
+.board-container {
     flex: 1;
     position: relative;
+    overflow: auto;
+    min-height: 0;
+    background: var(--dark-bg);
+}
+
+/* The Board */
+.board {
+    position: relative;
+    min-width: 100%;
+    min-height: 100%;
+    width: 2000px;
+    height: 2000px;
     background:
         linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
         linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        #1a1a2e;
+        var(--dark-bg);
     background-size: 40px 40px;
-    overflow: hidden;
     cursor: default;
+    transform-origin: 0 0;
+    transition: transform 0.1s ease;
 }
 
 /* Sticky Note */
@@ -204,6 +229,7 @@ body {
     word-wrap: break-word;
     overflow-y: auto;
     scrollbar-width: thin;
+    font-family: 'Poppins', sans-serif;
 }
 
 .note-content::-webkit-scrollbar {
@@ -275,6 +301,7 @@ body {
 
 .modal-header h3 {
     color: var(--text-light);
+    font-family: 'Poppins', sans-serif;
     font-size: 1.1rem;
     margin: 0;
 }
@@ -313,7 +340,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-light);
-    font-family: inherit;
+    font-family: 'Poppins', sans-serif;
     font-size: 1rem;
     resize: vertical;
     margin-bottom: 1rem;
@@ -338,6 +365,7 @@ body {
 
 .option-group label {
     color: var(--text-muted);
+    font-family: 'Poppins', sans-serif;
     font-size: 0.85rem;
     font-weight: 500;
 }
@@ -372,6 +400,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-light);
+    font-family: 'Poppins', sans-serif;
     font-size: 0.95rem;
 }
 
@@ -396,6 +425,7 @@ body {
     border: 1px solid var(--error);
     border-radius: 8px;
     color: var(--error);
+    font-family: 'Poppins', sans-serif;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -411,6 +441,7 @@ body {
     border: none;
     border-radius: 8px;
     color: white;
+    font-family: 'Poppins', sans-serif;
     font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
@@ -429,6 +460,7 @@ body {
 
 .share-body p {
     color: var(--text-muted);
+    font-family: 'Poppins', sans-serif;
     margin-bottom: 1rem;
 }
 
@@ -444,6 +476,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-light);
+    font-family: 'Poppins', sans-serif;
     font-size: 0.9rem;
 }
 
@@ -456,6 +489,7 @@ body {
     border: none;
     border-radius: 8px;
     color: white;
+    font-family: 'Poppins', sans-serif;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -465,10 +499,51 @@ body {
     background: var(--secondary);
 }
 
+/* Share options */
+.share-options {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-shorten {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    justify-content: center;
+}
+
+.btn-shorten:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-shorten.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
 .share-note {
     font-size: 0.85rem !important;
     color: var(--text-muted);
     margin-top: 1rem !important;
+}
+
+/* Sticky Board Footer */
+.sticky-board-footer {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
 }
 
 /* Toast */
@@ -482,6 +557,7 @@ body {
     border-radius: 8px;
     padding: 0.75rem 1.5rem;
     color: var(--text-light);
+    font-family: 'Poppins', sans-serif;
     font-size: 0.95rem;
     opacity: 0;
     transition: all 0.3s ease;
@@ -495,33 +571,43 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-    .board-header {
+    .board-controls {
         padding: 0.5rem 1rem;
         flex-wrap: wrap;
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
 
-    .brand {
+    .controls-left {
         width: 100%;
         justify-content: center;
     }
 
-    .header-actions {
+    .page-title {
+        font-size: 1.1rem;
+    }
+
+    .controls-right {
         width: 100%;
         justify-content: center;
     }
 
-    .header-btn span {
+    .control-btn span {
         display: none;
     }
 
-    .header-btn {
+    .control-btn {
         padding: 0.6rem;
     }
 
     .view-only-banner {
         flex-wrap: wrap;
         text-align: center;
+        font-size: 0.8rem;
+        padding: 0.5rem;
+    }
+
+    .view-only-banner svg {
+        display: none;
     }
 
     .create-own-btn {
@@ -530,27 +616,43 @@ body {
         text-align: center;
     }
 
+    /* Mobile optimized sticky notes in view mode */
     .sticky-note {
         min-width: 120px;
-        min-height: 120px;
+        min-height: 100px;
     }
 
     .modal-content {
-        max-height: 80vh;
+        max-height: 85vh;
+        margin: 0.5rem;
     }
 
     .color-picker {
         justify-content: center;
     }
+
+    .sticky-board-footer .container {
+        padding: 0.75rem;
+    }
+
+    .sticky-board-footer .footer-content {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .sticky-board-footer .footer-legal-links {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }
 
 @media (max-width: 480px) {
-    .brand-text {
-        display: none;
+    .board-controls {
+        padding: 0.5rem;
     }
 
-    .board-title {
-        font-size: 0.9rem;
+    .page-title {
+        font-size: 1rem;
     }
 
     .share-link-container {
@@ -560,23 +662,59 @@ body {
     .btn-copy {
         justify-content: center;
     }
+
+    /* Even smaller notes on very small screens */
+    .sticky-note {
+        min-width: 100px;
+        min-height: 80px;
+    }
+
+    .note-content {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .note-header {
+        padding: 0.15rem 0.35rem;
+    }
+
+    .note-edit-btn {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* View-only mode mobile optimizations */
+body.view-mode .board {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+body.view-mode .sticky-note {
+    cursor: default;
 }
 
 /* Print styles - hide controls when printing */
 @media print {
-    .board-header,
+    .site-header,
+    .board-controls,
     .view-only-banner,
     .note-header,
-    .resize-handle {
+    .resize-handle,
+    .sticky-board-footer {
         display: none !important;
     }
 
     .board {
         background: white !important;
+        overflow: visible !important;
+        height: auto !important;
     }
 
     .sticky-note {
         box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2) !important;
         break-inside: avoid;
+        position: relative !important;
+        margin: 1rem;
     }
 }

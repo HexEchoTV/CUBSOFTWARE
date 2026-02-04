@@ -6,8 +6,13 @@ class StickyBoard {
         this.nextNoteId = 1;
         this.editingNoteId = null;
         this.isViewOnly = false;
+        this.boardId = null;
         this.dragState = null;
         this.resizeState = null;
+        this.zoom = 1;
+        this.minZoom = 0.25;
+        this.maxZoom = 2;
+        this.zoomStep = 0.25;
 
         this.initElements();
         this.checkViewMode();
@@ -17,6 +22,7 @@ class StickyBoard {
     initElements() {
         // Board
         this.board = document.getElementById('board');
+        this.boardContainer = document.getElementById('boardContainer');
 
         // Header actions
         this.headerActions = document.getElementById('headerActions');
@@ -24,6 +30,13 @@ class StickyBoard {
         this.clearBoardBtn = document.getElementById('clearBoardBtn');
         this.shareBtn = document.getElementById('shareBtn');
         this.viewOnlyBanner = document.getElementById('viewOnlyBanner');
+        this.boardControls = document.getElementById('boardControls');
+
+        // Zoom controls
+        this.zoomInBtn = document.getElementById('zoomInBtn');
+        this.zoomOutBtn = document.getElementById('zoomOutBtn');
+        this.zoomResetBtn = document.getElementById('zoomResetBtn');
+        this.zoomLevelDisplay = document.getElementById('zoomLevel');
 
         // Note editor modal
         this.noteEditorModal = document.getElementById('noteEditorModal');
@@ -41,37 +54,69 @@ class StickyBoard {
         this.closeShareBtn = document.getElementById('closeShareBtn');
         this.shareLink = document.getElementById('shareLink');
         this.copyLinkBtn = document.getElementById('copyLinkBtn');
+        this.shortenLinkBtn = document.getElementById('shortenLinkBtn');
 
         // Toast
         this.toast = document.getElementById('toast');
     }
 
-    checkViewMode() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const data = urlParams.get('board');
+    async checkViewMode() {
+        // Check for server-stored board ID in URL path
+        const pathMatch = window.location.pathname.match(/\/apps\/sticky-board\/b\/([a-z0-9]+)/);
 
-        if (data) {
-            try {
-                const decoded = LZString.decompressFromEncodedURIComponent(data);
-                const boardData = JSON.parse(decoded);
-                this.notes = boardData.notes || [];
-                this.nextNoteId = boardData.nextId || 1;
-                this.isViewOnly = true;
-                this.enableViewOnlyMode();
-            } catch (e) {
-                console.error('Error loading shared board:', e);
+        if (pathMatch) {
+            // Load from server
+            this.boardId = pathMatch[1];
+            await this.loadFromServer(this.boardId);
+            this.isViewOnly = true;
+            this.enableViewOnlyMode();
+        } else {
+            // Check for legacy compressed data in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const data = urlParams.get('board');
+
+            if (data) {
+                try {
+                    const decoded = LZString.decompressFromEncodedURIComponent(data);
+                    const boardData = JSON.parse(decoded);
+                    this.notes = boardData.notes || [];
+                    this.nextNoteId = boardData.nextId || 1;
+                    this.isViewOnly = true;
+                    this.enableViewOnlyMode();
+                } catch (e) {
+                    console.error('Error loading shared board:', e);
+                    this.loadFromStorage();
+                }
+            } else {
                 this.loadFromStorage();
             }
-        } else {
-            this.loadFromStorage();
         }
 
         this.renderNotes();
     }
 
+    async loadFromServer(boardId) {
+        try {
+            const res = await fetch(`/api/sticky-board/${boardId}`);
+            if (!res.ok) throw new Error('Board not found');
+
+            const data = await res.json();
+            this.notes = data.notes || [];
+            this.nextNoteId = Math.max(...this.notes.map(n => n.id), 0) + 1;
+        } catch (e) {
+            console.error('Error loading board from server:', e);
+            this.showToast('Board not found');
+        }
+    }
+
     enableViewOnlyMode() {
-        this.headerActions.style.display = 'none';
-        this.viewOnlyBanner.style.display = 'flex';
+        document.body.classList.add('view-mode');
+        if (this.boardControls) {
+            this.boardControls.querySelector('.controls-right').style.display = 'none';
+        }
+        if (this.viewOnlyBanner) {
+            this.viewOnlyBanner.style.display = 'flex';
+        }
     }
 
     loadFromStorage() {
@@ -102,36 +147,61 @@ class StickyBoard {
 
     bindEvents() {
         // Add note
-        this.addNoteBtn.addEventListener('click', () => this.createNote());
+        if (this.addNoteBtn) {
+            this.addNoteBtn.addEventListener('click', () => this.createNote());
+        }
 
         // Clear board
-        this.clearBoardBtn.addEventListener('click', () => this.clearBoard());
+        if (this.clearBoardBtn) {
+            this.clearBoardBtn.addEventListener('click', () => this.clearBoard());
+        }
 
         // Share
-        this.shareBtn.addEventListener('click', () => this.openShareModal());
-        this.closeShareBtn.addEventListener('click', () => this.closeShareModal());
-        this.copyLinkBtn.addEventListener('click', () => this.copyShareLink());
+        if (this.shareBtn) {
+            this.shareBtn.addEventListener('click', () => this.openShareModal());
+        }
+        if (this.closeShareBtn) {
+            this.closeShareBtn.addEventListener('click', () => this.closeShareModal());
+        }
+        if (this.copyLinkBtn) {
+            this.copyLinkBtn.addEventListener('click', () => this.copyShareLink());
+        }
+        if (this.shortenLinkBtn) {
+            this.shortenLinkBtn.addEventListener('click', () => this.createShortLink());
+        }
 
         // Note editor
-        this.closeEditorBtn.addEventListener('click', () => this.closeEditor());
-        this.saveNoteBtn.addEventListener('click', () => this.saveNote());
-        this.deleteNoteBtn.addEventListener('click', () => this.deleteNote());
+        if (this.closeEditorBtn) {
+            this.closeEditorBtn.addEventListener('click', () => this.closeEditor());
+        }
+        if (this.saveNoteBtn) {
+            this.saveNoteBtn.addEventListener('click', () => this.saveNote());
+        }
+        if (this.deleteNoteBtn) {
+            this.deleteNoteBtn.addEventListener('click', () => this.deleteNote());
+        }
 
         // Color picker
-        this.colorPicker.querySelectorAll('.color-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.colorPicker.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+        if (this.colorPicker) {
+            this.colorPicker.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.colorPicker.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
             });
-        });
+        }
 
         // Close modals on overlay click
-        this.noteEditorModal.addEventListener('click', (e) => {
-            if (e.target === this.noteEditorModal) this.closeEditor();
-        });
-        this.shareModal.addEventListener('click', (e) => {
-            if (e.target === this.shareModal) this.closeShareModal();
-        });
+        if (this.noteEditorModal) {
+            this.noteEditorModal.addEventListener('click', (e) => {
+                if (e.target === this.noteEditorModal) this.closeEditor();
+            });
+        }
+        if (this.shareModal) {
+            this.shareModal.addEventListener('click', (e) => {
+                if (e.target === this.shareModal) this.closeShareModal();
+            });
+        }
 
         // Global mouse events for drag/resize
         document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
@@ -149,7 +219,106 @@ class StickyBoard {
                 e.preventDefault();
                 this.createNote();
             }
+            // Zoom shortcuts
+            if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
+                e.preventDefault();
+                this.zoomIn();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+                e.preventDefault();
+                this.zoomOut();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+                e.preventDefault();
+                this.resetZoom();
+            }
         });
+
+        // Zoom controls
+        if (this.zoomInBtn) {
+            this.zoomInBtn.addEventListener('click', () => this.zoomIn());
+        }
+        if (this.zoomOutBtn) {
+            this.zoomOutBtn.addEventListener('click', () => this.zoomOut());
+        }
+        if (this.zoomResetBtn) {
+            this.zoomResetBtn.addEventListener('click', () => this.resetZoom());
+        }
+
+        // Mouse wheel zoom
+        if (this.boardContainer) {
+            this.boardContainer.addEventListener('wheel', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    if (e.deltaY < 0) {
+                        this.zoomIn();
+                    } else {
+                        this.zoomOut();
+                    }
+                }
+            }, { passive: false });
+        }
+
+        // Pinch to zoom (touch devices)
+        let lastTouchDistance = 0;
+        if (this.boardContainer) {
+            this.boardContainer.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    lastTouchDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                }
+            });
+
+            this.boardContainer.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    const distance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+
+                    if (lastTouchDistance > 0) {
+                        const delta = distance - lastTouchDistance;
+                        if (Math.abs(delta) > 10) {
+                            if (delta > 0) {
+                                this.zoomIn(0.1);
+                            } else {
+                                this.zoomOut(0.1);
+                            }
+                            lastTouchDistance = distance;
+                        }
+                    }
+                }
+            });
+
+            this.boardContainer.addEventListener('touchend', () => {
+                lastTouchDistance = 0;
+            });
+        }
+    }
+
+    // Zoom methods
+    zoomIn(step = this.zoomStep) {
+        this.setZoom(Math.min(this.maxZoom, this.zoom + step));
+    }
+
+    zoomOut(step = this.zoomStep) {
+        this.setZoom(Math.max(this.minZoom, this.zoom - step));
+    }
+
+    resetZoom() {
+        this.setZoom(1);
+    }
+
+    setZoom(level) {
+        this.zoom = level;
+        if (this.board) {
+            this.board.style.transform = `scale(${this.zoom})`;
+        }
+        if (this.zoomLevelDisplay) {
+            this.zoomLevelDisplay.textContent = `${Math.round(this.zoom * 100)}%`;
+        }
     }
 
     createNote() {
@@ -360,7 +529,9 @@ class StickyBoard {
     }
 
     closeEditor() {
-        this.noteEditorModal.style.display = 'none';
+        if (this.noteEditorModal) {
+            this.noteEditorModal.style.display = 'none';
+        }
         this.editingNoteId = null;
     }
 
@@ -417,20 +588,23 @@ class StickyBoard {
     }
 
     openShareModal() {
+        // Generate compressed link (legacy/full data URL)
         const data = {
             notes: this.notes,
             nextId: this.nextNoteId
         };
 
         const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(data));
-        const url = `${window.location.origin}${window.location.pathname}?board=${compressed}`;
+        const url = `${window.location.origin}/apps/sticky-board?board=${compressed}`;
 
         this.shareLink.value = url;
         this.shareModal.style.display = 'flex';
     }
 
     closeShareModal() {
-        this.shareModal.style.display = 'none';
+        if (this.shareModal) {
+            this.shareModal.style.display = 'none';
+        }
     }
 
     copyShareLink() {
@@ -441,6 +615,45 @@ class StickyBoard {
             document.execCommand('copy');
             this.showToast('Link copied');
         });
+    }
+
+    async createShortLink() {
+        if (this.notes.length === 0) {
+            this.showToast('Add some notes first');
+            return;
+        }
+
+        this.shortenLinkBtn.classList.add('loading');
+        this.shortenLinkBtn.textContent = 'Creating...';
+
+        try {
+            const res = await fetch('/api/sticky-board/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notes: this.notes })
+            });
+
+            const data = await res.json();
+
+            if (data.shareUrl) {
+                this.shareLink.value = data.shareUrl;
+                this.showToast('Short link created!');
+            } else {
+                throw new Error(data.error || 'Failed to create short link');
+            }
+        } catch (e) {
+            console.error('Error creating short link:', e);
+            this.showToast('Failed to create short link');
+        } finally {
+            this.shortenLinkBtn.classList.remove('loading');
+            this.shortenLinkBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                Create Short Link
+            `;
+        }
     }
 
     escapeHtml(text) {
