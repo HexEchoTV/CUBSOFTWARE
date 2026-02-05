@@ -58,21 +58,23 @@ class CubReactiveOverlay {
 
             this.ws.onopen = () => {
                 clearTimeout(timeout);
-                console.log('WebSocket connected');
+                console.log('WebSocket connected, client_id:', DISCORD_CLIENT_ID);
             };
 
             this.ws.onmessage = (event) => {
+                console.log('Raw message:', event.data.substring(0, 200));
                 const data = JSON.parse(event.data);
                 this.handleMessage(data, resolve, reject);
             };
 
             this.ws.onerror = (error) => {
                 clearTimeout(timeout);
+                console.error('WebSocket error:', error);
                 reject(error);
             };
 
-            this.ws.onclose = () => {
-                console.log('WebSocket closed');
+            this.ws.onclose = (event) => {
+                console.log('WebSocket closed, code:', event.code, 'reason:', event.reason);
                 this.authenticated = false;
                 if (this.currentChannel) {
                     setTimeout(() => this.init(), 3000);
