@@ -1766,6 +1766,29 @@ function startLogServer() {
         }
     });
 
+    // CubReactive: notify overlay clients to refresh when config changes
+    app.post('/cubreactive/refresh', (req, res) => {
+        const { userId, apiKey } = req.body;
+        if (apiKey !== config.apiKey) {
+            return res.status(401).json({ error: 'Invalid API key' });
+        }
+        if (!userId) {
+            return res.status(400).json({ error: 'userId required' });
+        }
+
+        const connections = overlayConnections.get(userId) || [];
+        let notified = 0;
+        connections.forEach(ws => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'CONFIG_UPDATED', userId }));
+                notified++;
+            }
+        });
+
+        console.log(`[CubReactive] Config refresh for ${userId}: notified ${notified} overlay(s)`);
+        res.json({ success: true, notified });
+    });
+
     app.listen(config.logServerPort, '127.0.0.1', () => {
         console.log(`[CubSoftware Bot] Log server running on port ${config.logServerPort}`);
     });

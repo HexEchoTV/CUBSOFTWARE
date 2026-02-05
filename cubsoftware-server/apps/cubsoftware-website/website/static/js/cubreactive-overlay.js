@@ -122,6 +122,16 @@ class CubReactiveOverlay {
                 this.render();
                 break;
 
+            case 'CONFIG_UPDATED':
+                console.log('Config updated, refreshing...');
+                if (data.userId) {
+                    await this.fetchUserConfig(data.userId);
+                } else if (TARGET_USER_ID) {
+                    await this.fetchUserConfig(TARGET_USER_ID);
+                }
+                this.render();
+                break;
+
             case 'DISABLED':
                 this.disabled = true;
                 this.showStatus('CubReactive is disabled for this user', 'error');

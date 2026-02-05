@@ -1163,6 +1163,18 @@ def save_cubreactive_users(data):
     with open(CUBREACTIVE_USERS_FILE, 'w') as f:
         json.dump(data, f, indent=2)
 
+def notify_cubreactive_overlay(user_id):
+    """Notify the bot to send CONFIG_UPDATED to overlay WebSocket clients"""
+    try:
+        bot_port = os.environ.get('LOG_SERVER_PORT', 3847)
+        requests.post(
+            f'http://127.0.0.1:{bot_port}/cubreactive/refresh',
+            json={'userId': user_id, 'apiKey': os.environ.get('BOT_API_KEY', '')},
+            timeout=2
+        )
+    except Exception:
+        pass  # Non-critical - overlay will still work, just won't auto-refresh
+
 def cubreactive_auth_required(f):
     """Decorator to require CubReactive authentication"""
     @wraps(f)
@@ -1521,6 +1533,7 @@ def cubreactive_config():
         users[user['id']]['settings'].update(data['settings'])
 
     save_cubreactive_users(users)
+    notify_cubreactive_overlay(user['id'])
     return jsonify({'success': True, 'config': users[user['id']]})
 
 @app.route('/api/cubreactive/upload', methods=['POST'])
@@ -1619,6 +1632,7 @@ def cubreactive_upload_image():
 
     users[user['id']]['images'][state] = f"/uploads/cubreactive/{filename}"
     save_cubreactive_users(users)
+    notify_cubreactive_overlay(user['id'])
 
     return jsonify({
         'success': True,
@@ -1677,6 +1691,7 @@ def cubreactive_delete_image():
                 os.remove(full_path)
             users[user['id']]['images'][state] = None
             save_cubreactive_users(users)
+            notify_cubreactive_overlay(user['id'])
 
     return jsonify({'success': True})
 
