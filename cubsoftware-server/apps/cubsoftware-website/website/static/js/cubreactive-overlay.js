@@ -13,6 +13,7 @@ class CubReactiveOverlay {
 
         // Store initial config if provided
         if (TARGET_USER_ID && USER_CONFIG && Object.keys(USER_CONFIG).length > 0) {
+            USER_CONFIG.hasCubReactive = true;
             this.userConfigs.set(TARGET_USER_ID, USER_CONFIG);
         }
     }
@@ -48,6 +49,10 @@ class CubReactiveOverlay {
                 console.log('WebSocket connected, subscribing...');
                 this.connected = true;
                 this.reconnectAttempts = 0;
+                this.showStatus('');
+
+                // Start keepalive ping (Cloudflare drops idle WS after ~100s)
+                this.startPing();
 
                 // Subscribe to voice updates for our target user
                 this.send({
@@ -73,6 +78,7 @@ class CubReactiveOverlay {
 
             this.ws.onclose = (event) => {
                 clearTimeout(timeout);
+                this.stopPing();
                 console.log('WebSocket closed, code:', event.code);
                 this.connected = false;
                 if (!this.disabled) {
@@ -295,7 +301,13 @@ class CubReactiveOverlay {
 
     render() {
         const container = document.getElementById('overlay-container');
-        container.innerHTML = '';
+
+        // Remove avatars for participants that left
+        container.querySelectorAll('.avatar-wrapper').forEach(el => {
+            if (!this.participants.has(el.dataset.userId)) {
+                el.remove();
+            }
+        });
 
         let participantsToRender = Array.from(this.participants.values());
 
@@ -373,128 +385,139 @@ class CubReactiveOverlay {
             const idleOpacity = settings.idle_opacity || 100;
             const flipHorizontal = settings.flip_horizontal || false;
 
-            const wrapper = document.createElement('div');
-            wrapper.className = 'avatar-wrapper';
-            wrapper.style.transition = `all ${transitionDuration}ms ease`;
+            // Check if element already exists for this participant
+            let wrapper = container.querySelector(`[data-user-id="${participant.id}"]`);
+            let isNew = false;
 
-            // Add animation class if speaking
+            if (!wrapper) {
+                isNew = true;
+                wrapper = document.createElement('div');
+                wrapper.className = 'avatar-wrapper';
+                wrapper.dataset.userId = participant.id;
+                wrapper.style.transition = `all ${transitionDuration}ms ease`;
+
+                // Avatar container
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.style.position = 'relative';
+                avatar.style.overflow = 'visible';
+
+                // Image wrapper (for clipping)
+                const imgWrapper = document.createElement('div');
+                imgWrapper.className = 'img-wrapper';
+                imgWrapper.style.width = '100%';
+                imgWrapper.style.height = '100%';
+                imgWrapper.style.overflow = 'hidden';
+
+                // Image
+                const img = document.createElement('img');
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.transition = `all ${transitionDuration}ms ease`;
+                img.onerror = () => { img.src = participant.avatar; };
+
+                imgWrapper.appendChild(img);
+                avatar.appendChild(imgWrapper);
+
+                // Status icon placeholder
+                const statusIcon = document.createElement('div');
+                statusIcon.className = 'status-icon';
+                statusIcon.style.display = 'none';
+                avatar.appendChild(statusIcon);
+
+                wrapper.appendChild(avatar);
+
+                // Username element
+                const username = document.createElement('div');
+                username.className = 'username';
+                wrapper.appendChild(username);
+            }
+
+            // Update existing elements
+            const avatar = wrapper.querySelector('.avatar');
+            const img = wrapper.querySelector('img');
+            const statusIcon = wrapper.querySelector('.status-icon');
+            const username = wrapper.querySelector('.username');
+
+            // Update wrapper animation class
+            wrapper.className = 'avatar-wrapper';
+            wrapper.dataset.userId = participant.id;
             if (participant.speaking && bounceOnSpeak) {
                 const animClass = this.getAnimationClass(animationStyle);
                 if (animClass) wrapper.classList.add(animClass);
             }
 
-            // Avatar container
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar';
+            // Update avatar styling
             avatar.style.width = `${avatarSize}px`;
             avatar.style.height = `${avatarSize}px`;
             avatar.style.borderRadius = this.getShapeBorderRadius(avatarShape);
             avatar.style.transition = `all ${transitionDuration}ms ease`;
-            avatar.style.position = 'relative';
-            avatar.style.overflow = 'visible';
+            avatar.style.clipPath = avatarShape === 'hexagon' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : '';
+            avatar.style.border = borderEnabled ? `${borderWidth}px solid ${borderColor}` : '';
 
-            // Apply hexagon clip-path
-            if (avatarShape === 'hexagon') {
-                avatar.style.clipPath = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
-            }
-
-            // Apply border
-            if (borderEnabled) {
-                avatar.style.border = `${borderWidth}px solid ${borderColor}`;
-            }
-
-            // Apply speaking ring
+            // Box shadow (speaking ring + glow)
+            let boxShadows = [];
             if (speakingRingEnabled && participant.speaking) {
-                avatar.style.boxShadow = `0 0 0 ${speakingRingWidth}px ${speakingRingColor}`;
+                boxShadows.push(`0 0 0 ${speakingRingWidth}px ${speakingRingColor}`);
             }
-
-            // Apply glow when speaking
             if (glowEnabled && participant.speaking) {
-                const existingShadow = avatar.style.boxShadow;
-                const glowShadow = `0 0 20px ${glowColor}, 0 0 40px ${glowColor}`;
-                avatar.style.boxShadow = existingShadow ? `${existingShadow}, ${glowShadow}` : glowShadow;
+                boxShadows.push(`0 0 20px ${glowColor}`, `0 0 40px ${glowColor}`);
             }
+            avatar.style.boxShadow = boxShadows.join(', ');
 
-            // Apply drop shadow
-            if (shadowEnabled) {
-                avatar.style.filter = `drop-shadow(0 4px ${shadowBlur}px ${shadowColor})`;
-            }
+            // Drop shadow
+            avatar.style.filter = shadowEnabled ? `drop-shadow(0 4px ${shadowBlur}px ${shadowColor})` : '';
 
-            // Image wrapper (for clipping)
-            const imgWrapper = document.createElement('div');
-            imgWrapper.style.width = '100%';
-            imgWrapper.style.height = '100%';
+            // Image wrapper shape
+            const imgWrapper = wrapper.querySelector('.img-wrapper');
             imgWrapper.style.borderRadius = this.getShapeBorderRadius(avatarShape);
-            imgWrapper.style.overflow = 'hidden';
-            if (avatarShape === 'hexagon') {
-                imgWrapper.style.clipPath = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
-            }
+            imgWrapper.style.clipPath = avatarShape === 'hexagon' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : '';
 
-            // Image
-            const img = document.createElement('img');
-            img.src = imageUrl;
+            // Update image src only if changed (prevents reload flicker)
+            if (img.src !== new URL(imageUrl, window.location.origin).href) {
+                img.src = imageUrl;
+            }
             img.alt = participant.username;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            img.style.transition = `all ${transitionDuration}ms ease`;
-            img.onerror = () => {
-                img.src = participant.avatar;
-            };
-
-            // Apply flip
-            if (flipHorizontal) {
-                img.style.transform = 'scaleX(-1)';
-            }
+            img.style.transform = flipHorizontal ? 'scaleX(-1)' : '';
 
             // Apply filters based on state
             let filters = [];
             let opacity = 1;
-
             if (participant.deafened && grayscaleDeafened) {
                 filters.push('grayscale(80%)', 'brightness(0.7)');
             } else if (participant.muted && grayscaleMuted) {
                 filters.push('grayscale(50%)');
-            } else if (!participant.speaking && dimWhenIdle) {
-                opacity = idleOpacity / 100;
             } else if (!participant.speaking) {
                 opacity = idleOpacity / 100;
             }
-
-            if (filters.length > 0) {
-                img.style.filter = filters.join(' ');
-            }
+            img.style.filter = filters.join(' ');
             wrapper.style.opacity = opacity;
-
-            imgWrapper.appendChild(img);
-            avatar.appendChild(imgWrapper);
 
             // Status icons
             if (showStatusIcons && (participant.muted || participant.deafened)) {
-                const statusIcon = document.createElement('div');
-                statusIcon.className = 'status-icon';
+                statusIcon.style.display = 'flex';
                 statusIcon.innerHTML = participant.deafened ? this.getDeafenedIcon() : this.getMutedIcon();
-                avatar.appendChild(statusIcon);
+            } else {
+                statusIcon.style.display = 'none';
             }
-
-            wrapper.appendChild(avatar);
 
             // Username
             if (showName) {
-                const username = document.createElement('div');
-                username.className = 'username';
+                username.style.display = '';
                 username.textContent = participant.username;
                 username.style.color = nameColor;
                 username.style.fontSize = `${nameSize}px`;
-                if (nameBgEnabled) {
-                    username.style.background = nameBgColor;
-                    username.style.padding = '4px 8px';
-                    username.style.borderRadius = '4px';
-                }
-                wrapper.appendChild(username);
+                username.style.background = nameBgEnabled ? nameBgColor : '';
+                username.style.padding = nameBgEnabled ? '4px 8px' : '';
+                username.style.borderRadius = nameBgEnabled ? '4px' : '';
+            } else {
+                username.style.display = 'none';
             }
 
-            container.appendChild(wrapper);
+            if (isNew) {
+                container.appendChild(wrapper);
+            }
         });
 
         this.ensureAnimationStyles();
@@ -578,6 +601,20 @@ class CubReactiveOverlay {
             }
         `;
         document.head.appendChild(style);
+    }
+
+    startPing() {
+        this.stopPing();
+        this.pingInterval = setInterval(() => {
+            this.send({ type: 'PING' });
+        }, 30000);
+    }
+
+    stopPing() {
+        if (this.pingInterval) {
+            clearInterval(this.pingInterval);
+            this.pingInterval = null;
+        }
     }
 
     send(payload) {

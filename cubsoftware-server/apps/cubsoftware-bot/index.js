@@ -246,10 +246,23 @@ async function joinChannelForSpeaking(channelId, guildId) {
 
     try {
         const guild = client.guilds.cache.get(guildId);
-        if (!guild) return;
+        if (!guild) {
+            console.log(`[CubReactive] Guild ${guildId} not found, skipping voice join`);
+            return;
+        }
 
         const channel = guild.channels.cache.get(channelId);
-        if (!channel) return;
+        if (!channel) {
+            console.log(`[CubReactive] Channel ${channelId} not found, skipping voice join`);
+            return;
+        }
+
+        // Check bot has permission to connect
+        const permissions = channel.permissionsFor(guild.members.me);
+        if (!permissions || !permissions.has('Connect')) {
+            console.log(`[CubReactive] No Connect permission for channel: ${channel.name}`);
+            return;
+        }
 
         console.log(`[CubReactive] Joining voice channel: ${channel.name} (${channelId})`);
 
@@ -262,6 +275,11 @@ async function joinChannelForSpeaking(channelId, guildId) {
         });
 
         activeVoiceConnections.set(channelId, connection);
+
+        // Wait for ready state before setting up listeners
+        connection.on(VoiceConnectionStatus.Ready, () => {
+            console.log(`[CubReactive] Voice connection ready in: ${channel.name}`);
+        });
 
         // Listen for speaking events
         connection.receiver.speaking.on('start', (userId) => {
@@ -292,7 +310,7 @@ async function joinChannelForSpeaking(channelId, guildId) {
                 // Reconnecting
             } catch (e) {
                 // Truly disconnected
-                connection.destroy();
+                try { connection.destroy(); } catch (_) {}
                 activeVoiceConnections.delete(channelId);
                 console.log(`[CubReactive] Disconnected from channel: ${channelId}`);
             }
@@ -302,8 +320,14 @@ async function joinChannelForSpeaking(channelId, guildId) {
             activeVoiceConnections.delete(channelId);
         });
 
+        // Catch any errors on the connection
+        connection.on('error', (err) => {
+            console.error(`[CubReactive] Voice connection error in ${channelId}:`, err.message);
+        });
+
     } catch (e) {
-        console.error(`[CubReactive] Failed to join voice channel ${channelId}:`, e);
+        console.error(`[CubReactive] Failed to join voice channel ${channelId}:`, e.message);
+        activeVoiceConnections.delete(channelId);
     }
 }
 
@@ -1424,74 +1448,67 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
     const avatar = member?.user?.avatarURL({ size: 256 }) ||
                    `https://cdn.discordapp.com/embed/avatars/${parseInt(member?.user?.discriminator || '0') % 5}.png`;
 
-    // User left a channel
-    if (oldChannelId && (!newChannelId || oldChannelId !== newChannelId)) {
-        // Remove from old channel
+    // Case 1: User left voice completely
+    if (!newChannelId) {
+        if (oldChannelId) {
+            const oldMembers = channelMembers.get(oldChannelId);
+            if (oldMembers) {
+                oldMembers.delete(userId);
+                if (oldMembers.size === 0) channelMembers.delete(oldChannelId);
+            }
+            if (overlayConnections.has(userId)) {
+                untrackOverlayUser(userId, oldChannelId);
+            }
+            broadcastChannelUpdate(oldChannelId);
+        }
+        voiceStates.delete(userId);
+        broadcastVoiceUpdate(userId, { left: true });
+        return;
+    }
+
+    // Case 2: User switched channels
+    if (oldChannelId && oldChannelId !== newChannelId) {
         const oldMembers = channelMembers.get(oldChannelId);
         if (oldMembers) {
             oldMembers.delete(userId);
-            if (oldMembers.size === 0) {
-                channelMembers.delete(oldChannelId);
-            }
+            if (oldMembers.size === 0) channelMembers.delete(oldChannelId);
         }
-
-        // If this user has an overlay, untrack from old channel
         if (overlayConnections.has(userId)) {
             untrackOverlayUser(userId, oldChannelId);
         }
-
-        // Broadcast leave to overlays watching this channel
         broadcastChannelUpdate(oldChannelId);
     }
 
-    // User joined a channel
-    if (newChannelId) {
-        // Add to new channel
-        if (!channelMembers.has(newChannelId)) {
-            channelMembers.set(newChannelId, new Set());
-        }
-        channelMembers.get(newChannelId).add(userId);
+    // Case 3: User joined or is in a channel — update state
+    if (!channelMembers.has(newChannelId)) {
+        channelMembers.set(newChannelId, new Set());
+    }
+    channelMembers.get(newChannelId).add(userId);
 
-        // Update voice state
-        const state = {
-            channelId: newChannelId,
-            guildId: guildId,
-            username,
-            avatar,
-            muted: newState.selfMute || newState.serverMute || false,
-            deafened: newState.selfDeaf || newState.serverDeaf || false,
-            speaking: voiceStates.get(userId)?.speaking || false,
-            streaming: newState.streaming || false,
-            video: newState.selfVideo || false
-        };
+    const isNewJoin = !oldChannelId || oldChannelId !== newChannelId;
 
-        voiceStates.set(userId, state);
+    // Build/update voice state
+    const state = {
+        channelId: newChannelId,
+        guildId: guildId,
+        username,
+        avatar,
+        muted: newState.selfMute || newState.serverMute || false,
+        deafened: newState.selfDeaf || newState.serverDeaf || false,
+        speaking: voiceStates.get(userId)?.speaking || false,
+        streaming: newState.streaming || false,
+        video: newState.selfVideo || false
+    };
 
-        // If this user has an overlay, join the channel for speaking detection
+    voiceStates.set(userId, state);
+    broadcastVoiceUpdate(userId, state);
+
+    // Only send channel update and join voice on actual channel change
+    if (isNewJoin) {
         if (overlayConnections.has(userId)) {
             trackOverlayUser(userId, newChannelId, guildId);
         }
-
-        // Broadcast update
-        broadcastVoiceUpdate(userId, state);
         broadcastChannelUpdate(newChannelId);
-    } else {
-        // User completely left voice
-        voiceStates.delete(userId);
-        broadcastVoiceUpdate(userId, { left: true });
-    }
-
-    // Handle mute/deafen changes within same channel
-    if (oldChannelId === newChannelId && newChannelId) {
-        const currentState = voiceStates.get(userId);
-        if (currentState) {
-            currentState.muted = newState.selfMute || newState.serverMute || false;
-            currentState.deafened = newState.selfDeaf || newState.serverDeaf || false;
-            currentState.streaming = newState.streaming || false;
-            currentState.video = newState.selfVideo || false;
-            voiceStates.set(userId, currentState);
-            broadcastVoiceUpdate(userId, currentState);
-        }
     }
 });
 
@@ -1743,5 +1760,10 @@ function startLogServer() {
         console.log(`[CubSoftware Bot] Log server running on port ${config.logServerPort}`);
     });
 }
+
+// Catch unhandled errors so voice connection issues don't crash the bot
+process.on('unhandledRejection', (err) => {
+    console.error('[CubSoftware Bot] Unhandled rejection:', err.message || err);
+});
 
 client.login(config.token);
