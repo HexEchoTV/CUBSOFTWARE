@@ -1214,7 +1214,8 @@ def cubreactive_overlay_group(user_id):
         mode='group',
         target_user_id=user_id,
         user_config=user_config,
-        ws_url=CUBREACTIVE_WS_URL
+        ws_url=CUBREACTIVE_WS_URL,
+        cache_bust=int(time.time())
     )
 
 @app.route('/apps/cubreactive/overlay/<user_id>')
@@ -1226,7 +1227,8 @@ def cubreactive_overlay_individual(user_id):
         mode='individual',
         target_user_id=user_id,
         user_config=user_config,
-        ws_url=CUBREACTIVE_WS_URL
+        ws_url=CUBREACTIVE_WS_URL,
+        cache_bust=int(time.time())
     )
 
 # CubReactive OAuth Routes

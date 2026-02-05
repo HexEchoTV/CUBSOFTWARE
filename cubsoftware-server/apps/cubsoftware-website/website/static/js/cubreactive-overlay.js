@@ -124,12 +124,10 @@ class CubReactiveOverlay {
 
             case 'CONFIG_UPDATED':
                 console.log('Config updated, refreshing...');
-                if (data.userId) {
-                    await this.fetchUserConfig(data.userId);
-                } else if (TARGET_USER_ID) {
-                    await this.fetchUserConfig(TARGET_USER_ID);
+                const refreshId = data.userId || TARGET_USER_ID;
+                if (refreshId) {
+                    this.fetchUserConfig(refreshId).then(() => this.render());
                 }
-                this.render();
                 break;
 
             case 'DISABLED':
