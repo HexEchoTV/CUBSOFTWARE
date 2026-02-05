@@ -537,31 +537,37 @@
 
 .shape-preview.hexagon {
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: var(--accent-blue);
 }
 
 .shape-preview.diamond {
     clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    background: var(--accent-blue);
 }
 
 .shape-preview.octagon {
     clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+    background: var(--accent-blue);
 }
 
 .shape-preview.star {
     clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    background: var(--accent-blue);
 }
 
 .shape-preview.heart {
-    clip-path: path('M20 8.5c0-2.5-2-4.5-4.5-4.5-1.5 0-2.8.7-3.5 1.7C11.3 4.7 10 4 8.5 4 6 4 4 6 4 8.5c0 4.5 7.5 10.5 8 11 .5-.5 8-6.5 8-11z');
-    transform: scale(2);
+    clip-path: polygon(50% 15%, 100% 0%, 100% 35%, 50% 100%, 0% 35%, 0% 0%);
+    background: linear-gradient(135deg, #ff6b9d, #c44569);
 }
 
 .shape-preview.shield {
     clip-path: polygon(50% 0%, 100% 10%, 100% 60%, 50% 100%, 0% 60%, 0% 10%);
+    background: var(--accent-blue);
 }
 
 .shape-preview.blob {
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
 }
 
 .shape-btn span {
@@ -898,6 +904,11 @@
     background: linear-gradient(180deg, #37474f, #78909c, #b0bec5);
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
     opacity: 0.7;
+}
+
+.theme-preview.vaporwave {
+    background: linear-gradient(135deg, #ff71ce, #01cdfe, #05ffa1, #b967ff, #fffb96);
+    box-shadow: 0 0 10px #ff71ce, 0 0 5px #01cdfe;
 }
 
 .theme-btn span {

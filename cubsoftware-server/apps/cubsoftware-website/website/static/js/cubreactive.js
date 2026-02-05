@@ -753,6 +753,33 @@ const THEMES = {
         idle_opacity: 40,
         transition_style: 'blur',
         transition_duration: 350
+    },
+    vaporwave: {
+        bounce_on_speak: true,
+        dim_when_idle: false,
+        animation_style: 'wave',
+        avatar_shape: 'rounded',
+        avatar_size: 185,
+        border_enabled: true,
+        border_color: '#ff71ce',
+        border_width: 4,
+        glow_enabled: true,
+        glow_color: '#01cdfe',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#05ffa1',
+        speaking_ring_width: 5,
+        shadow_enabled: true,
+        shadow_color: '#b967ff',
+        shadow_blur: 20,
+        name_color: '#fffb96',
+        name_size: 14,
+        name_background_enabled: true,
+        name_background_color: '#1a0a2e',
+        grayscale_muted: false,
+        grayscale_deafened: true,
+        idle_opacity: 85,
+        transition_style: 'fade',
+        transition_duration: 250
     }
 };
 
