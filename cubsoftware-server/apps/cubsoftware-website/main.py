@@ -1255,12 +1255,6 @@ def enable_feature():
 
     return jsonify({'success': True, 'message': f'{feature} has been enabled'})
 
-@app.route('/api/features/status')
-def get_features_status():
-    """Get disabled features list (for index page)"""
-    config = load_features_config()
-    return jsonify({'disabled': config.get('disabled', [])})
-
 # ==================== CLEANME WEBSITE ====================
 
 # CleanMe Data Storage
@@ -1929,6 +1923,60 @@ def submit_report():
 
     return jsonify({'success': True, 'reportId': report['id']})
 
+# ==================== PM2 DASHBOARD CONFIG & AUTH ====================
+
+# PM2 Dashboard Configuration
+PM2_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'pm2_config.json')
+PM2_WHITELIST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'pm2_whitelist.json')
+
+# Discord OAuth Configuration (loaded from config file or environment)
+def load_pm2_config():
+    """Load PM2 dashboard configuration"""
+    if os.path.exists(PM2_CONFIG_FILE):
+        with open(PM2_CONFIG_FILE, 'r') as f:
+            return json.load(f)
+    return {
+        'discord_client_id': os.environ.get('DISCORD_CLIENT_ID', ''),
+        'discord_client_secret': os.environ.get('DISCORD_CLIENT_SECRET', ''),
+        'discord_redirect_uri': os.environ.get('DISCORD_REDIRECT_URI', 'https://cubsoftware.site/apps/pm2-dashboard/callback')
+    }
+
+def save_pm2_config(config):
+    """Save PM2 dashboard configuration"""
+    os.makedirs(os.path.dirname(PM2_CONFIG_FILE), exist_ok=True)
+    with open(PM2_CONFIG_FILE, 'w') as f:
+        json.dump(config, f, indent=2)
+
+def load_pm2_whitelist():
+    """Load PM2 dashboard whitelist"""
+    if os.path.exists(PM2_WHITELIST_FILE):
+        with open(PM2_WHITELIST_FILE, 'r') as f:
+            return json.load(f)
+    return {'allowed_users': ['378501056008683530']}
+
+def save_pm2_whitelist(whitelist):
+    """Save PM2 dashboard whitelist"""
+    os.makedirs(os.path.dirname(PM2_WHITELIST_FILE), exist_ok=True)
+    with open(PM2_WHITELIST_FILE, 'w') as f:
+        json.dump(whitelist, f, indent=2)
+
+def is_user_whitelisted(user_id):
+    """Check if a user is whitelisted for PM2 dashboard access"""
+    whitelist = load_pm2_whitelist()
+    return str(user_id) in whitelist.get('allowed_users', [])
+
+def pm2_auth_required(f):
+    """Decorator to require PM2 dashboard authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'pm2_user' not in session:
+            return redirect(url_for('pm2_login'))
+        if not is_user_whitelisted(session['pm2_user']['id']):
+            session.pop('pm2_user', None)
+            return redirect(url_for('pm2_login', error='not_whitelisted'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Admin API for reports management
 @app.route('/api/reports')
 @pm2_auth_required
@@ -2022,59 +2070,7 @@ social_module = importlib.util.module_from_spec(spec_social)
 spec_social.loader.exec_module(social_module)
 app.register_blueprint(social_module.social_media_bp, url_prefix='/apps/social-media-saver')
 
-# ==================== PM2 DASHBOARD ====================
-
-# PM2 Dashboard Configuration
-PM2_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'pm2_config.json')
-PM2_WHITELIST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'pm2_whitelist.json')
-
-# Discord OAuth Configuration (loaded from config file or environment)
-def load_pm2_config():
-    """Load PM2 dashboard configuration"""
-    if os.path.exists(PM2_CONFIG_FILE):
-        with open(PM2_CONFIG_FILE, 'r') as f:
-            return json.load(f)
-    return {
-        'discord_client_id': os.environ.get('DISCORD_CLIENT_ID', ''),
-        'discord_client_secret': os.environ.get('DISCORD_CLIENT_SECRET', ''),
-        'discord_redirect_uri': os.environ.get('DISCORD_REDIRECT_URI', 'https://cubsoftware.site/apps/pm2-dashboard/callback')
-    }
-
-def save_pm2_config(config):
-    """Save PM2 dashboard configuration"""
-    os.makedirs(os.path.dirname(PM2_CONFIG_FILE), exist_ok=True)
-    with open(PM2_CONFIG_FILE, 'w') as f:
-        json.dump(config, f, indent=2)
-
-def load_pm2_whitelist():
-    """Load PM2 dashboard whitelist"""
-    if os.path.exists(PM2_WHITELIST_FILE):
-        with open(PM2_WHITELIST_FILE, 'r') as f:
-            return json.load(f)
-    return {'allowed_users': ['378501056008683530']}
-
-def save_pm2_whitelist(whitelist):
-    """Save PM2 dashboard whitelist"""
-    os.makedirs(os.path.dirname(PM2_WHITELIST_FILE), exist_ok=True)
-    with open(PM2_WHITELIST_FILE, 'w') as f:
-        json.dump(whitelist, f, indent=2)
-
-def is_user_whitelisted(user_id):
-    """Check if a user is whitelisted for PM2 dashboard access"""
-    whitelist = load_pm2_whitelist()
-    return str(user_id) in whitelist.get('allowed_users', [])
-
-def pm2_auth_required(f):
-    """Decorator to require PM2 dashboard authentication"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'pm2_user' not in session:
-            return redirect(url_for('pm2_login'))
-        if not is_user_whitelisted(session['pm2_user']['id']):
-            session.pop('pm2_user', None)
-            return redirect(url_for('pm2_login', error='not_whitelisted'))
-        return f(*args, **kwargs)
-    return decorated_function
+# ==================== PM2 DASHBOARD ROUTES ====================
 
 @app.route('/admin')
 @app.route('/admin/')
