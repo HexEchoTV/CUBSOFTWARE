@@ -351,7 +351,17 @@ function trackOverlayUser(userId, channelId, guildId) {
         overlayChannels.set(channelId, new Set());
     }
     overlayChannels.get(channelId).add(userId);
-    joinChannelForSpeaking(channelId, guildId);
+
+    // Defer voice join so it can't crash the subscribe flow
+    setTimeout(() => {
+        try {
+            joinChannelForSpeaking(channelId, guildId).catch(err => {
+                console.error(`[CubReactive] Voice join failed (async): ${err.message}`);
+            });
+        } catch (err) {
+            console.error(`[CubReactive] Voice join failed (sync): ${err.message}`);
+        }
+    }, 2000);
 }
 
 // Untrack overlay user from a channel
