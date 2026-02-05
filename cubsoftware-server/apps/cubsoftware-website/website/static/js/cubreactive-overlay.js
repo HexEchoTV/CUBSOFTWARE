@@ -47,7 +47,9 @@ class CubReactiveOverlay {
 
     tryConnect(port) {
         return new Promise((resolve, reject) => {
-            const url = `ws://127.0.0.1:${port}/?v=1&client_id=${DISCORD_CLIENT_ID}&encoding=json`;
+            // Use Discord StreamKit's client_id which has broader origin permissions
+            const STREAMKIT_CLIENT_ID = '207646673902501888';
+            const url = `ws://127.0.0.1:${port}/?v=1&client_id=${STREAMKIT_CLIENT_ID}&encoding=json`;
 
             this.ws = new WebSocket(url);
 
@@ -131,11 +133,12 @@ class CubReactiveOverlay {
     }
 
     authorize() {
-        console.log('Sending AUTHORIZE command');
+        const STREAMKIT_CLIENT_ID = '207646673902501888';
+        console.log('Sending AUTHORIZE command with StreamKit client_id');
         this.send({
             cmd: 'AUTHORIZE',
             args: {
-                client_id: DISCORD_CLIENT_ID,
+                client_id: STREAMKIT_CLIENT_ID,
                 scopes: ['rpc', 'rpc.voice.read']
             },
             nonce: this.nonce()

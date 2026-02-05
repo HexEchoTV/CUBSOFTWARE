@@ -1068,7 +1068,8 @@ async function performCopy(interaction, sourceServerId) {
         // Step 3: Create roles
         const roleMap = new Map();
         const roleErrors = [];
-        const sortedRoles = [...save.roles].sort((a, b) => a.position - b.position);
+        // Sort roles from highest to lowest position so they stack correctly when created
+        const sortedRoles = [...save.roles].sort((a, b) => b.position - a.position);
         let rolesCreated = 0;
 
         for (const roleData of sortedRoles) {
@@ -1094,23 +1095,31 @@ async function performCopy(interaction, sourceServerId) {
         }
         await updateProgressEmbed(2, 'Creating Roles', save.roles.length, save.roles.length, 'Complete');
 
-        // Try to reorder roles
+        // Try to reorder roles - sort by original position (highest first) and assign new positions
         try {
             const rolePositions = [];
-            for (const roleData of save.roles) {
-                const role = roleMap.get(roleData.name);
-                if (role) {
-                    rolePositions.push({
-                        role: role,
-                        position: roleData.position
-                    });
-                }
-            }
-            if (rolePositions.length > 0) {
-                await safeApiCall(() => guild.roles.setPositions(rolePositions.map((r, i) => ({
+            // Get roles sorted by their original position (highest first)
+            const rolesWithPositions = [...save.roles]
+                .sort((a, b) => b.position - a.position)
+                .map(roleData => ({
+                    role: roleMap.get(roleData.name),
+                    originalPosition: roleData.position
+                }))
+                .filter(r => r.role);
+
+            // Calculate max position we can use (below bot's highest role)
+            const maxPosition = guild.members.me.roles.highest.position - 1;
+
+            // Assign positions from top to bottom
+            rolesWithPositions.forEach((r, index) => {
+                rolePositions.push({
                     role: r.role.id,
-                    position: Math.min(r.position, guild.members.me.roles.highest.position - 1)
-                }))));
+                    position: Math.max(1, maxPosition - index)
+                });
+            });
+
+            if (rolePositions.length > 0) {
+                await safeApiCall(() => guild.roles.setPositions(rolePositions));
             }
         } catch (e) {
             console.log('Could not reorder roles:', e.message);
