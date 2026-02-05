@@ -11,6 +11,8 @@ class CubReactiveOverlay {
         this.minPort = 6463;
         this.maxPort = 6472;
         this.currentUserId = null; // The user viewing the overlay
+        this.resolveConnect = null;
+        this.rejectConnect = null;
 
         // Store initial config if provided
         if (TARGET_USER_ID && USER_CONFIG && Object.keys(USER_CONFIG).length > 0) {
@@ -22,13 +24,45 @@ class CubReactiveOverlay {
         this.showStatus('Connecting to Discord...', 'connecting');
 
         try {
+            // First, fetch the RPC token from our server
+            await this.fetchRpcToken();
+
+            if (!this.accessToken) {
+                this.showStatus('Please connect Discord RPC in your CubReactive dashboard first.', 'error');
+                return;
+            }
+
             await this.connect();
         } catch (error) {
-            this.showStatus('Could not connect to Discord. Make sure Discord is running.', 'error');
             console.error('Connection failed:', error);
 
-            // Retry after 5 seconds
-            setTimeout(() => this.init(), 5000);
+            if (error.message === 'needs_auth') {
+                this.showStatus('Please connect Discord RPC in your CubReactive dashboard.', 'error');
+            } else {
+                this.showStatus('Could not connect to Discord. Make sure Discord is running.', 'error');
+                // Retry after 5 seconds
+                setTimeout(() => this.init(), 5000);
+            }
+        }
+    }
+
+    async fetchRpcToken() {
+        try {
+            const response = await fetch(`${API_BASE}/api/cubreactive/rpc-token?user_id=${TARGET_USER_ID}`);
+            const data = await response.json();
+
+            if (data.error) {
+                if (data.needs_auth) {
+                    throw new Error('needs_auth');
+                }
+                throw new Error(data.error);
+            }
+
+            this.accessToken = data.access_token;
+            console.log('Got RPC token from server');
+        } catch (error) {
+            console.error('Failed to fetch RPC token:', error);
+            throw error;
         }
     }
 
@@ -39,7 +73,7 @@ class CubReactiveOverlay {
                 console.log(`Connected to Discord on port ${port}`);
                 return;
             } catch (error) {
-                console.log(`Port ${port} failed, trying next...`);
+                console.log(`Port ${port} failed:`, error.message, 'trying next...');
             }
         }
         throw new Error('Could not connect to any Discord RPC port');
@@ -47,27 +81,28 @@ class CubReactiveOverlay {
 
     tryConnect(port) {
         return new Promise((resolve, reject) => {
-            // Use Discord StreamKit's client_id which has broader origin permissions
-            // Use Reactive Images client_id which has RPC scope approved
-            const RPC_CLIENT_ID = '794365445557846066';
-            const url = `ws://127.0.0.1:${port}/?v=1&client_id=${RPC_CLIENT_ID}&encoding=json`;
+            // Use our app's client_id
+            const url = `ws://127.0.0.1:${port}/?v=1&client_id=${DISCORD_CLIENT_ID}&encoding=json`;
 
+            console.log('Connecting to:', url);
             this.ws = new WebSocket(url);
+            this.resolveConnect = resolve;
+            this.rejectConnect = reject;
 
             const timeout = setTimeout(() => {
                 this.ws.close();
                 reject(new Error('Connection timeout'));
-            }, 3000);
+            }, 5000);
 
             this.ws.onopen = () => {
                 clearTimeout(timeout);
-                console.log('WebSocket connected, client_id:', DISCORD_CLIENT_ID);
+                console.log('WebSocket connected, waiting for READY...');
             };
 
             this.ws.onmessage = (event) => {
-                console.log('Raw message:', event.data.substring(0, 200));
+                console.log('Raw message:', event.data.substring(0, 500));
                 const data = JSON.parse(event.data);
-                this.handleMessage(data, resolve, reject);
+                this.handleMessage(data);
             };
 
             this.ws.onerror = (error) => {
@@ -77,8 +112,16 @@ class CubReactiveOverlay {
             };
 
             this.ws.onclose = (event) => {
+                clearTimeout(timeout);
                 console.log('WebSocket closed, code:', event.code, 'reason:', event.reason);
                 this.authenticated = false;
+
+                // If closed with 4001, origin is rejected
+                if (event.code === 4001) {
+                    reject(new Error('Invalid Origin - origin not whitelisted'));
+                    return;
+                }
+
                 if (this.currentChannel) {
                     setTimeout(() => this.init(), 3000);
                 }
@@ -86,29 +129,32 @@ class CubReactiveOverlay {
         });
     }
 
-    handleMessage(data, resolveConnect, rejectConnect) {
+    handleMessage(data) {
         console.log('Received:', data.cmd, data.evt);
 
         switch (data.cmd) {
             case 'DISPATCH':
-                this.handleDispatch(data);
-                break;
-
-            case 'AUTHORIZE':
-                this.handleAuthorize(data);
+                if (data.evt === 'READY') {
+                    // Got READY, now authenticate directly with our token
+                    console.log('Got READY, authenticating with pre-obtained token...');
+                    this.authenticate();
+                } else {
+                    this.handleDispatch(data);
+                }
                 break;
 
             case 'AUTHENTICATE':
                 if (data.evt === 'ERROR') {
                     console.error('Auth error:', data.data);
-                    this.showStatus('Authentication failed', 'error');
+                    this.showStatus('Authentication failed: ' + (data.data?.message || 'Unknown error'), 'error');
+                    if (this.rejectConnect) this.rejectConnect(new Error('Auth failed'));
                 } else {
                     this.authenticated = true;
                     this.currentUserId = data.data?.user?.id;
                     this.showStatus('');
                     console.log('Authenticated successfully, user:', this.currentUserId);
                     this.subscribeToVoice();
-                    if (resolveConnect) resolveConnect();
+                    if (this.resolveConnect) this.resolveConnect();
                 }
                 break;
 
@@ -121,46 +167,16 @@ class CubReactiveOverlay {
                     this.handleVoiceChannel(data.data);
                 }
                 break;
-
-            default:
-                if (data.cmd === 'DISPATCH' && data.evt === 'READY') {
-                    this.authorize();
-                }
-        }
-
-        if (data.evt === 'READY' && !this.authenticated) {
-            this.authorize();
         }
     }
 
-    authorize() {
-        // Use Reactive Images client_id which has RPC scope approved
-            const RPC_CLIENT_ID = '794365445557846066';
-        console.log('Sending AUTHORIZE command with StreamKit client_id');
-        this.send({
-            cmd: 'AUTHORIZE',
-            args: {
-                client_id: RPC_CLIENT_ID,
-                scopes: ['rpc', 'rpc.voice.read']
-            },
-            nonce: this.nonce()
-        });
-    }
-
-    async handleAuthorize(data) {
-        if (data.evt === 'ERROR') {
-            console.error('Authorization error:', data.data);
-            this.showStatus('Please authorize CubReactive in Discord', 'error');
-            return;
-        }
-
-        const code = data.data.code;
-        console.log('Got auth code, authenticating...');
-
+    authenticate() {
+        // Use our pre-obtained access token directly
+        console.log('Sending AUTHENTICATE with access token');
         this.send({
             cmd: 'AUTHENTICATE',
             args: {
-                access_token: code
+                access_token: this.accessToken
             },
             nonce: this.nonce()
         });

@@ -1144,6 +1144,7 @@ CUBREACTIVE_UPLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)
 
 # Discord OAuth for CubReactive (uses same credentials as CleanMe)
 CUBREACTIVE_REDIRECT_URI = os.environ.get('CUBREACTIVE_REDIRECT_URI', 'https://cubsoftware.site/apps/cubreactive/auth/callback')
+CUBREACTIVE_RPC_REDIRECT_URI = os.environ.get('CUBREACTIVE_RPC_REDIRECT_URI', 'https://cubsoftware.site/apps/cubreactive/auth/rpc/callback')
 
 def load_cubreactive_users():
     """Load CubReactive user configurations"""
@@ -1352,6 +1353,123 @@ def cubreactive_logout():
     """Logout from CubReactive"""
     session.pop('cubreactive_user', None)
     return redirect('/apps/cubreactive')
+
+@app.route('/apps/cubreactive/auth/rpc')
+@cubreactive_auth_required
+def cubreactive_rpc_auth():
+    """Initiate Discord OAuth for RPC access"""
+    config = load_pm2_config()
+    params = {
+        'client_id': config.get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', '')),
+        'redirect_uri': CUBREACTIVE_RPC_REDIRECT_URI,
+        'response_type': 'code',
+        'scope': 'rpc rpc.voice.read identify',
+        'state': secrets.token_urlsafe(16)
+    }
+    session['cubreactive_rpc_oauth_state'] = params['state']
+    discord_url = f"https://discord.com/api/oauth2/authorize?{urllib.parse.urlencode(params)}"
+    return redirect(discord_url)
+
+@app.route('/apps/cubreactive/auth/rpc/callback')
+def cubreactive_rpc_callback():
+    """Discord OAuth callback for RPC access"""
+    error = request.args.get('error')
+    if error:
+        return redirect('/apps/cubreactive?error=rpc_auth_failed')
+
+    code = request.args.get('code')
+    state = request.args.get('state')
+
+    # Verify state
+    if state != session.get('cubreactive_rpc_oauth_state'):
+        return redirect('/apps/cubreactive?error=invalid_state')
+
+    # Exchange code for token
+    config = load_pm2_config()
+    try:
+        token_response = requests.post('https://discord.com/api/oauth2/token', data={
+            'client_id': config.get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', '')),
+            'client_secret': config.get('discord_client_secret', os.environ.get('DISCORD_CLIENT_SECRET', '')),
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': CUBREACTIVE_RPC_REDIRECT_URI
+        }, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+
+        if token_response.status_code != 200:
+            print(f"RPC token exchange failed: {token_response.status_code} {token_response.text}")
+            return redirect('/apps/cubreactive?error=rpc_token_failed')
+
+        tokens = token_response.json()
+        access_token = tokens.get('access_token')
+        refresh_token = tokens.get('refresh_token')
+        expires_in = tokens.get('expires_in', 604800)  # Default 7 days
+
+        # Get user info to verify
+        user = session.get('cubreactive_user')
+        if not user:
+            return redirect('/apps/cubreactive?error=not_logged_in')
+
+        # Store RPC token with user data
+        users = load_cubreactive_users()
+        if user['id'] in users:
+            users[user['id']]['rpc_token'] = access_token
+            users[user['id']]['rpc_refresh_token'] = refresh_token
+            users[user['id']]['rpc_token_expires'] = time.time() + expires_in
+            save_cubreactive_users(users)
+
+        return redirect('/apps/cubreactive?rpc_connected=true')
+
+    except Exception as e:
+        print(f"CubReactive RPC OAuth error: {e}")
+        return redirect('/apps/cubreactive?error=rpc_auth_error')
+
+@app.route('/api/cubreactive/rpc-token')
+def cubreactive_get_rpc_token():
+    """Get RPC token for overlay (called from overlay page)"""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    users = load_cubreactive_users()
+    user_config = users.get(user_id)
+
+    if not user_config:
+        return jsonify({'error': 'User not found'}), 404
+
+    rpc_token = user_config.get('rpc_token')
+    if not rpc_token:
+        return jsonify({'error': 'RPC not connected', 'needs_auth': True}), 401
+
+    # Check if token is expired
+    expires = user_config.get('rpc_token_expires', 0)
+    if time.time() > expires:
+        # Try to refresh the token
+        refresh_token = user_config.get('rpc_refresh_token')
+        if refresh_token:
+            config = load_pm2_config()
+            try:
+                token_response = requests.post('https://discord.com/api/oauth2/token', data={
+                    'client_id': config.get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', '')),
+                    'client_secret': config.get('discord_client_secret', os.environ.get('DISCORD_CLIENT_SECRET', '')),
+                    'grant_type': 'refresh_token',
+                    'refresh_token': refresh_token
+                }, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+
+                if token_response.status_code == 200:
+                    tokens = token_response.json()
+                    rpc_token = tokens.get('access_token')
+                    users[user_id]['rpc_token'] = rpc_token
+                    users[user_id]['rpc_refresh_token'] = tokens.get('refresh_token', refresh_token)
+                    users[user_id]['rpc_token_expires'] = time.time() + tokens.get('expires_in', 604800)
+                    save_cubreactive_users(users)
+                else:
+                    return jsonify({'error': 'Token expired', 'needs_auth': True}), 401
+            except:
+                return jsonify({'error': 'Token refresh failed', 'needs_auth': True}), 401
+        else:
+            return jsonify({'error': 'Token expired', 'needs_auth': True}), 401
+
+    return jsonify({'access_token': rpc_token})
 
 # CubReactive API Routes
 @app.route('/api/cubreactive/user/<user_id>')

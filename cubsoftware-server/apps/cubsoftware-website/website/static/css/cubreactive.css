@@ -740,6 +740,89 @@
     box-shadow: 0 4px 20px rgba(0, 157, 255, 0.3);
 }
 
+/* RPC Connection Section */
+.rpc-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.rpc-section h2 {
+    margin-bottom: 0.5rem;
+}
+
+.rpc-status-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.rpc-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.rpc-status.connected {
+    background: rgba(87, 242, 135, 0.2);
+    color: #57f287;
+}
+
+.rpc-status.disconnected {
+    background: rgba(237, 66, 69, 0.2);
+    color: #ed4245;
+}
+
+.rpc-status-card p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.btn-rpc-connect {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #5865f2;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-rpc-connect:hover {
+    background: #4752c4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(88, 101, 242, 0.4);
+}
+
+.btn-rpc-reconnect {
+    display: inline-block;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-rpc-reconnect:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
 /* Sources Section */
 .sources-section {
     background: var(--card-bg);

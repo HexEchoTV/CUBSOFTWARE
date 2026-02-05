@@ -512,3 +512,85 @@ document.addEventListener('DOMContentLoaded', () => {
     initToggleOptions('setting-speaking-ring', 'speaking-ring-options');
     initToggleOptions('setting-name-bg', 'name-bg-options');
 });
+
+// Download standalone overlay HTML file
+async function downloadOverlay(mode = 'individual') {
+    showToast('Generating overlay file...', 'info');
+
+    try {
+        // Fetch the overlay JavaScript
+        const overlayJsResponse = await fetch('/static/js/cubreactive-overlay.js');
+        const overlayJs = await overlayJsResponse.text();
+
+        // Fetch the overlay CSS
+        const overlayCssResponse = await fetch('/static/css/cubreactive-overlay.css');
+        const overlayCss = await overlayCssResponse.text();
+
+        // Get current config
+        const config = USER_CONFIG || {};
+        const settings = config.settings || {};
+        const images = config.images || {};
+
+        // Convert image URLs to absolute URLs
+        const baseUrl = window.location.origin;
+        const absoluteImages = {};
+        for (const [key, value] of Object.entries(images)) {
+            if (value) {
+                absoluteImages[key] = value.startsWith('http') ? value : baseUrl + value;
+            }
+        }
+
+        // Generate the standalone HTML
+        const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CubReactive Overlay</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: transparent;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        ${overlayCss}
+    </style>
+</head>
+<body>
+    <div id="status-overlay" class="status-overlay"></div>
+    <div id="overlay-container" class="overlay-container"></div>
+
+    <script>
+        // Configuration
+        const MODE = '${mode}';
+        const TARGET_USER_ID = '${USER_ID}';
+        const API_BASE = '${baseUrl}';
+        const DISCORD_CLIENT_ID = '794365445557846066';
+        const USER_CONFIG = ${JSON.stringify({
+            images: absoluteImages,
+            settings: settings
+        })};
+
+        ${overlayJs}
+    </script>
+</body>
+</html>`;
+
+        // Create and download the file
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cubreactive-${mode}-${USER_ID}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('Overlay downloaded! Add it as a local file in OBS.', 'success');
+    } catch (error) {
+        console.error('Download error:', error);
+        showToast('Failed to generate overlay: ' + error.message, 'error');
+    }
+}
