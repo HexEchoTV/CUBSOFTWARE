@@ -15,6 +15,8 @@ import atexit
 import signal
 from functools import wraps
 from jinja2 import ChoiceLoader, FileSystemLoader
+from PIL import Image
+import io
 
 # Add shared folder to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'shared'))
@@ -634,9 +636,10 @@ def shorten_url():
     """API endpoint to shorten a URL"""
     ip_address = get_client_ip()
 
-    # Check if IP is banned
-    if is_ip_banned(ip_address):
-        return jsonify({'error': 'Your IP has been banned from creating links'}), 403
+    # Check if IP is banned (uses the new unified ban system)
+    is_banned, ban_type, reason, expires = check_ip_ban(ip_address, 'link-shortener')
+    if is_banned:
+        return jsonify({'error': 'Your IP has been banned from creating links', 'reason': reason}), 403
 
     # Check rate limit
     if not check_link_rate_limit(ip_address):
@@ -1133,6 +1136,588 @@ def get_sticky_board(board_id):
 
     return jsonify(boards[board_id])
 
+# ==================== CUBREACTIVE - DISCORD REACTIVE IMAGES ====================
+
+# CubReactive Data Storage
+CUBREACTIVE_USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'cubreactive_users.json')
+CUBREACTIVE_UPLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'website', 'uploads', 'cubreactive')
+
+# Discord OAuth for CubReactive (uses same credentials as CleanMe)
+CUBREACTIVE_REDIRECT_URI = os.environ.get('CUBREACTIVE_REDIRECT_URI', 'https://cubsoftware.site/apps/cubreactive/auth/callback')
+
+def load_cubreactive_users():
+    """Load CubReactive user configurations"""
+    if os.path.exists(CUBREACTIVE_USERS_FILE):
+        try:
+            with open(CUBREACTIVE_USERS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+def save_cubreactive_users(data):
+    """Save CubReactive user configurations"""
+    os.makedirs(os.path.dirname(CUBREACTIVE_USERS_FILE), exist_ok=True)
+    with open(CUBREACTIVE_USERS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def cubreactive_auth_required(f):
+    """Decorator to require CubReactive authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'cubreactive_user' not in session:
+            if request.is_json or request.path.startswith('/api/cubreactive/'):
+                return jsonify({'error': 'Authentication required'}), 401
+            return redirect(url_for('cubreactive_auth'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# CubReactive Page Routes
+@app.route('/apps/cubreactive')
+@app.route('/apps/cubreactive/')
+@check_feature_enabled('cubreactive')
+def cubreactive_home():
+    """CubReactive - Discord Reactive Images for Streamers"""
+    cubreactive_user = session.get('cubreactive_user')
+    user_config = None
+
+    if cubreactive_user:
+        users = load_cubreactive_users()
+        user_config = users.get(cubreactive_user['id'])
+
+    return render_template('cubreactive.html',
+        cubreactive_user=cubreactive_user,
+        user_config=user_config,
+        discord_client_id=os.environ.get('DISCORD_CLIENT_ID', '')
+    )
+
+@app.route('/apps/cubreactive/overlay/<user_id>')
+def cubreactive_overlay_individual(user_id):
+    """CubReactive - Individual overlay browser source"""
+    users = load_cubreactive_users()
+    user_config = users.get(user_id, {})
+    return render_template('cubreactive-overlay.html',
+        mode='individual',
+        target_user_id=user_id,
+        user_config=user_config,
+        discord_client_id=os.environ.get('DISCORD_CLIENT_ID', '')
+    )
+
+@app.route('/apps/cubreactive/overlay/group')
+def cubreactive_overlay_group():
+    """CubReactive - Group overlay browser source (shows all voice channel participants)"""
+    return render_template('cubreactive-overlay.html',
+        mode='group',
+        target_user_id=None,
+        discord_client_id=os.environ.get('DISCORD_CLIENT_ID', '')
+    )
+
+# CubReactive OAuth Routes
+@app.route('/apps/cubreactive/auth/discord')
+def cubreactive_auth():
+    """Initiate Discord OAuth for CubReactive"""
+    config = load_pm2_config()
+    params = {
+        'client_id': config.get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', '')),
+        'redirect_uri': CUBREACTIVE_REDIRECT_URI,
+        'response_type': 'code',
+        'scope': 'identify',
+        'state': secrets.token_urlsafe(16)
+    }
+    session['cubreactive_oauth_state'] = params['state']
+    discord_url = f"https://discord.com/api/oauth2/authorize?{urllib.parse.urlencode(params)}"
+    return redirect(discord_url)
+
+@app.route('/apps/cubreactive/auth/callback')
+def cubreactive_callback():
+    """Discord OAuth callback for CubReactive"""
+    error = request.args.get('error')
+    if error:
+        return redirect('/apps/cubreactive?error=auth_failed')
+
+    code = request.args.get('code')
+    state = request.args.get('state')
+
+    # Verify state
+    if state != session.get('cubreactive_oauth_state'):
+        return redirect('/apps/cubreactive?error=invalid_state')
+
+    # Exchange code for token
+    config = load_pm2_config()
+    try:
+        token_response = requests.post('https://discord.com/api/oauth2/token', data={
+            'client_id': config.get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', '')),
+            'client_secret': config.get('discord_client_secret', os.environ.get('DISCORD_CLIENT_SECRET', '')),
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': CUBREACTIVE_REDIRECT_URI
+        }, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+
+        if token_response.status_code != 200:
+            return redirect('/apps/cubreactive?error=token_failed')
+
+        tokens = token_response.json()
+        access_token = tokens.get('access_token')
+
+        # Get user info
+        user_response = requests.get('https://discord.com/api/users/@me',
+            headers={'Authorization': f'Bearer {access_token}'})
+
+        if user_response.status_code != 200:
+            return redirect('/apps/cubreactive?error=user_failed')
+
+        user_data = user_response.json()
+
+        # Build avatar URL
+        avatar_hash = user_data.get('avatar')
+        if avatar_hash:
+            avatar_url = f"https://cdn.discordapp.com/avatars/{user_data['id']}/{avatar_hash}.png?size=256"
+        else:
+            # Default avatar
+            discriminator = int(user_data.get('discriminator', '0') or '0')
+            avatar_url = f"https://cdn.discordapp.com/embed/avatars/{discriminator % 5}.png"
+
+        # Store in session
+        session['cubreactive_user'] = {
+            'id': user_data['id'],
+            'username': user_data.get('global_name') or user_data.get('username'),
+            'avatar': avatar_url,
+            'authenticated_at': time.time()
+        }
+
+        # Initialize user config if new
+        users = load_cubreactive_users()
+        if user_data['id'] not in users:
+            users[user_data['id']] = {
+                'username': user_data.get('global_name') or user_data.get('username'),
+                'avatar_url': avatar_url,
+                'images': {
+                    'speaking': None,
+                    'idle': None,
+                    'muted': None,
+                    'deafened': None
+                },
+                'settings': {
+                    'bounce_on_speak': True,
+                    'dim_when_idle': False,
+                    'show_name': True,
+                    'overlay_position': 'bottom',
+                    'animation_style': 'bounce',
+                    'avatar_shape': 'rounded',
+                    'avatar_size': 180,
+                    'border_enabled': False,
+                    'border_color': '#5865f2',
+                    'border_width': 3,
+                    'glow_enabled': False,
+                    'glow_color': '#5865f2',
+                    'name_color': '#ffffff',
+                    'name_size': 14,
+                    'background_color': 'transparent',
+                    'spacing': 20,
+                    'grayscale_muted': True,
+                    'grayscale_deafened': True,
+                    'transition_style': 'fade',
+                    'transition_duration': 200,
+                    'shadow_enabled': False,
+                    'shadow_color': '#000000',
+                    'shadow_blur': 10,
+                    'speaking_ring_enabled': True,
+                    'speaking_ring_color': '#57f287',
+                    'speaking_ring_width': 4,
+                    'show_status_icons': True,
+                    'overlay_background': 'transparent',
+                    'name_background_enabled': False,
+                    'name_background_color': 'rgba(0,0,0,0.5)',
+                    'flip_horizontal': False,
+                    'max_participants': 0,
+                    'hide_self': False,
+                    'idle_opacity': 100,
+                    'theme': 'custom'
+                },
+                'created': time.time()
+            }
+            save_cubreactive_users(users)
+
+        return redirect('/apps/cubreactive')
+
+    except Exception as e:
+        print(f"CubReactive OAuth error: {e}")
+        return redirect('/apps/cubreactive?error=auth_error')
+
+@app.route('/apps/cubreactive/auth/logout')
+def cubreactive_logout():
+    """Logout from CubReactive"""
+    session.pop('cubreactive_user', None)
+    return redirect('/apps/cubreactive')
+
+# CubReactive API Routes
+@app.route('/api/cubreactive/user/<user_id>')
+def cubreactive_get_user(user_id):
+    """Get a user's CubReactive configuration (public - for overlays)"""
+    users = load_cubreactive_users()
+    user_config = users.get(user_id)
+
+    if not user_config:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Return public config (images and settings only)
+    return jsonify({
+        'username': user_config.get('username'),
+        'avatar_url': user_config.get('avatar_url'),
+        'images': user_config.get('images', {}),
+        'settings': user_config.get('settings', {})
+    })
+
+@app.route('/api/cubreactive/config', methods=['GET', 'POST'])
+@cubreactive_auth_required
+def cubreactive_config():
+    """Get or update user's CubReactive configuration"""
+    user = session.get('cubreactive_user')
+    users = load_cubreactive_users()
+
+    if request.method == 'GET':
+        user_config = users.get(user['id'], {})
+        return jsonify(user_config)
+
+    # POST - update config
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    if user['id'] not in users:
+        users[user['id']] = {
+            'username': user['username'],
+            'avatar_url': user['avatar'],
+            'images': {},
+            'settings': {},
+            'created': time.time()
+        }
+
+    # Update settings if provided
+    if 'settings' in data:
+        users[user['id']]['settings'].update(data['settings'])
+
+    save_cubreactive_users(users)
+    return jsonify({'success': True, 'config': users[user['id']]})
+
+@app.route('/api/cubreactive/upload', methods=['POST'])
+@cubreactive_auth_required
+def cubreactive_upload_image():
+    """Upload an image for a specific state - resized to 1024x1024"""
+    user = session.get('cubreactive_user')
+
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image provided'}), 400
+
+    image_file = request.files['image']
+    state = request.form.get('state', 'idle')
+
+    if state not in ['speaking', 'idle', 'muted', 'deafened']:
+        return jsonify({'error': 'Invalid state'}), 400
+
+    if image_file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    # Validate file type
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    ext = image_file.filename.rsplit('.', 1)[-1].lower() if '.' in image_file.filename else ''
+    if ext not in allowed_extensions:
+        return jsonify({'error': 'Invalid file type. Allowed: PNG, JPG, GIF, WebP'}), 400
+
+    # Validate file size (5MB max)
+    image_file.seek(0, 2)  # Seek to end
+    size = image_file.tell()
+    image_file.seek(0)  # Seek back to start
+    if size > 5 * 1024 * 1024:
+        return jsonify({'error': 'File too large. Maximum 5MB'}), 400
+
+    # Create uploads directory
+    os.makedirs(CUBREACTIVE_UPLOADS_DIR, exist_ok=True)
+
+    try:
+        # Open image with PIL
+        img = Image.open(image_file)
+
+        # Handle animated GIFs - resize all frames
+        if ext == 'gif' and hasattr(img, 'n_frames') and img.n_frames > 1:
+            frames = []
+            durations = []
+            for frame_num in range(img.n_frames):
+                img.seek(frame_num)
+                # Resize frame to 1024x1024 (cover/fill mode)
+                frame = img.copy()
+                frame = resize_image_cover(frame, 1024, 1024)
+                frames.append(frame)
+                durations.append(img.info.get('duration', 100))
+
+            # Save animated GIF
+            filename = f"{user['id']}_{state}.gif"
+            filepath = os.path.join(CUBREACTIVE_UPLOADS_DIR, filename)
+            frames[0].save(
+                filepath,
+                save_all=True,
+                append_images=frames[1:],
+                duration=durations,
+                loop=0,
+                optimize=False
+            )
+        else:
+            # Static image - resize to 1024x1024
+            img = resize_image_cover(img, 1024, 1024)
+
+            # Convert to RGB if necessary (for JPEG)
+            if ext in ['jpg', 'jpeg'] and img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+
+            # Save as PNG for best quality (unless original was JPEG)
+            if ext in ['jpg', 'jpeg']:
+                filename = f"{user['id']}_{state}.jpg"
+            else:
+                filename = f"{user['id']}_{state}.png"
+                if img.mode != 'RGBA':
+                    img = img.convert('RGBA')
+
+            filepath = os.path.join(CUBREACTIVE_UPLOADS_DIR, filename)
+            img.save(filepath, quality=95 if ext in ['jpg', 'jpeg'] else None)
+
+    except Exception as e:
+        return jsonify({'error': f'Failed to process image: {str(e)}'}), 400
+
+    # Update user config
+    users = load_cubreactive_users()
+    if user['id'] not in users:
+        users[user['id']] = {
+            'username': user['username'],
+            'avatar_url': user['avatar'],
+            'images': {},
+            'settings': {},
+            'created': time.time()
+        }
+
+    users[user['id']]['images'][state] = f"/uploads/cubreactive/{filename}"
+    save_cubreactive_users(users)
+
+    return jsonify({
+        'success': True,
+        'image_url': f"/uploads/cubreactive/{filename}",
+        'state': state
+    })
+
+def resize_image_cover(img, target_width, target_height):
+    """Resize image to cover target dimensions (crop to fit as square)"""
+    # Get original dimensions
+    orig_width, orig_height = img.size
+
+    # Calculate aspect ratios
+    target_ratio = target_width / target_height
+    orig_ratio = orig_width / orig_height
+
+    if orig_ratio > target_ratio:
+        # Image is wider - crop width
+        new_height = orig_height
+        new_width = int(orig_height * target_ratio)
+        left = (orig_width - new_width) // 2
+        top = 0
+    else:
+        # Image is taller - crop height
+        new_width = orig_width
+        new_height = int(orig_width / target_ratio)
+        left = 0
+        top = (orig_height - new_height) // 2
+
+    # Crop to square ratio
+    img = img.crop((left, top, left + new_width, top + new_height))
+
+    # Resize to target dimensions
+    img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+
+    return img
+
+@app.route('/api/cubreactive/delete-image', methods=['POST'])
+@cubreactive_auth_required
+def cubreactive_delete_image():
+    """Delete an image for a specific state"""
+    user = session.get('cubreactive_user')
+    data = request.get_json()
+    state = data.get('state')
+
+    if state not in ['speaking', 'idle', 'muted', 'deafened']:
+        return jsonify({'error': 'Invalid state'}), 400
+
+    users = load_cubreactive_users()
+    if user['id'] in users and state in users[user['id']].get('images', {}):
+        image_path = users[user['id']]['images'][state]
+        if image_path:
+            # Delete file
+            full_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'website', image_path.lstrip('/'))
+            if os.path.exists(full_path):
+                os.remove(full_path)
+            users[user['id']]['images'][state] = None
+            save_cubreactive_users(users)
+
+    return jsonify({'success': True})
+
+# Serve CubReactive uploads
+@app.route('/uploads/cubreactive/<filename>')
+def cubreactive_serve_upload(filename):
+    """Serve uploaded CubReactive images"""
+    return send_from_directory(CUBREACTIVE_UPLOADS_DIR, filename)
+
+# ==================== CUBPRESENCE - DISCORD CUSTOM RICH PRESENCE ====================
+
+CUBPRESENCE_CONFIGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'cubpresence_configs.json')
+
+def load_cubpresence_configs():
+    """Load CubPresence configurations"""
+    if os.path.exists(CUBPRESENCE_CONFIGS_FILE):
+        try:
+            with open(CUBPRESENCE_CONFIGS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+def save_cubpresence_configs(data):
+    """Save CubPresence configurations"""
+    os.makedirs(os.path.dirname(CUBPRESENCE_CONFIGS_FILE), exist_ok=True)
+    with open(CUBPRESENCE_CONFIGS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def generate_config_id():
+    """Generate a unique config ID"""
+    return secrets.token_urlsafe(8)
+
+# CubPresence Page Routes
+@app.route('/apps/cubpresence')
+@app.route('/apps/cubpresence/')
+@check_feature_enabled('cubpresence')
+def cubpresence_home():
+    """CubPresence - Discord Custom Rich Presence"""
+    config_id = request.args.get('config')
+    config = None
+    if config_id:
+        configs = load_cubpresence_configs()
+        config = configs.get(config_id)
+
+    return render_template('cubpresence.html',
+        config_id=config_id,
+        config=config
+    )
+
+@app.route('/apps/cubpresence/connect/<config_id>')
+def cubpresence_connect(config_id):
+    """CubPresence - Dedicated connection page"""
+    configs = load_cubpresence_configs()
+    config = configs.get(config_id)
+    if not config:
+        return redirect('/apps/cubpresence?error=config_not_found')
+
+    return render_template('cubpresence-connect.html',
+        config_id=config_id,
+        config=config
+    )
+
+# CubPresence API Routes
+@app.route('/api/cubpresence/config', methods=['POST'])
+def cubpresence_create_config():
+    """Create a new CubPresence configuration"""
+    data = request.get_json()
+    if not data or 'client_id' not in data:
+        return jsonify({'error': 'Discord Application ID is required'}), 400
+
+    client_id = data['client_id'].strip()
+    if not client_id.isdigit():
+        return jsonify({'error': 'Invalid Application ID format'}), 400
+
+    config_id = generate_config_id()
+    configs = load_cubpresence_configs()
+
+    configs[config_id] = {
+        'client_id': client_id,
+        'created': time.time(),
+        'last_connected': None,
+        'presence': {
+            'details': data.get('details', ''),
+            'state': data.get('state', ''),
+            'timestamps_type': 'none',
+            'start_timestamp': None,
+            'end_timestamp': None,
+            'large_image_key': '',
+            'large_image_text': '',
+            'small_image_key': '',
+            'small_image_text': '',
+            'button1_label': '',
+            'button1_url': '',
+            'button2_label': '',
+            'button2_url': '',
+            'party_id': '',
+            'party_size': 0,
+            'party_max': 0
+        }
+    }
+
+    save_cubpresence_configs(configs)
+    return jsonify({'success': True, 'config_id': config_id})
+
+@app.route('/api/cubpresence/config/<config_id>', methods=['GET', 'POST'])
+def cubpresence_config(config_id):
+    """Get or update a CubPresence configuration"""
+    configs = load_cubpresence_configs()
+
+    if request.method == 'GET':
+        config = configs.get(config_id)
+        if not config:
+            return jsonify({'error': 'Config not found'}), 404
+        return jsonify(config)
+
+    # POST - update config
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    if config_id not in configs:
+        return jsonify({'error': 'Config not found'}), 404
+
+    # Update client_id if provided
+    if 'client_id' in data:
+        client_id = str(data['client_id']).strip()
+        if client_id.isdigit():
+            configs[config_id]['client_id'] = client_id
+
+    # Update presence fields if provided
+    if 'presence' in data:
+        presence = data['presence']
+        allowed_fields = [
+            'details', 'state', 'timestamps_type', 'start_timestamp', 'end_timestamp',
+            'large_image_key', 'large_image_text', 'small_image_key', 'small_image_text',
+            'button1_label', 'button1_url', 'button2_label', 'button2_url',
+            'party_id', 'party_size', 'party_max'
+        ]
+        for field in allowed_fields:
+            if field in presence:
+                configs[config_id]['presence'][field] = presence[field]
+
+    save_cubpresence_configs(configs)
+    return jsonify({'success': True, 'config': configs[config_id]})
+
+@app.route('/api/cubpresence/config/<config_id>', methods=['DELETE'])
+def cubpresence_delete_config(config_id):
+    """Delete a CubPresence configuration"""
+    configs = load_cubpresence_configs()
+    if config_id in configs:
+        del configs[config_id]
+        save_cubpresence_configs(configs)
+    return jsonify({'success': True})
+
+@app.route('/api/cubpresence/connected/<config_id>', methods=['POST'])
+def cubpresence_mark_connected(config_id):
+    """Mark a config as recently connected"""
+    configs = load_cubpresence_configs()
+    if config_id in configs:
+        configs[config_id]['last_connected'] = time.time()
+        save_cubpresence_configs(configs)
+    return jsonify({'success': True})
+
 # ==================== FEATURE DISABLE SYSTEM ====================
 
 FEATURES_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'features_config.json')
@@ -1171,6 +1756,8 @@ FEATURE_ROUTES = {
     'audio-trimmer': '/apps/audio-trimmer',
     'sticky-board': '/apps/sticky-board',
     'streamerbot-commands': '/apps/streamerbot-commands',
+    'cubreactive': '/apps/cubreactive',
+    'cubpresence': '/apps/cubpresence',
 }
 
 def load_features_config():
@@ -2602,6 +3189,8 @@ def admin_get_features():
         {'id': 'lorem-ipsum', 'name': 'Lorem Ipsum', 'description': 'Lorem ipsum text generator'},
         {'id': 'cleanme', 'name': 'CleanMe', 'description': 'Discord bot management'},
         {'id': 'admin-dashboard', 'name': 'Admin Dashboard', 'description': 'Admin control panel'},
+        {'id': 'cubreactive', 'name': 'CubReactive', 'description': 'Discord reactive images for streamers'},
+        {'id': 'cubpresence', 'name': 'CubPresence', 'description': 'Discord custom rich presence from your browser'},
     ]
 
     # Add status to each feature
@@ -2706,8 +3295,12 @@ def admin_add_temp_ip_ban():
 
     bans = load_ip_bans()
 
+    # Ensure temp list exists (for backwards compatibility with old ip_bans.json files)
+    if 'temp' not in bans:
+        bans['temp'] = []
+
     # Remove existing temp ban for this IP if any
-    bans['temp'] = [b for b in bans.get('temp', []) if b['ip'] != ip]
+    bans['temp'] = [b for b in bans['temp'] if b['ip'] != ip]
 
     # Add new temp ban
     temp_ban = {
@@ -2762,8 +3355,8 @@ def admin_remove_ip_ban():
 @app.before_request
 def enforce_ip_bans():
     """Check if the requesting IP is banned before processing"""
-    # Skip for static files and admin API (so admins can unban)
-    if request.path.startswith('/static/') or request.path.startswith('/api/admin/') or request.path.startswith('/api/pm2/'):
+    # Skip for static files, admin API (so admins can unban), and report page (so banned users can appeal)
+    if request.path.startswith('/static/') or request.path.startswith('/api/admin/') or request.path.startswith('/api/pm2/') or request.path.startswith('/report'):
         return None
 
     maybe_clean_bans()
