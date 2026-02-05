@@ -288,9 +288,34 @@
                                 <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'glow' %}active{% endif %}" data-style="glow">Glow</button>
                                 <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'shake' %}active{% endif %}" data-style="shake">Shake</button>
                                 <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'wave' %}active{% endif %}" data-style="wave">Wave</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'float' %}active{% endif %}" data-style="float">Float</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'spin' %}active{% endif %}" data-style="spin">Spin</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'jello' %}active{% endif %}" data-style="jello">Jello</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'heartbeat' %}active{% endif %}" data-style="heartbeat">Heartbeat</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'flash' %}active{% endif %}" data-style="flash">Flash</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'rubberband' %}active{% endif %}" data-style="rubberband">Rubberband</button>
                                 <button type="button" class="style-btn {% if user_config and user_config.settings.animation_style == 'none' %}active{% endif %}" data-style="none">None</button>
                             </div>
                             <input type="hidden" id="setting-animation" value="{{ user_config.settings.animation_style if user_config and user_config.settings.animation_style else 'bounce' }}">
+                            <div class="slider-setting" style="margin-top: 1rem;">
+                                <label>Animation Speed</label>
+                                <input type="range" id="setting-animation-speed" min="50" max="200" step="10" value="{{ user_config.settings.animation_speed if user_config and user_config.settings.animation_speed else 100 }}">
+                                <span class="slider-value" id="animation-speed-value">{{ user_config.settings.animation_speed if user_config and user_config.settings.animation_speed else 100 }}%</span>
+                            </div>
+                        </div>
+
+                        <!-- Idle Animation -->
+                        <div class="settings-group">
+                            <h3>Idle Animation</h3>
+                            <p class="setting-description">Animation style when not speaking (optional)</p>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.idle_animation_style or user_config.settings.idle_animation_style == 'none' %}active{% endif %}" data-idle-style="none">None</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.idle_animation_style == 'float' %}active{% endif %}" data-idle-style="float">Float</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.idle_animation_style == 'pulse' %}active{% endif %}" data-idle-style="pulse">Pulse</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.idle_animation_style == 'wave' %}active{% endif %}" data-idle-style="wave">Wave</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.idle_animation_style == 'breathe' %}active{% endif %}" data-idle-style="breathe">Breathe</button>
+                            </div>
+                            <input type="hidden" id="setting-idle-animation" value="{{ user_config.settings.idle_animation_style if user_config and user_config.settings.idle_animation_style else 'none' }}">
                         </div>
 
                         <!-- Avatar Shape -->
@@ -313,6 +338,30 @@
                                     <div class="shape-preview hexagon"></div>
                                     <span>Hexagon</span>
                                 </button>
+                                <button type="button" class="shape-btn {% if user_config and user_config.settings.avatar_shape == 'diamond' %}active{% endif %}" data-shape="diamond">
+                                    <div class="shape-preview diamond"></div>
+                                    <span>Diamond</span>
+                                </button>
+                                <button type="button" class="shape-btn {% if user_config and user_config.settings.avatar_shape == 'octagon' %}active{% endif %}" data-shape="octagon">
+                                    <div class="shape-preview octagon"></div>
+                                    <span>Octagon</span>
+                                </button>
+                                <button type="button" class="shape-btn {% if user_config and user_config.settings.avatar_shape == 'star' %}active{% endif %}" data-shape="star">
+                                    <div class="shape-preview star"></div>
+                                    <span>Star</span>
+                                </button>
+                                <button type="button" class="shape-btn {% if user_config and user_config.settings.avatar_shape == 'heart' %}active{% endif %}" data-shape="heart">
+                                    <div class="shape-preview heart"></div>
+                                    <span>Heart</span>
+                                </button>
+                                <button type="button" class="shape-btn {% if user_config and user_config.settings.avatar_shape == 'shield' %}active{% endif %}" data-shape="shield">
+                                    <div class="shape-preview shield"></div>
+                                    <span>Shield</span>
+                                </button>
+                                <button type="button" class="shape-btn {% if user_config and user_config.settings.avatar_shape == 'blob' %}active{% endif %}" data-shape="blob">
+                                    <div class="shape-preview blob"></div>
+                                    <span>Blob</span>
+                                </button>
                             </div>
                             <input type="hidden" id="setting-shape" value="{{ user_config.settings.avatar_shape if user_config and user_config.settings.avatar_shape else 'rounded' }}">
                         </div>
@@ -323,6 +372,32 @@
                             <div class="slider-setting">
                                 <input type="range" id="setting-size" min="80" max="300" value="{{ user_config.settings.avatar_size if user_config and user_config.settings.avatar_size else 180 }}">
                                 <span class="slider-value" id="size-value">{{ user_config.settings.avatar_size if user_config and user_config.settings.avatar_size else 180 }}px</span>
+                            </div>
+                        </div>
+
+                        <!-- Avatar Filters -->
+                        <div class="settings-group">
+                            <h3>Avatar Filters</h3>
+                            <p class="setting-description">Adjust the look of your avatar image</p>
+                            <div class="slider-setting">
+                                <label>Brightness</label>
+                                <input type="range" id="setting-filter-brightness" min="50" max="150" value="{{ user_config.settings.filter_brightness if user_config and user_config.settings.filter_brightness else 100 }}">
+                                <span class="slider-value" id="filter-brightness-value">{{ user_config.settings.filter_brightness if user_config and user_config.settings.filter_brightness else 100 }}%</span>
+                            </div>
+                            <div class="slider-setting">
+                                <label>Contrast</label>
+                                <input type="range" id="setting-filter-contrast" min="50" max="150" value="{{ user_config.settings.filter_contrast if user_config and user_config.settings.filter_contrast else 100 }}">
+                                <span class="slider-value" id="filter-contrast-value">{{ user_config.settings.filter_contrast if user_config and user_config.settings.filter_contrast else 100 }}%</span>
+                            </div>
+                            <div class="slider-setting">
+                                <label>Saturation</label>
+                                <input type="range" id="setting-filter-saturate" min="0" max="200" value="{{ user_config.settings.filter_saturate if user_config and user_config.settings.filter_saturate else 100 }}">
+                                <span class="slider-value" id="filter-saturate-value">{{ user_config.settings.filter_saturate if user_config and user_config.settings.filter_saturate else 100 }}%</span>
+                            </div>
+                            <div class="slider-setting">
+                                <label>Hue Rotate</label>
+                                <input type="range" id="setting-filter-hue" min="0" max="360" value="{{ user_config.settings.filter_hue if user_config and user_config.settings.filter_hue else 0 }}">
+                                <span class="slider-value" id="filter-hue-value">{{ user_config.settings.filter_hue if user_config and user_config.settings.filter_hue else 0 }}°</span>
                             </div>
                         </div>
 
@@ -344,6 +419,13 @@
                                     <input type="range" id="setting-border-width" min="1" max="10" value="{{ user_config.settings.border_width if user_config and user_config.settings.border_width else 3 }}">
                                     <span class="slider-value" id="border-width-value">{{ user_config.settings.border_width if user_config and user_config.settings.border_width else 3 }}px</span>
                                 </div>
+                                <div class="style-buttons" style="margin-top: 0.75rem;">
+                                    <button type="button" class="style-btn {% if not user_config or not user_config.settings.border_style or user_config.settings.border_style == 'solid' %}active{% endif %}" data-border-style="solid">Solid</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.border_style == 'dashed' %}active{% endif %}" data-border-style="dashed">Dashed</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.border_style == 'dotted' %}active{% endif %}" data-border-style="dotted">Dotted</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.border_style == 'double' %}active{% endif %}" data-border-style="double">Double</button>
+                                </div>
+                                <input type="hidden" id="setting-border-style" value="{{ user_config.settings.border_style if user_config and user_config.settings.border_style else 'solid' }}">
                             </div>
                         </div>
 
@@ -375,6 +457,28 @@
                                     <label>Name Size</label>
                                     <input type="range" id="setting-name-size" min="10" max="24" value="{{ user_config.settings.name_size if user_config and user_config.settings.name_size else 14 }}">
                                     <span class="slider-value" id="name-size-value">{{ user_config.settings.name_size if user_config and user_config.settings.name_size else 14 }}px</span>
+                                </div>
+                                <label class="setting-toggle" style="margin-top: 0.75rem;">
+                                    <input type="checkbox" id="setting-name-shadow" {% if user_config and user_config.settings.name_shadow_enabled %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                    <span class="setting-label">Text shadow</span>
+                                </label>
+                                <div class="name-shadow-options" id="name-shadow-options" style="{% if not user_config or not user_config.settings.name_shadow_enabled %}display:none{% endif %}; margin-top: 0.5rem;">
+                                    <div class="color-setting">
+                                        <label>Shadow Color</label>
+                                        <input type="color" id="setting-name-shadow-color" value="{{ user_config.settings.name_shadow_color if user_config and user_config.settings.name_shadow_color else '#000000' }}">
+                                    </div>
+                                </div>
+                                <label class="setting-toggle" style="margin-top: 0.75rem;">
+                                    <input type="checkbox" id="setting-name-glow" {% if user_config and user_config.settings.name_glow_enabled %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                    <span class="setting-label">Text glow</span>
+                                </label>
+                                <div class="name-glow-options" id="name-glow-options" style="{% if not user_config or not user_config.settings.name_glow_enabled %}display:none{% endif %}; margin-top: 0.5rem;">
+                                    <div class="color-setting">
+                                        <label>Glow Color</label>
+                                        <input type="color" id="setting-name-glow-color" value="{{ user_config.settings.name_glow_color if user_config and user_config.settings.name_glow_color else '#5865f2' }}">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -488,6 +592,29 @@
                                 <label>Duration</label>
                                 <input type="range" id="setting-transition-duration" min="100" max="500" step="50" value="{{ user_config.settings.transition_duration if user_config and user_config.settings.transition_duration else 200 }}">
                                 <span class="slider-value" id="transition-duration-value">{{ user_config.settings.transition_duration if user_config and user_config.settings.transition_duration else 200 }}ms</span>
+                            </div>
+                        </div>
+
+                        <!-- Entry/Exit Animations -->
+                        <div class="settings-group">
+                            <h3>Entry/Exit Animation</h3>
+                            <p class="setting-description">Animation when joining or leaving voice channel</p>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.entry_animation or user_config.settings.entry_animation == 'fade' %}active{% endif %}" data-entry="fade">Fade</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.entry_animation == 'slide-up' %}active{% endif %}" data-entry="slide-up">Slide Up</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.entry_animation == 'slide-down' %}active{% endif %}" data-entry="slide-down">Slide Down</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.entry_animation == 'slide-left' %}active{% endif %}" data-entry="slide-left">Slide Left</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.entry_animation == 'slide-right' %}active{% endif %}" data-entry="slide-right">Slide Right</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.entry_animation == 'zoom' %}active{% endif %}" data-entry="zoom">Zoom</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.entry_animation == 'bounce' %}active{% endif %}" data-entry="bounce">Bounce</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.entry_animation == 'flip' %}active{% endif %}" data-entry="flip">Flip</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.entry_animation == 'none' %}active{% endif %}" data-entry="none">None</button>
+                            </div>
+                            <input type="hidden" id="setting-entry-animation" value="{{ user_config.settings.entry_animation if user_config and user_config.settings.entry_animation else 'fade' }}">
+                            <div class="slider-setting" style="margin-top: 1rem;">
+                                <label>Entry Duration</label>
+                                <input type="range" id="setting-entry-duration" min="200" max="1000" step="100" value="{{ user_config.settings.entry_duration if user_config and user_config.settings.entry_duration else 500 }}">
+                                <span class="slider-value" id="entry-duration-value">{{ user_config.settings.entry_duration if user_config and user_config.settings.entry_duration else 500 }}ms</span>
                             </div>
                         </div>
 
@@ -645,6 +772,46 @@
                                     <div class="theme-preview blood"></div>
                                     <span>Blood</span>
                                 </button>
+                                <button type="button" class="theme-btn" data-theme="midnight" onclick="applyTheme('midnight')">
+                                    <div class="theme-preview midnight"></div>
+                                    <span>Midnight</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="forest" onclick="applyTheme('forest')">
+                                    <div class="theme-preview forest"></div>
+                                    <span>Forest</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="lavender" onclick="applyTheme('lavender')">
+                                    <div class="theme-preview lavender"></div>
+                                    <span>Lavender</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="ember" onclick="applyTheme('ember')">
+                                    <div class="theme-preview ember"></div>
+                                    <span>Ember</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="arctic" onclick="applyTheme('arctic')">
+                                    <div class="theme-preview arctic"></div>
+                                    <span>Arctic</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="shadow" onclick="applyTheme('shadow')">
+                                    <div class="theme-preview shadow"></div>
+                                    <span>Shadow</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="rainbow" onclick="applyTheme('rainbow')">
+                                    <div class="theme-preview rainbow"></div>
+                                    <span>Rainbow</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="copper" onclick="applyTheme('copper')">
+                                    <div class="theme-preview copper"></div>
+                                    <span>Copper</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="electric" onclick="applyTheme('electric')">
+                                    <div class="theme-preview electric"></div>
+                                    <span>Electric</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="phantom" onclick="applyTheme('phantom')">
+                                    <div class="theme-preview phantom"></div>
+                                    <span>Phantom</span>
+                                </button>
                             </div>
                         </div>
 
@@ -720,23 +887,28 @@
 
                     <!-- Preview Section -->
                     <div class="preview-section">
-                        <h2>Preview</h2>
-                        <p class="section-description">See how your avatar will look. Click to simulate speaking.</p>
-                        <div class="preview-container" id="preview-container">
-                            <div class="preview-avatar" id="preview-avatar" onclick="togglePreviewSpeaking()">
-                                {% if user_config and user_config.images.idle %}
-                                <img src="{{ user_config.images.idle }}" alt="Preview" id="preview-image">
-                                {% elif user_config and user_config.images.speaking %}
-                                <img src="{{ user_config.images.speaking }}" alt="Preview" id="preview-image">
-                                {% else %}
-                                <img src="{{ cubreactive_user.avatar }}" alt="Preview" id="preview-image">
-                                {% endif %}
-                                {% if user_config and user_config.settings.show_name %}
-                                <span class="preview-name">{{ cubreactive_user.username }}</span>
-                                {% endif %}
+                        <h2>Live Preview</h2>
+                        <p class="section-description">See exactly how your avatar will look in OBS. Click to simulate speaking.</p>
+                        <div class="preview-stage" id="preview-stage">
+                            <div class="avatar-wrapper" id="preview-wrapper" onclick="togglePreviewSpeaking()">
+                                <div class="avatar" id="preview-avatar">
+                                    <div class="img-wrapper">
+                                        {% if user_config and user_config.images.idle %}
+                                        <img src="{{ user_config.images.idle }}" alt="Preview" id="preview-image">
+                                        {% elif user_config and user_config.images.speaking %}
+                                        <img src="{{ user_config.images.speaking }}" alt="Preview" id="preview-image">
+                                        {% else %}
+                                        <img src="{{ cubreactive_user.avatar }}" alt="Preview" id="preview-image">
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="username" id="preview-username">{{ cubreactive_user.username }}</div>
                             </div>
                         </div>
-                        <p class="preview-hint">Click avatar to toggle speaking state</p>
+                        <div class="preview-controls">
+                            <span class="preview-state" id="preview-state-label">Idle</span>
+                            <p class="preview-hint">Click avatar to simulate speaking</p>
+                        </div>
                     </div>
                 </div>
                 {% endif %}

@@ -489,6 +489,270 @@ const THEMES = {
         idle_opacity: 50,
         transition_style: 'fade',
         transition_duration: 150
+    },
+    midnight: {
+        bounce_on_speak: false,
+        dim_when_idle: true,
+        animation_style: 'float',
+        avatar_shape: 'circle',
+        avatar_size: 180,
+        border_enabled: true,
+        border_color: '#1a237e',
+        border_width: 3,
+        glow_enabled: true,
+        glow_color: '#3949ab',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#5c6bc0',
+        speaking_ring_width: 4,
+        shadow_enabled: true,
+        shadow_color: '#0d1137',
+        shadow_blur: 18,
+        name_color: '#9fa8da',
+        name_size: 13,
+        name_background_enabled: true,
+        name_background_color: '#0a0d24',
+        grayscale_muted: true,
+        grayscale_deafened: true,
+        idle_opacity: 45,
+        transition_style: 'fade',
+        transition_duration: 300
+    },
+    forest: {
+        bounce_on_speak: true,
+        dim_when_idle: false,
+        animation_style: 'wave',
+        avatar_shape: 'rounded',
+        avatar_size: 175,
+        border_enabled: true,
+        border_color: '#2e7d32',
+        border_width: 4,
+        glow_enabled: true,
+        glow_color: '#43a047',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#66bb6a',
+        speaking_ring_width: 4,
+        shadow_enabled: true,
+        shadow_color: '#1b5e20',
+        shadow_blur: 15,
+        name_color: '#a5d6a7',
+        name_size: 14,
+        name_background_enabled: true,
+        name_background_color: '#0d260f',
+        grayscale_muted: true,
+        grayscale_deafened: true,
+        idle_opacity: 85,
+        transition_style: 'fade',
+        transition_duration: 250
+    },
+    lavender: {
+        bounce_on_speak: true,
+        dim_when_idle: false,
+        animation_style: 'bounce',
+        avatar_shape: 'circle',
+        avatar_size: 170,
+        border_enabled: true,
+        border_color: '#ce93d8',
+        border_width: 4,
+        glow_enabled: false,
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#f48fb1',
+        speaking_ring_width: 5,
+        shadow_enabled: true,
+        shadow_color: '#ab47bc',
+        shadow_blur: 12,
+        name_color: '#f3e5f5',
+        name_size: 13,
+        name_background_enabled: true,
+        name_background_color: '#2a1a2e',
+        grayscale_muted: false,
+        grayscale_deafened: false,
+        idle_opacity: 100,
+        transition_style: 'fade',
+        transition_duration: 200
+    },
+    ember: {
+        bounce_on_speak: true,
+        dim_when_idle: false,
+        animation_style: 'pulse',
+        avatar_shape: 'rounded',
+        avatar_size: 185,
+        border_enabled: true,
+        border_color: '#ff5722',
+        border_width: 4,
+        glow_enabled: true,
+        glow_color: '#ff7043',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#ffab91',
+        speaking_ring_width: 5,
+        shadow_enabled: true,
+        shadow_color: '#bf360c',
+        shadow_blur: 20,
+        name_color: '#ffccbc',
+        name_size: 14,
+        name_background_enabled: true,
+        name_background_color: '#1a0800',
+        grayscale_muted: true,
+        grayscale_deafened: true,
+        idle_opacity: 80,
+        transition_style: 'fade',
+        transition_duration: 150
+    },
+    arctic: {
+        bounce_on_speak: false,
+        dim_when_idle: true,
+        animation_style: 'float',
+        avatar_shape: 'hexagon',
+        avatar_size: 175,
+        border_enabled: true,
+        border_color: '#e1f5fe',
+        border_width: 3,
+        glow_enabled: true,
+        glow_color: '#b3e5fc',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#81d4fa',
+        speaking_ring_width: 4,
+        shadow_enabled: true,
+        shadow_color: '#4fc3f7',
+        shadow_blur: 18,
+        name_color: '#e1f5fe',
+        name_size: 13,
+        name_background_enabled: true,
+        name_background_color: '#01579b',
+        grayscale_muted: false,
+        grayscale_deafened: true,
+        idle_opacity: 55,
+        transition_style: 'blur',
+        transition_duration: 300
+    },
+    shadow: {
+        bounce_on_speak: false,
+        dim_when_idle: true,
+        animation_style: 'none',
+        avatar_shape: 'rounded',
+        avatar_size: 160,
+        border_enabled: true,
+        border_color: '#424242',
+        border_width: 2,
+        glow_enabled: false,
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#616161',
+        speaking_ring_width: 3,
+        shadow_enabled: true,
+        shadow_color: '#000000',
+        shadow_blur: 25,
+        name_color: '#9e9e9e',
+        name_size: 12,
+        name_background_enabled: false,
+        grayscale_muted: true,
+        grayscale_deafened: true,
+        idle_opacity: 35,
+        transition_style: 'fade',
+        transition_duration: 200
+    },
+    rainbow: {
+        bounce_on_speak: true,
+        dim_when_idle: false,
+        animation_style: 'spin',
+        avatar_shape: 'circle',
+        avatar_size: 190,
+        border_enabled: true,
+        border_color: '#ff1744',
+        border_width: 5,
+        glow_enabled: true,
+        glow_color: '#f50057',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#d500f9',
+        speaking_ring_width: 6,
+        shadow_enabled: true,
+        shadow_color: '#651fff',
+        shadow_blur: 25,
+        name_color: '#00e5ff',
+        name_size: 15,
+        name_background_enabled: true,
+        name_background_color: '#1a0a2e',
+        grayscale_muted: false,
+        grayscale_deafened: false,
+        idle_opacity: 100,
+        transition_style: 'rotate',
+        transition_duration: 200
+    },
+    copper: {
+        bounce_on_speak: true,
+        dim_when_idle: false,
+        animation_style: 'pulse',
+        avatar_shape: 'rounded',
+        avatar_size: 180,
+        border_enabled: true,
+        border_color: '#bf8040',
+        border_width: 4,
+        glow_enabled: true,
+        glow_color: '#cd9754',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#e6ac69',
+        speaking_ring_width: 5,
+        shadow_enabled: true,
+        shadow_color: '#8b5a2b',
+        shadow_blur: 18,
+        name_color: '#f4d4a5',
+        name_size: 14,
+        name_background_enabled: true,
+        name_background_color: '#1a1005',
+        grayscale_muted: true,
+        grayscale_deafened: true,
+        idle_opacity: 85,
+        transition_style: 'fade',
+        transition_duration: 200
+    },
+    electric: {
+        bounce_on_speak: true,
+        dim_when_idle: false,
+        animation_style: 'jello',
+        avatar_shape: 'hexagon',
+        avatar_size: 185,
+        border_enabled: true,
+        border_color: '#2979ff',
+        border_width: 3,
+        glow_enabled: true,
+        glow_color: '#448aff',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#82b1ff',
+        speaking_ring_width: 5,
+        shadow_enabled: true,
+        shadow_color: '#2962ff',
+        shadow_blur: 22,
+        name_color: '#82b1ff',
+        name_size: 14,
+        name_background_enabled: true,
+        name_background_color: '#0a1929',
+        grayscale_muted: true,
+        grayscale_deafened: true,
+        idle_opacity: 75,
+        transition_style: 'flash',
+        transition_duration: 100
+    },
+    phantom: {
+        bounce_on_speak: false,
+        dim_when_idle: true,
+        animation_style: 'float',
+        avatar_shape: 'blob',
+        avatar_size: 175,
+        border_enabled: false,
+        glow_enabled: true,
+        glow_color: '#b0bec5',
+        speaking_ring_enabled: true,
+        speaking_ring_color: '#cfd8dc',
+        speaking_ring_width: 3,
+        shadow_enabled: true,
+        shadow_color: '#607d8b',
+        shadow_blur: 30,
+        name_color: '#eceff1',
+        name_size: 13,
+        name_background_enabled: false,
+        grayscale_muted: true,
+        grayscale_deafened: true,
+        idle_opacity: 40,
+        transition_style: 'blur',
+        transition_duration: 350
     }
 };
 
@@ -536,37 +800,210 @@ function copyUrl(inputId) {
     showToast('URL copied to clipboard!');
 }
 
-// Toggle preview speaking state
-function togglePreviewSpeaking() {
+// Get shape styles (border-radius and clip-path)
+function getShapeStyles(shape) {
+    const shapes = {
+        'circle': { borderRadius: '50%', clipPath: '' },
+        'square': { borderRadius: '0', clipPath: '' },
+        'rounded': { borderRadius: '12px', clipPath: '' },
+        'hexagon': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' },
+        'diamond': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' },
+        'octagon': { borderRadius: '0', clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' },
+        'star': { borderRadius: '0', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' },
+        'heart': { borderRadius: '0', clipPath: 'polygon(50% 15%, 90% 0%, 100% 35%, 50% 100%, 0% 35%, 10% 0%)' },
+        'shield': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 10%, 100% 60%, 50% 100%, 0% 60%, 0% 10%)' },
+        'blob': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', clipPath: '' }
+    };
+    return shapes[shape] || shapes['rounded'];
+}
+
+// Get animation class name
+function getAnimationClass(style) {
+    const classes = {
+        'bounce': 'anim-bounce',
+        'pulse': 'anim-pulse',
+        'glow': 'anim-glow',
+        'shake': 'anim-shake',
+        'wave': 'anim-wave',
+        'float': 'anim-float',
+        'spin': 'anim-spin',
+        'jello': 'anim-jello',
+        'heartbeat': 'anim-heartbeat',
+        'flash': 'anim-flash',
+        'rubberband': 'anim-rubberband',
+        'breathe': 'anim-breathe',
+        'none': ''
+    };
+    return classes[style] || '';
+}
+
+// Update preview to reflect current settings
+function updatePreview() {
+    const wrapper = document.getElementById('preview-wrapper');
     const avatar = document.getElementById('preview-avatar');
     const image = document.getElementById('preview-image');
-    const settings = USER_CONFIG.settings || {};
+    const username = document.getElementById('preview-username');
+    const stateLabel = document.getElementById('preview-state-label');
 
-    isSpeaking = !isSpeaking;
+    if (!wrapper || !avatar || !image) return;
+
+    // Get current form values
+    const size = getVal('setting-size', 180);
+    const shape = getVal('setting-shape', 'rounded');
+    const borderEnabled = getVal('setting-border', false);
+    const borderColor = getVal('setting-border-color', '#5865f2');
+    const borderWidth = getVal('setting-border-width', 3);
+    const borderStyle = getVal('setting-border-style', 'solid');
+    const glowEnabled = getVal('setting-glow', false);
+    const glowColor = getVal('setting-glow-color', '#5865f2');
+    const speakingRingEnabled = getVal('setting-speaking-ring', true);
+    const speakingRingColor = getVal('setting-speaking-ring-color', '#57f287');
+    const speakingRingWidth = getVal('setting-speaking-ring-width', 4);
+    const shadowEnabled = getVal('setting-shadow', false);
+    const shadowColor = getVal('setting-shadow-color', '#000000');
+    const shadowBlur = getVal('setting-shadow-blur', 10);
+    const showName = getVal('setting-name', true);
+    const nameColor = getVal('setting-name-color', '#ffffff');
+    const nameSize = getVal('setting-name-size', 14);
+    const nameBgEnabled = getVal('setting-name-bg', false);
+    const nameBgColor = getVal('setting-name-bg-color', '#000000');
+    const nameShadowEnabled = getVal('setting-name-shadow', false);
+    const nameShadowColor = getVal('setting-name-shadow-color', '#000000');
+    const nameGlowEnabled = getVal('setting-name-glow', false);
+    const nameGlowColor = getVal('setting-name-glow-color', '#5865f2');
+    const idleOpacity = getVal('setting-idle-opacity', 100);
+    const dimWhenIdle = getVal('setting-dim', false);
+    const animStyle = getVal('setting-animation', 'bounce');
+    const animSpeed = getVal('setting-animation-speed', 100);
+    const idleAnimStyle = getVal('setting-idle-animation', 'none');
+    const flipHorizontal = getVal('setting-flip', false);
+    const filterBrightness = getVal('setting-filter-brightness', 100);
+    const filterContrast = getVal('setting-filter-contrast', 100);
+    const filterSaturate = getVal('setting-filter-saturate', 100);
+    const filterHue = getVal('setting-filter-hue', 0);
+
+    // Apply size
+    avatar.style.width = size + 'px';
+    avatar.style.height = size + 'px';
+
+    // Apply shape
+    const shapeStyles = getShapeStyles(shape);
+    avatar.style.borderRadius = shapeStyles.borderRadius;
+    avatar.style.clipPath = shapeStyles.clipPath || 'none';
+
+    // Apply border
+    if (borderEnabled) {
+        avatar.style.border = `${borderWidth}px ${borderStyle} ${borderColor}`;
+    } else {
+        avatar.style.border = 'none';
+    }
+
+    // Build box-shadow
+    let shadows = [];
+    if (shadowEnabled) {
+        shadows.push(`0 0 ${shadowBlur}px ${shadowColor}`);
+    }
+    if (isSpeaking && glowEnabled) {
+        shadows.push(`0 0 20px ${glowColor}`);
+    }
+    if (isSpeaking && speakingRingEnabled) {
+        shadows.push(`0 0 0 ${speakingRingWidth}px ${speakingRingColor}`);
+    }
+    avatar.style.boxShadow = shadows.length > 0 ? shadows.join(', ') : 'none';
+
+    // Apply flip
+    image.style.transform = flipHorizontal ? 'scaleX(-1)' : 'none';
+
+    // Build image filter
+    let filters = [];
+    if (filterBrightness !== 100) filters.push(`brightness(${filterBrightness}%)`);
+    if (filterContrast !== 100) filters.push(`contrast(${filterContrast}%)`);
+    if (filterSaturate !== 100) filters.push(`saturate(${filterSaturate}%)`);
+    if (filterHue !== 0) filters.push(`hue-rotate(${filterHue}deg)`);
+
+    // Apply opacity and grayscale based on state
+    if (!isSpeaking && dimWhenIdle) {
+        avatar.style.opacity = (idleOpacity / 100).toString();
+        filters.push('grayscale(20%)');
+    } else {
+        avatar.style.opacity = '1';
+    }
+
+    image.style.filter = filters.length > 0 ? filters.join(' ') : 'none';
+
+    // Apply animation speed
+    const speedFactor = 100 / animSpeed;
+    avatar.style.animationDuration = (0.5 * speedFactor) + 's';
+
+    // Apply animation class when speaking or idle
+    const allAnimClasses = ['anim-bounce', 'anim-pulse', 'anim-glow', 'anim-shake', 'anim-wave',
+                           'anim-float', 'anim-spin', 'anim-jello', 'anim-heartbeat', 'anim-flash',
+                           'anim-rubberband', 'anim-breathe'];
+    allAnimClasses.forEach(c => avatar.classList.remove(c));
 
     if (isSpeaking) {
-        avatar.classList.add('speaking');
-        avatar.classList.remove('dimmed');
-
-        const speakingImg = USER_CONFIG.images?.speaking;
-        if (speakingImg) {
-            image.src = speakingImg;
-        } else if (USER_AVATAR) {
-            image.src = USER_AVATAR;
+        const animClass = getAnimationClass(animStyle);
+        if (animClass) {
+            avatar.classList.add(animClass);
         }
-    } else {
-        avatar.classList.remove('speaking');
-        if (settings.dim_when_idle) {
-            avatar.classList.add('dimmed');
-        }
-
-        const idleImg = USER_CONFIG.images?.idle;
-        if (idleImg) {
-            image.src = idleImg;
-        } else if (USER_AVATAR) {
-            image.src = USER_AVATAR;
+    } else if (idleAnimStyle !== 'none') {
+        const idleAnimClass = getAnimationClass(idleAnimStyle);
+        if (idleAnimClass) {
+            avatar.classList.add(idleAnimClass);
         }
     }
+
+    // Update username visibility and style
+    if (username) {
+        username.style.display = showName ? 'block' : 'none';
+        username.style.color = nameColor;
+        username.style.fontSize = nameSize + 'px';
+        if (nameBgEnabled) {
+            username.style.background = nameBgColor + '80';
+            username.style.padding = '2px 8px';
+            username.style.borderRadius = '4px';
+        } else {
+            username.style.background = 'transparent';
+            username.style.padding = '0';
+        }
+
+        // Apply text shadow/glow
+        let textShadows = [];
+        if (nameShadowEnabled) {
+            textShadows.push(`2px 2px 4px ${nameShadowColor}`);
+        }
+        if (nameGlowEnabled) {
+            textShadows.push(`0 0 10px ${nameGlowColor}`);
+            textShadows.push(`0 0 20px ${nameGlowColor}`);
+        }
+        username.style.textShadow = textShadows.length > 0 ? textShadows.join(', ') : '0 2px 4px rgba(0,0,0,0.5)';
+    }
+
+    // Update image based on speaking state
+    if (isSpeaking) {
+        const speakingImg = USER_CONFIG.images?.speaking;
+        image.src = speakingImg || USER_AVATAR || '';
+    } else {
+        const idleImg = USER_CONFIG.images?.idle;
+        image.src = idleImg || USER_AVATAR || '';
+    }
+
+    // Update state label
+    if (stateLabel) {
+        if (isSpeaking) {
+            stateLabel.textContent = 'Speaking';
+            stateLabel.className = 'preview-state speaking';
+        } else {
+            stateLabel.textContent = 'Idle';
+            stateLabel.className = 'preview-state';
+        }
+    }
+}
+
+// Toggle preview speaking state
+function togglePreviewSpeaking() {
+    isSpeaking = !isSpeaking;
+    updatePreview();
 }
 
 // Upload image for a state
@@ -657,16 +1094,7 @@ async function deleteImage(state) {
 
 // Update main preview image
 function updateMainPreview() {
-    const image = document.getElementById('preview-image');
-    if (!image) return;
-
-    if (isSpeaking) {
-        const speakingImg = USER_CONFIG.images?.speaking;
-        image.src = speakingImg || USER_AVATAR || '';
-    } else {
-        const idleImg = USER_CONFIG.images?.idle;
-        image.src = idleImg || USER_AVATAR || '';
-    }
+    updatePreview();
 }
 
 // Get value from element with fallback
@@ -750,6 +1178,9 @@ function applyTheme(themeName) {
     setVal('setting-transition', theme.transition_style);
     setVal('setting-transition-duration', theme.transition_duration);
 
+    // Update preview with new theme settings
+    updatePreview();
+
     showToast(`Applied ${themeName} theme! Click Save to keep changes.`, 'success');
 }
 
@@ -764,15 +1195,22 @@ async function saveSettings() {
         grayscale_muted: getVal('setting-grayscale-muted', true),
         grayscale_deafened: getVal('setting-grayscale-deafened', true),
         animation_style: getVal('setting-animation', 'bounce'),
+        animation_speed: getVal('setting-animation-speed', 100),
+        idle_animation_style: getVal('setting-idle-animation', 'none'),
         avatar_shape: getVal('setting-shape', 'rounded'),
         avatar_size: getVal('setting-size', 180),
         border_enabled: getVal('setting-border', false),
         border_color: getVal('setting-border-color', '#5865f2'),
         border_width: getVal('setting-border-width', 3),
+        border_style: getVal('setting-border-style', 'solid'),
         glow_enabled: getVal('setting-glow', false),
         glow_color: getVal('setting-glow-color', '#5865f2'),
         name_color: getVal('setting-name-color', '#ffffff'),
         name_size: getVal('setting-name-size', 14),
+        name_shadow_enabled: getVal('setting-name-shadow', false),
+        name_shadow_color: getVal('setting-name-shadow-color', '#000000'),
+        name_glow_enabled: getVal('setting-name-glow', false),
+        name_glow_color: getVal('setting-name-glow-color', '#5865f2'),
         overlay_position: getVal('setting-position', 'bottom'),
         spacing: getVal('setting-spacing', 20),
         speaking_ring_enabled: getVal('setting-speaking-ring', true),
@@ -783,6 +1221,8 @@ async function saveSettings() {
         shadow_blur: getVal('setting-shadow-blur', 10),
         transition_style: getVal('setting-transition', 'fade'),
         transition_duration: getVal('setting-transition-duration', 200),
+        entry_animation: getVal('setting-entry-animation', 'fade'),
+        entry_duration: getVal('setting-entry-duration', 500),
         show_status_icons: getVal('setting-status-icons', true),
         name_background_enabled: getVal('setting-name-bg', false),
         name_background_color: getVal('setting-name-bg-color', '#000000') + '80',
@@ -791,6 +1231,10 @@ async function saveSettings() {
         flip_horizontal: getVal('setting-flip', false),
         hide_self: getVal('setting-hide-self', false),
         max_participants: getVal('setting-max-participants', 0),
+        filter_brightness: getVal('setting-filter-brightness', 100),
+        filter_contrast: getVal('setting-filter-contrast', 100),
+        filter_saturate: getVal('setting-filter-saturate', 100),
+        filter_hue: getVal('setting-filter-hue', 0),
         theme: 'custom'
     };
 
@@ -863,6 +1307,56 @@ function initToggleOptions(toggleId, optionsId) {
     }
 }
 
+// Initialize button group with preview update
+function initButtonGroupWithPreview(selector, hiddenInputId, dataAttr) {
+    const buttons = document.querySelectorAll(selector);
+    const hiddenInput = document.getElementById(hiddenInputId);
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (hiddenInput) {
+                hiddenInput.value = btn.dataset[dataAttr];
+            }
+            updatePreview();
+        });
+    });
+}
+
+// Initialize slider with preview update
+function initSliderWithPreview(sliderId, valueId, suffix = 'px') {
+    const slider = document.getElementById(sliderId);
+    const valueDisplay = document.getElementById(valueId);
+
+    if (slider && valueDisplay) {
+        slider.addEventListener('input', () => {
+            valueDisplay.textContent = slider.value + suffix;
+            updatePreview();
+        });
+    }
+}
+
+// Initialize toggle with preview update
+function initToggleWithPreview(toggleId) {
+    const toggle = document.getElementById(toggleId);
+    if (toggle) {
+        toggle.addEventListener('change', () => {
+            updatePreview();
+        });
+    }
+}
+
+// Initialize color picker with preview update
+function initColorWithPreview(colorId) {
+    const color = document.getElementById(colorId);
+    if (color) {
+        color.addEventListener('input', () => {
+            updatePreview();
+        });
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Set up file upload listeners
@@ -877,35 +1371,69 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Apply initial dim setting
-    const avatar = document.getElementById('preview-avatar');
-    if (avatar && USER_CONFIG.settings?.dim_when_idle) {
-        avatar.classList.add('dimmed');
-    }
+    // Initialize button groups with preview update
+    initButtonGroupWithPreview('.position-btn', 'setting-position', 'position');
+    initButtonGroupWithPreview('.style-btn[data-style]', 'setting-animation', 'style');
+    initButtonGroupWithPreview('.style-btn[data-idle-style]', 'setting-idle-animation', 'idleStyle');
+    initButtonGroupWithPreview('.style-btn[data-transition]', 'setting-transition', 'transition');
+    initButtonGroupWithPreview('.style-btn[data-entry]', 'setting-entry-animation', 'entry');
+    initButtonGroupWithPreview('.style-btn[data-border-style]', 'setting-border-style', 'borderStyle');
+    initButtonGroupWithPreview('.shape-btn', 'setting-shape', 'shape');
 
-    // Initialize button groups
-    initButtonGroup('.position-btn', 'setting-position', 'position');
-    initButtonGroup('.style-btn[data-style]', 'setting-animation', 'style');
-    initButtonGroup('.style-btn[data-transition]', 'setting-transition', 'transition');
-    initButtonGroup('.shape-btn', 'setting-shape', 'shape');
+    // Initialize sliders with preview update
+    initSliderWithPreview('setting-size', 'size-value');
+    initSliderWithPreview('setting-border-width', 'border-width-value');
+    initSliderWithPreview('setting-name-size', 'name-size-value');
+    initSliderWithPreview('setting-spacing', 'spacing-value');
+    initSliderWithPreview('setting-speaking-ring-width', 'speaking-ring-width-value');
+    initSliderWithPreview('setting-shadow-blur', 'shadow-blur-value');
+    initSliderWithPreview('setting-transition-duration', 'transition-duration-value', 'ms');
+    initSliderWithPreview('setting-idle-opacity', 'idle-opacity-value', '%');
+    initSliderWithPreview('setting-max-participants', 'max-participants-value', '');
+    initSliderWithPreview('setting-animation-speed', 'animation-speed-value', '%');
+    initSliderWithPreview('setting-entry-duration', 'entry-duration-value', 'ms');
+    initSliderWithPreview('setting-filter-brightness', 'filter-brightness-value', '%');
+    initSliderWithPreview('setting-filter-contrast', 'filter-contrast-value', '%');
+    initSliderWithPreview('setting-filter-saturate', 'filter-saturate-value', '%');
+    initSliderWithPreview('setting-filter-hue', 'filter-hue-value', '°');
 
-    // Initialize sliders
-    initSlider('setting-size', 'size-value');
-    initSlider('setting-border-width', 'border-width-value');
-    initSlider('setting-name-size', 'name-size-value');
-    initSlider('setting-spacing', 'spacing-value');
-    initSlider('setting-speaking-ring-width', 'speaking-ring-width-value');
-    initSlider('setting-shadow-blur', 'shadow-blur-value');
-    initSlider('setting-transition-duration', 'transition-duration-value', 'ms');
-    initSlider('setting-idle-opacity', 'idle-opacity-value', '%');
-    initSlider('setting-max-participants', 'max-participants-value', '');
-
-    // Initialize toggle options
+    // Initialize toggle options (show/hide sub-options)
     initToggleOptions('setting-border', 'border-options');
     initToggleOptions('setting-glow', 'glow-options');
     initToggleOptions('setting-shadow', 'shadow-options');
     initToggleOptions('setting-speaking-ring', 'speaking-ring-options');
     initToggleOptions('setting-name-bg', 'name-bg-options');
+    initToggleOptions('setting-name-shadow', 'name-shadow-options');
+    initToggleOptions('setting-name-glow', 'name-glow-options');
+
+    // Initialize toggles with preview update
+    initToggleWithPreview('setting-bounce');
+    initToggleWithPreview('setting-dim');
+    initToggleWithPreview('setting-name');
+    initToggleWithPreview('setting-grayscale-muted');
+    initToggleWithPreview('setting-grayscale-deafened');
+    initToggleWithPreview('setting-border');
+    initToggleWithPreview('setting-glow');
+    initToggleWithPreview('setting-shadow');
+    initToggleWithPreview('setting-speaking-ring');
+    initToggleWithPreview('setting-name-bg');
+    initToggleWithPreview('setting-flip');
+    initToggleWithPreview('setting-hide-self');
+    initToggleWithPreview('setting-name-shadow');
+    initToggleWithPreview('setting-name-glow');
+
+    // Initialize color pickers with preview update
+    initColorWithPreview('setting-border-color');
+    initColorWithPreview('setting-glow-color');
+    initColorWithPreview('setting-name-color');
+    initColorWithPreview('setting-speaking-ring-color');
+    initColorWithPreview('setting-shadow-color');
+    initColorWithPreview('setting-name-bg-color');
+    initColorWithPreview('setting-name-shadow-color');
+    initColorWithPreview('setting-name-glow-color');
+
+    // Initial preview update
+    updatePreview();
 });
 
 // Download standalone overlay HTML file

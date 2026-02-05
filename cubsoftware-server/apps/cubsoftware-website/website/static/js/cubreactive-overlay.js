@@ -307,14 +307,28 @@ class CubReactiveOverlay {
         return participant.avatar;
     }
 
+    getShapeStyles(shape) {
+        const shapes = {
+            'circle': { borderRadius: '50%', clipPath: '' },
+            'square': { borderRadius: '0', clipPath: '' },
+            'rounded': { borderRadius: '12px', clipPath: '' },
+            'hexagon': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' },
+            'diamond': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' },
+            'octagon': { borderRadius: '0', clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' },
+            'star': { borderRadius: '0', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' },
+            'heart': { borderRadius: '0', clipPath: 'path("M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z")' },
+            'shield': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 10%, 100% 60%, 50% 100%, 0% 60%, 0% 10%)' },
+            'blob': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', clipPath: '' }
+        };
+        return shapes[shape] || shapes['rounded'];
+    }
+
     getShapeBorderRadius(shape) {
-        switch (shape) {
-            case 'circle': return '50%';
-            case 'square': return '0';
-            case 'hexagon': return '0';
-            case 'rounded':
-            default: return '12px';
-        }
+        return this.getShapeStyles(shape).borderRadius;
+    }
+
+    getShapeClipPath(shape) {
+        return this.getShapeStyles(shape).clipPath;
     }
 
     getAnimationClass(style) {
@@ -324,6 +338,13 @@ class CubReactiveOverlay {
             case 'glow': return 'anim-glow';
             case 'shake': return 'anim-shake';
             case 'wave': return 'anim-wave';
+            case 'float': return 'anim-float';
+            case 'spin': return 'anim-spin';
+            case 'jello': return 'anim-jello';
+            case 'heartbeat': return 'anim-heartbeat';
+            case 'flash': return 'anim-flash';
+            case 'rubberband': return 'anim-rubberband';
+            case 'breathe': return 'anim-breathe';
             case 'none':
             default: return '';
         }
@@ -393,6 +414,7 @@ class CubReactiveOverlay {
             const borderEnabled = settings.border_enabled || false;
             const borderColor = settings.border_color || '#5865f2';
             const borderWidth = settings.border_width || 3;
+            const borderStyle = settings.border_style || 'solid';
             const glowEnabled = settings.glow_enabled || false;
             const glowColor = settings.glow_color || '#5865f2';
             const speakingRingEnabled = settings.speaking_ring_enabled !== false;
@@ -405,7 +427,13 @@ class CubReactiveOverlay {
             const nameSize = settings.name_size || 14;
             const nameBgEnabled = settings.name_background_enabled || false;
             const nameBgColor = settings.name_background_color || 'rgba(0,0,0,0.5)';
+            const nameShadowEnabled = settings.name_shadow_enabled || false;
+            const nameShadowColor = settings.name_shadow_color || '#000000';
+            const nameGlowEnabled = settings.name_glow_enabled || false;
+            const nameGlowColor = settings.name_glow_color || '#5865f2';
             const animationStyle = settings.animation_style || 'bounce';
+            const animationSpeed = settings.animation_speed || 100;
+            const idleAnimationStyle = settings.idle_animation_style || 'none';
             const grayscaleMuted = settings.grayscale_muted !== false;
             const grayscaleDeafened = settings.grayscale_deafened !== false;
             const dimWhenIdle = settings.dim_when_idle || false;
@@ -414,6 +442,12 @@ class CubReactiveOverlay {
             const showStatusIcons = settings.show_status_icons !== false;
             const idleOpacity = settings.idle_opacity || 100;
             const flipHorizontal = settings.flip_horizontal || false;
+            const filterBrightness = settings.filter_brightness || 100;
+            const filterContrast = settings.filter_contrast || 100;
+            const filterSaturate = settings.filter_saturate || 100;
+            const filterHue = settings.filter_hue || 0;
+            const entryAnimation = settings.entry_animation || 'fade';
+            const entryDuration = settings.entry_duration || 500;
 
             // Check if element already exists for this participant
             let wrapper = container.querySelector(`[data-user-id="${participant.id}"]`);
@@ -473,18 +507,27 @@ class CubReactiveOverlay {
             // Update wrapper animation class
             wrapper.className = 'avatar-wrapper';
             wrapper.dataset.userId = participant.id;
+
+            // Apply animation speed
+            const speedFactor = 100 / animationSpeed;
+            wrapper.style.animationDuration = (0.5 * speedFactor) + 's';
+
             if (participant.speaking && bounceOnSpeak) {
                 const animClass = this.getAnimationClass(animationStyle);
                 if (animClass) wrapper.classList.add(animClass);
+            } else if (!participant.speaking && idleAnimationStyle !== 'none') {
+                const idleAnimClass = this.getAnimationClass(idleAnimationStyle);
+                if (idleAnimClass) wrapper.classList.add(idleAnimClass);
             }
 
             // Update avatar styling
+            const shapeStyles = this.getShapeStyles(avatarShape);
             avatar.style.width = `${avatarSize}px`;
             avatar.style.height = `${avatarSize}px`;
-            avatar.style.borderRadius = this.getShapeBorderRadius(avatarShape);
+            avatar.style.borderRadius = shapeStyles.borderRadius;
             avatar.style.transition = `all ${transitionDuration}ms ease`;
-            avatar.style.clipPath = avatarShape === 'hexagon' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : '';
-            avatar.style.border = borderEnabled ? `${borderWidth}px solid ${borderColor}` : '';
+            avatar.style.clipPath = shapeStyles.clipPath;
+            avatar.style.border = borderEnabled ? `${borderWidth}px ${borderStyle} ${borderColor}` : '';
 
             // Box shadow (speaking ring + glow)
             let boxShadows = [];
@@ -501,8 +544,8 @@ class CubReactiveOverlay {
 
             // Image wrapper shape
             const imgWrapper = wrapper.querySelector('.img-wrapper');
-            imgWrapper.style.borderRadius = this.getShapeBorderRadius(avatarShape);
-            imgWrapper.style.clipPath = avatarShape === 'hexagon' ? 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' : '';
+            imgWrapper.style.borderRadius = shapeStyles.borderRadius;
+            imgWrapper.style.clipPath = shapeStyles.clipPath;
 
             // Update image src only if changed (prevents reload flicker)
             if (img.src !== new URL(imageUrl, window.location.origin).href) {
@@ -514,6 +557,14 @@ class CubReactiveOverlay {
             // Apply filters based on state
             let filters = [];
             let opacity = 1;
+
+            // Apply custom avatar filters
+            if (filterBrightness !== 100) filters.push(`brightness(${filterBrightness}%)`);
+            if (filterContrast !== 100) filters.push(`contrast(${filterContrast}%)`);
+            if (filterSaturate !== 100) filters.push(`saturate(${filterSaturate}%)`);
+            if (filterHue !== 0) filters.push(`hue-rotate(${filterHue}deg)`);
+
+            // Apply state-based filters
             if (participant.deafened && grayscaleDeafened) {
                 filters.push('grayscale(80%)', 'brightness(0.7)');
             } else if (participant.muted && grayscaleMuted) {
@@ -541,11 +592,29 @@ class CubReactiveOverlay {
                 username.style.background = nameBgEnabled ? nameBgColor : '';
                 username.style.padding = nameBgEnabled ? '4px 8px' : '';
                 username.style.borderRadius = nameBgEnabled ? '4px' : '';
+
+                // Apply text shadow/glow
+                let textShadows = [];
+                if (nameShadowEnabled) {
+                    textShadows.push(`2px 2px 4px ${nameShadowColor}`);
+                }
+                if (nameGlowEnabled) {
+                    textShadows.push(`0 0 10px ${nameGlowColor}`, `0 0 20px ${nameGlowColor}`);
+                }
+                username.style.textShadow = textShadows.length > 0 ? textShadows.join(', ') : '0 2px 4px rgba(0,0,0,0.5)';
             } else {
                 username.style.display = 'none';
             }
 
             if (isNew) {
+                // Apply entry animation
+                if (entryAnimation !== 'none') {
+                    wrapper.classList.add(`entry-${entryAnimation}`);
+                    wrapper.style.animationDuration = `${entryDuration}ms`;
+                    setTimeout(() => {
+                        wrapper.classList.remove(`entry-${entryAnimation}`);
+                    }, entryDuration);
+                }
                 container.appendChild(wrapper);
             }
         });
@@ -602,6 +671,53 @@ class CubReactiveOverlay {
             .anim-wave {
                 animation: cr-wave 1s ease infinite;
             }
+            .anim-float {
+                animation: cr-float 2s ease-in-out infinite;
+            }
+            .anim-spin {
+                animation: cr-spin 2s linear infinite;
+            }
+            .anim-jello {
+                animation: cr-jello 0.9s ease infinite;
+            }
+            .anim-heartbeat {
+                animation: cr-heartbeat 1.3s ease-in-out infinite;
+            }
+            .anim-flash {
+                animation: cr-flash 1s ease infinite;
+            }
+            .anim-rubberband {
+                animation: cr-rubberband 1s ease infinite;
+            }
+            .anim-breathe {
+                animation: cr-breathe 3s ease-in-out infinite;
+            }
+
+            /* Entry animations */
+            .entry-fade {
+                animation: cr-entry-fade ease-out forwards;
+            }
+            .entry-slide-up {
+                animation: cr-entry-slide-up ease-out forwards;
+            }
+            .entry-slide-down {
+                animation: cr-entry-slide-down ease-out forwards;
+            }
+            .entry-slide-left {
+                animation: cr-entry-slide-left ease-out forwards;
+            }
+            .entry-slide-right {
+                animation: cr-entry-slide-right ease-out forwards;
+            }
+            .entry-zoom {
+                animation: cr-entry-zoom ease-out forwards;
+            }
+            .entry-bounce {
+                animation: cr-entry-bounce ease-out forwards;
+            }
+            .entry-flip {
+                animation: cr-entry-flip ease-out forwards;
+            }
 
             @keyframes cr-bounce {
                 0%, 100% { transform: translateY(0); }
@@ -628,6 +744,95 @@ class CubReactiveOverlay {
                 0%, 100% { transform: rotate(0deg); }
                 25% { transform: rotate(-3deg); }
                 75% { transform: rotate(3deg); }
+            }
+
+            @keyframes cr-float {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-8px); }
+            }
+
+            @keyframes cr-spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            @keyframes cr-jello {
+                0%, 100% { transform: scale3d(1, 1, 1); }
+                30% { transform: scale3d(1.25, 0.75, 1); }
+                40% { transform: scale3d(0.75, 1.25, 1); }
+                50% { transform: scale3d(1.15, 0.85, 1); }
+                65% { transform: scale3d(0.95, 1.05, 1); }
+                75% { transform: scale3d(1.05, 0.95, 1); }
+            }
+
+            @keyframes cr-heartbeat {
+                0%, 100% { transform: scale(1); }
+                14% { transform: scale(1.1); }
+                28% { transform: scale(1); }
+                42% { transform: scale(1.1); }
+                70% { transform: scale(1); }
+            }
+
+            @keyframes cr-flash {
+                0%, 50%, 100% { opacity: 1; }
+                25%, 75% { opacity: 0.5; }
+            }
+
+            @keyframes cr-rubberband {
+                0%, 100% { transform: scale3d(1, 1, 1); }
+                30% { transform: scale3d(1.15, 0.85, 1); }
+                40% { transform: scale3d(0.85, 1.15, 1); }
+                50% { transform: scale3d(1.1, 0.9, 1); }
+                65% { transform: scale3d(0.95, 1.05, 1); }
+                75% { transform: scale3d(1.02, 0.98, 1); }
+            }
+
+            @keyframes cr-breathe {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.03); }
+            }
+
+            /* Entry animation keyframes */
+            @keyframes cr-entry-fade {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            @keyframes cr-entry-slide-up {
+                from { opacity: 0; transform: translateY(50px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            @keyframes cr-entry-slide-down {
+                from { opacity: 0; transform: translateY(-50px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            @keyframes cr-entry-slide-left {
+                from { opacity: 0; transform: translateX(50px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+
+            @keyframes cr-entry-slide-right {
+                from { opacity: 0; transform: translateX(-50px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+
+            @keyframes cr-entry-zoom {
+                from { opacity: 0; transform: scale(0); }
+                to { opacity: 1; transform: scale(1); }
+            }
+
+            @keyframes cr-entry-bounce {
+                0% { opacity: 0; transform: scale(0.3); }
+                50% { transform: scale(1.05); }
+                70% { transform: scale(0.9); }
+                100% { opacity: 1; transform: scale(1); }
+            }
+
+            @keyframes cr-entry-flip {
+                from { opacity: 0; transform: perspective(400px) rotateY(90deg); }
+                to { opacity: 1; transform: perspective(400px) rotateY(0); }
             }
         `;
         document.head.appendChild(style);
