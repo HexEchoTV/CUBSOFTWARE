@@ -2532,69 +2532,9 @@ def pm2_bot_get_whitelist():
 
 # ==================== ADMIN API ENDPOINTS ====================
 
-IP_BANS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'ip_bans.json')
-LINKS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'links.json')
-
-def load_ip_bans():
-    """Load IP bans from file"""
-    if os.path.exists(IP_BANS_FILE):
-        try:
-            with open(IP_BANS_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            pass
-    return {
-        'global': [],
-        'feature_specific': {},
-        'temporary': []
-    }
-
-def save_ip_bans(bans):
-    """Save IP bans to file"""
-    os.makedirs(os.path.dirname(IP_BANS_FILE), exist_ok=True)
-    with open(IP_BANS_FILE, 'w') as f:
-        json.dump(bans, f, indent=2)
-
-def is_ip_banned(ip, feature=None):
-    """Check if an IP is banned (globally or for a specific feature)"""
-    bans = load_ip_bans()
-
-    # Check global bans
-    if ip in bans.get('global', []):
-        return True
-
-    # Check temporary bans
-    current_time = datetime.now().timestamp()
-    for temp_ban in bans.get('temporary', []):
-        if temp_ban['ip'] == ip and temp_ban['expires'] > current_time:
-            return True
-
-    # Check feature-specific bans
-    if feature and feature in bans.get('feature_specific', {}):
-        if ip in bans['feature_specific'][feature]:
-            return True
-
-    return False
-
-def load_links():
-    """Load shortened links from file"""
-    if os.path.exists(LINKS_FILE):
-        try:
-            with open(LINKS_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            pass
-    return {}
-
-def save_links(links):
-    """Save shortened links to file"""
-    os.makedirs(os.path.dirname(LINKS_FILE), exist_ok=True)
-    with open(LINKS_FILE, 'w') as f:
-        json.dump(links, f, indent=2)
-
 # Admin Links Management
 @app.route('/api/admin/links', methods=['GET'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_get_links():
     """Get all shortened links for admin"""
     links = load_links()
@@ -2612,7 +2552,7 @@ def admin_get_links():
     return jsonify({'links': links_list})
 
 @app.route('/api/admin/links/<code>', methods=['GET'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_get_link(code):
     """Get single link details"""
     links = load_links()
@@ -2621,7 +2561,7 @@ def admin_get_link(code):
     return jsonify({'error': 'Link not found'}), 404
 
 @app.route('/api/admin/links/<code>', methods=['DELETE'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_delete_link(code):
     """Delete a shortened link"""
     links = load_links()
@@ -2633,7 +2573,7 @@ def admin_delete_link(code):
 
 # Admin Features Management
 @app.route('/api/admin/features', methods=['GET'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_get_features():
     """Get all features and their status"""
     disabled = load_disabled_features()
@@ -2675,7 +2615,7 @@ def admin_get_features():
     return jsonify({'features': all_features})
 
 @app.route('/api/admin/features/enable', methods=['POST'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_enable_feature():
     """Enable a feature"""
     data = request.get_json()
@@ -2693,7 +2633,7 @@ def admin_enable_feature():
     return jsonify({'success': True, 'message': f'Feature {feature_id} was already enabled'})
 
 @app.route('/api/admin/features/disable', methods=['POST'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_disable_feature():
     """Disable a feature"""
     data = request.get_json()
@@ -2718,22 +2658,17 @@ def save_disabled_features(features):
 
 # Admin IP Bans Management
 @app.route('/api/admin/ipbans', methods=['GET'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_get_ip_bans():
     """Get all IP bans"""
+    clean_expired_temp_bans()
     bans = load_ip_bans()
-
-    # Clean up expired temporary bans
-    current_time = datetime.now().timestamp()
-    bans['temporary'] = [b for b in bans.get('temporary', []) if b['expires'] > current_time]
-    save_ip_bans(bans)
-
     return jsonify({'bans': bans})
 
 @app.route('/api/admin/ipbans/add', methods=['POST'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_add_ip_ban():
-    """Add a permanent IP ban"""
+    """Add a permanent IP ban (global or feature-specific)"""
     data = request.get_json()
     if not data or 'ip' not in data:
         return jsonify({'error': 'IP address is required'}), 400
@@ -2741,24 +2676,27 @@ def admin_add_ip_ban():
     ip = data['ip']
     ban_type = data.get('type', 'global')
     feature = data.get('feature')
-    reason = data.get('reason', '')
+    reason = data.get('reason', 'Banned by admin')
 
     bans = load_ip_bans()
 
     if ban_type == 'global':
-        if ip not in bans['global']:
-            bans['global'].append(ip)
+        # Check if IP already globally banned
+        existing = [b for b in bans['global'] if b['ip'] == ip]
+        if not existing:
+            bans['global'].append({'ip': ip, 'reason': reason})
     elif ban_type == 'feature' and feature:
-        if feature not in bans['feature_specific']:
-            bans['feature_specific'][feature] = []
-        if ip not in bans['feature_specific'][feature]:
-            bans['feature_specific'][feature].append(ip)
+        if feature not in bans.get('features', {}):
+            bans['features'][feature] = []
+        existing = [b for b in bans['features'][feature] if b['ip'] == ip]
+        if not existing:
+            bans['features'][feature].append({'ip': ip, 'reason': reason})
 
     save_ip_bans(bans)
     return jsonify({'success': True, 'message': f'IP {ip} banned'})
 
 @app.route('/api/admin/ipbans/temp', methods=['POST'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_add_temp_ip_ban():
     """Add a temporary IP ban"""
     data = request.get_json()
@@ -2767,26 +2705,30 @@ def admin_add_temp_ip_ban():
 
     ip = data['ip']
     duration = data.get('duration', 3600)  # Default 1 hour
-    reason = data.get('reason', '')
+    reason = data.get('reason', 'Temporary ban by admin')
+    feature = data.get('feature')
 
     bans = load_ip_bans()
 
     # Remove existing temp ban for this IP if any
-    bans['temporary'] = [b for b in bans.get('temporary', []) if b['ip'] != ip]
+    bans['temp'] = [b for b in bans.get('temp', []) if b['ip'] != ip]
 
     # Add new temp ban
-    bans['temporary'].append({
+    temp_ban = {
         'ip': ip,
-        'expires': datetime.now().timestamp() + duration,
-        'reason': reason,
-        'created_at': datetime.now().isoformat()
-    })
+        'expires': time.time() + duration,
+        'reason': reason
+    }
+    if feature:
+        temp_ban['feature'] = feature
+
+    bans['temp'].append(temp_ban)
 
     save_ip_bans(bans)
     return jsonify({'success': True, 'message': f'IP {ip} temporarily banned for {duration} seconds'})
 
 @app.route('/api/admin/ipbans/remove', methods=['POST'])
-@require_pm2_auth
+@pm2_auth_required
 def admin_remove_ip_ban():
     """Remove an IP ban"""
     data = request.get_json()
@@ -2801,17 +2743,18 @@ def admin_remove_ip_ban():
     removed = False
 
     if ban_type == 'global':
-        if ip in bans['global']:
-            bans['global'].remove(ip)
-            removed = True
+        original_len = len(bans.get('global', []))
+        bans['global'] = [b for b in bans.get('global', []) if b['ip'] != ip]
+        removed = len(bans['global']) < original_len
     elif ban_type == 'feature' and feature:
-        if feature in bans['feature_specific'] and ip in bans['feature_specific'][feature]:
-            bans['feature_specific'][feature].remove(ip)
-            removed = True
-    elif ban_type == 'temporary':
-        original_len = len(bans.get('temporary', []))
-        bans['temporary'] = [b for b in bans.get('temporary', []) if b['ip'] != ip]
-        removed = len(bans['temporary']) < original_len
+        if feature in bans.get('features', {}):
+            original_len = len(bans['features'][feature])
+            bans['features'][feature] = [b for b in bans['features'][feature] if b['ip'] != ip]
+            removed = len(bans['features'][feature]) < original_len
+    elif ban_type == 'temp':
+        original_len = len(bans.get('temp', []))
+        bans['temp'] = [b for b in bans.get('temp', []) if b['ip'] != ip]
+        removed = len(bans['temp']) < original_len
 
     if removed:
         save_ip_bans(bans)
@@ -2819,17 +2762,16 @@ def admin_remove_ip_ban():
 
     return jsonify({'success': False, 'message': f'IP {ip} was not banned'})
 
-# IP Ban Middleware Check
+# IP Ban Middleware - check on every request
 @app.before_request
-def check_ip_ban():
-    """Check if the requesting IP is banned"""
-    # Skip for static files and certain paths
-    if request.path.startswith('/static/') or request.path.startswith('/api/admin/'):
+def enforce_ip_bans():
+    """Check if the requesting IP is banned before processing"""
+    # Skip for static files and admin API (so admins can unban)
+    if request.path.startswith('/static/') or request.path.startswith('/api/admin/') or request.path.startswith('/api/pm2/'):
         return None
 
-    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if client_ip and ',' in client_ip:
-        client_ip = client_ip.split(',')[0].strip()
+    maybe_clean_bans()
+    client_ip = get_client_ip()
 
     # Determine the feature from the path
     feature = None
@@ -2838,14 +2780,21 @@ def check_ip_ban():
         if len(parts) > 1:
             feature = parts[1].split('/')[0]
 
-    if is_ip_banned(client_ip, feature):
+    is_banned, ban_type, reason, expires = check_ip_ban(client_ip, feature)
+
+    if is_banned:
         if request.is_json or request.path.startswith('/api/'):
             return jsonify({
                 'error': 'Access denied',
-                'message': 'Your IP address has been banned.'
+                'reason': reason,
+                'ban_type': ban_type,
+                'expires': expires
             }), 403
         else:
-            return render_template('banned.html'), 403
+            return render_template('banned.html',
+                                 reason=reason,
+                                 ban_type=ban_type,
+                                 expires=expires), 403
 
     return None
 

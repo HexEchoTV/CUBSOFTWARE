@@ -623,15 +623,25 @@
         if (!elements.linksList) return;
 
         try {
-            const search = elements.linkSearch?.value || '';
-            const res = await fetch(`/api/admin/links?search=${encodeURIComponent(search)}&limit=50`);
+            const res = await fetch('/api/admin/links');
             if (!res.ok) throw new Error('Failed');
 
             const data = await res.json();
-            const links = data.links || [];
+            let links = data.links || [];
 
-            if (elements.totalLinksCount) elements.totalLinksCount.textContent = data.total || 0;
-            if (elements.totalClicksCount) elements.totalClicksCount.textContent = data.totalClicks || 0;
+            // Client-side search filter
+            const search = (elements.linkSearch?.value || '').toLowerCase();
+            if (search) {
+                links = links.filter(l =>
+                    l.code.toLowerCase().includes(search) ||
+                    (l.url && l.url.toLowerCase().includes(search))
+                );
+            }
+
+            // Compute totals
+            const totalClicks = links.reduce((sum, l) => sum + (l.clicks || 0), 0);
+            if (elements.totalLinksCount) elements.totalLinksCount.textContent = links.length;
+            if (elements.totalClicksCount) elements.totalClicksCount.textContent = totalClicks;
 
             renderLinks(links);
 
@@ -668,7 +678,8 @@
             const res = await fetch(`/api/admin/links/${code}`);
             if (!res.ok) throw new Error('Failed');
 
-            const link = await res.json();
+            const data = await res.json();
+            const link = data.link || data;
             currentLink = link;
 
             elements.linkModalBody.innerHTML = `
@@ -687,11 +698,11 @@
                     </div>
                     <div class="report-field">
                         <label>Created</label>
-                        <div class="value">${formatDate(link.created * 1000)}</div>
+                        <div class="value">${formatDate(link.created_at ? link.created_at : (link.created ? link.created * 1000 : null))}</div>
                     </div>
                     <div class="report-field">
-                        <label>Creator IP</label>
-                        <div class="value mono">${link.ip || 'Unknown'}</div>
+                        <label>Created By</label>
+                        <div class="value mono">${escapeHtml(link.created_by || link.ip || 'Unknown')}</div>
                     </div>
                 </div>
             `;
@@ -709,10 +720,12 @@
     };
 
     window.deleteLink = async function() {
-        if (!currentLink || !confirm('Delete this link?')) return;
+        if (!currentLink) return;
+        const code = currentLink.code;
+        if (!confirm(`Delete link ${code}?`)) return;
 
         try {
-            const res = await fetch(`/api/admin/links/${currentLink.code}`, { method: 'DELETE' });
+            const res = await fetch(`/api/admin/links/${code}`, { method: 'DELETE' });
             if (res.ok) {
                 showToast('Link deleted', 'success');
                 closeLinkModal();
@@ -726,11 +739,14 @@
     };
 
     window.banLinkCreator = async function() {
-        if (!currentLink?.ip) return;
+        const ip = currentLink?.created_by || currentLink?.ip;
+        if (!ip) {
+            showToast('No IP/creator info available', 'error');
+            return;
+        }
 
-        elements.banIpAddress.value = currentLink.ip;
-        elements.banType.value = 'links';
-        elements.banReason.value = 'Suspicious link activity';
+        elements.banIpAddress.value = ip;
+        if (elements.banReason) elements.banReason.value = 'Suspicious link activity';
 
         closeLinkModal();
         switchSection('ipbans');
@@ -745,7 +761,7 @@
             if (!res.ok) throw new Error('Failed');
 
             const data = await res.json();
-            renderFeatures(data.features || [], data.disabled || []);
+            renderFeatures(data.features || []);
 
         } catch (e) {
             console.error('Error loading features:', e);
@@ -753,36 +769,27 @@
         }
     }
 
-    function renderFeatures(features, disabled) {
-        const allFeatures = [
-            'social-media-saver', 'file-converter', 'pdf-tools', 'image-editor',
-            'qr-generator', 'link-shortener', 'color-picker', 'text-tools',
-            'unit-converter', 'json-formatter', 'timestamp-converter', 'video-compressor',
-            'resume-builder', 'countdown-maker', 'random-picker', 'wheel-spinner',
-            'calculator-suite', 'password-generator', 'timer-tools', 'world-clock',
-            'currency-converter', 'sticky-board', 'encoding-tools', 'diff-checker',
-            'regex-tester', 'code-minifier', 'markdown-editor', 'notepad',
-            'invoice-generator', 'audio-trimmer'
-        ];
+    function renderFeatures(features) {
+        if (features.length === 0) {
+            elements.featuresGrid.innerHTML = '<div class="empty-state">No features found</div>';
+            return;
+        }
 
-        elements.featuresGrid.innerHTML = allFeatures.map(f => {
-            const isEnabled = !disabled.includes(f);
-            return `
-                <div class="feature-card">
-                    <div class="feature-info">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                                <polyline points="2 17 12 22 22 17"></polyline>
-                                <polyline points="2 12 12 17 22 12"></polyline>
-                            </svg>
-                        </div>
-                        <span class="feature-name">${f.replace(/-/g, ' ')}</span>
+        elements.featuresGrid.innerHTML = features.map(f => `
+            <div class="feature-card">
+                <div class="feature-info">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                            <polyline points="2 17 12 22 22 17"></polyline>
+                            <polyline points="2 12 12 17 22 12"></polyline>
+                        </svg>
                     </div>
-                    <div class="feature-toggle ${isEnabled ? 'enabled' : ''}" onclick="toggleFeature('${f}', ${!isEnabled})"></div>
+                    <span class="feature-name">${f.name}</span>
                 </div>
-            `;
-        }).join('');
+                <div class="feature-toggle ${f.enabled ? 'enabled' : ''}" onclick="toggleFeature('${f.id}', ${!f.enabled})"></div>
+            </div>
+        `).join('');
     }
 
     window.toggleFeature = async function(feature, enable) {
@@ -810,7 +817,7 @@
         if (!elements.whitelistList) return;
 
         try {
-            const res = await fetch('/api/pm2/bot/whitelist');
+            const res = await fetch('/api/pm2/whitelist');
             if (!res.ok) throw new Error('Failed');
 
             const data = await res.json();
@@ -847,7 +854,7 @@
         }
 
         try {
-            const res = await fetch('/api/pm2/bot/whitelist/add', {
+            const res = await fetch('/api/pm2/whitelist/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: userId })
@@ -869,7 +876,7 @@
         if (!confirm(`Remove ${userId} from whitelist?`)) return;
 
         try {
-            const res = await fetch('/api/pm2/bot/whitelist/remove', {
+            const res = await fetch('/api/pm2/whitelist/remove', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: userId })
@@ -895,7 +902,7 @@
             if (!res.ok) throw new Error('Failed');
 
             const data = await res.json();
-            renderIpBans(data);
+            renderIpBans(data.bans || {});
 
         } catch (e) {
             console.error('Error loading IP bans:', e);
@@ -903,17 +910,19 @@
         }
     }
 
-    function renderIpBans(data) {
+    function renderIpBans(bansData) {
         let bans = [];
 
         if (ipBansTab === 'global') {
-            bans = (data.global || []).map(b => ({ ...b, type: 'global' }));
+            bans = (bansData.global || []).map(b => ({ ...b, type: 'global' }));
         } else if (ipBansTab === 'feature') {
-            Object.entries(data.features || {}).forEach(([feature, featureBans]) => {
+            Object.entries(bansData.features || {}).forEach(([feature, featureBans]) => {
                 featureBans.forEach(b => bans.push({ ...b, type: 'feature', feature }));
             });
         } else if (ipBansTab === 'temp') {
-            bans = (data.temp || []).filter(b => b.expires > Date.now()).map(b => ({ ...b, type: 'temp' }));
+            // Server uses seconds, JS uses milliseconds
+            const nowSec = Date.now() / 1000;
+            bans = (bansData.temp || []).filter(b => b.expires > nowSec).map(b => ({ ...b, type: 'temp' }));
         }
 
         if (bans.length === 0) {
@@ -928,12 +937,12 @@
                     <span class="ipban-meta">
                         ${b.reason || 'No reason'}
                         ${b.feature ? `(${b.feature})` : ''}
-                        ${b.expires ? `- Expires: ${formatDate(b.expires)}` : ''}
+                        ${b.expires ? `- Expires: ${formatDate(b.expires * 1000)}` : ''}
                     </span>
                 </div>
                 <div class="ipban-actions">
                     <span class="ipban-type ${b.type}">${b.type}</span>
-                    <button class="unban-btn" onclick="unbanIp('${b.ip}')">Unban</button>
+                    <button class="unban-btn" onclick="unbanIp('${b.ip}', '${b.type}'${b.feature ? `, '${b.feature}'` : ''})">Unban</button>
                 </div>
             </div>
         `).join('');
@@ -941,7 +950,7 @@
 
     window.banIpAddress = async function() {
         const ip = elements.banIpAddress?.value?.trim();
-        const type = elements.banType?.value || 'global';
+        const banTypeValue = elements.banType?.value || 'global';
         const reason = elements.banReason?.value?.trim() || 'No reason';
 
         if (!ip) {
@@ -949,11 +958,22 @@
             return;
         }
 
+        // Map select value to API params
+        const isGlobal = banTypeValue === 'global';
+        const payload = {
+            ip,
+            type: isGlobal ? 'global' : 'feature',
+            reason
+        };
+        if (!isGlobal) {
+            payload.feature = banTypeValue;
+        }
+
         try {
             const res = await fetch('/api/admin/ipbans/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ip, type, reason })
+                body: JSON.stringify(payload)
             });
 
             if (res.ok) {
@@ -969,13 +989,29 @@
         }
     };
 
+    function parseDuration(str) {
+        // Parse human-readable duration strings like "1h", "30m", "7d", "3600"
+        const match = str.match(/^(\d+)\s*(s|m|h|d)?$/i);
+        if (!match) return null;
+        const value = parseInt(match[1]);
+        const unit = (match[2] || 's').toLowerCase();
+        const multipliers = { s: 1, m: 60, h: 3600, d: 86400 };
+        return value * (multipliers[unit] || 1);
+    }
+
     window.tempBanIp = async function() {
         const ip = elements.tempBanIp?.value?.trim();
-        const duration = elements.tempBanDuration?.value?.trim();
+        const durationStr = elements.tempBanDuration?.value?.trim();
         const reason = elements.tempBanReason?.value?.trim() || 'Temporary ban';
 
-        if (!ip || !duration) {
+        if (!ip || !durationStr) {
             showToast('Please enter IP and duration', 'error');
+            return;
+        }
+
+        const duration = parseDuration(durationStr);
+        if (!duration || duration <= 0) {
+            showToast('Invalid duration. Use: 30m, 1h, 7d, or seconds', 'error');
             return;
         }
 
@@ -1000,14 +1036,17 @@
         }
     };
 
-    window.unbanIp = async function(ip) {
+    window.unbanIp = async function(ip, type, feature) {
         if (!confirm(`Unban ${ip}?`)) return;
 
         try {
+            const payload = { ip, type: type || 'global' };
+            if (feature) payload.feature = feature;
+
             const res = await fetch('/api/admin/ipbans/remove', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ip })
+                body: JSON.stringify(payload)
             });
 
             if (res.ok) {
