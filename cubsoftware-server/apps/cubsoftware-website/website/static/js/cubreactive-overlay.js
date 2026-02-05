@@ -24,26 +24,35 @@ class CubReactiveOverlay {
         this.startConfigPoll();
     }
 
-    // Poll for config changes every 5 seconds so OBS picks up saves automatically
+    // Poll for config changes so OBS picks up saves automatically
     startConfigPoll() {
         this.configPollInterval = setInterval(async () => {
-            if (!TARGET_USER_ID || this.participants.size === 0) return;
+            if (!TARGET_USER_ID) return;
             try {
-                const response = await fetch(`${API_BASE}/api/cubreactive/user/${TARGET_USER_ID}`);
+                const response = await fetch(`${API_BASE}/api/cubreactive/user/${TARGET_USER_ID}?_=${Date.now()}`);
                 if (!response.ok) return;
                 const newConfig = await response.json();
                 newConfig.hasCubReactive = true;
                 const oldConfig = this.userConfigs.get(TARGET_USER_ID);
-                // Compare serialized configs to detect changes
-                if (JSON.stringify(oldConfig?.settings) !== JSON.stringify(newConfig.settings) ||
-                    JSON.stringify(oldConfig?.images) !== JSON.stringify(newConfig.images)) {
+                const oldStr = JSON.stringify(oldConfig?.settings) + JSON.stringify(oldConfig?.images);
+                const newStr = JSON.stringify(newConfig.settings) + JSON.stringify(newConfig.images);
+                if (oldStr !== newStr) {
+                    // Add cache bust to image URLs so browser reloads them
+                    const bust = Date.now();
+                    if (newConfig.images) {
+                        for (const key of Object.keys(newConfig.images)) {
+                            if (newConfig.images[key]) {
+                                newConfig.images[key] = newConfig.images[key].split('?')[0] + '?v=' + bust;
+                            }
+                        }
+                    }
                     this.userConfigs.set(TARGET_USER_ID, newConfig);
                     this.render();
                 }
             } catch (e) {
                 // Ignore poll errors
             }
-        }, 5000);
+        }, 3000);
     }
 
     async connect() {
