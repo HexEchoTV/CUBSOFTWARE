@@ -1,5 +1,5 @@
 {
-  "discord_client_id": "YOUR_DISCORD_CLIENT_ID",
+  "discord_client_id": "1412661083759579303",
   "discord_client_secret": "YOUR_DISCORD_CLIENT_SECRET",
   "discord_redirect_uri": "https://cubsoftware.site/apps/pm2-dashboard/callback",
   "bot_api_key": "YOUR_SECURE_API_KEY_FOR_BOT",

@@ -134,8 +134,7 @@ class CubReactiveOverlay {
             cmd: 'AUTHORIZE',
             args: {
                 client_id: DISCORD_CLIENT_ID,
-                scopes: ['rpc', 'rpc.voice.read'],
-                prompt: 'none'
+                scopes: ['rpc', 'rpc.voice.read']
             },
             nonce: this.nonce()
         });

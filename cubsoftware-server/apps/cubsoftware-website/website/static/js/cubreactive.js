@@ -40,7 +40,7 @@ const THEMES = {
         name_color: '#ffffff',
         name_size: 12,
         name_background_enabled: true,
-        name_background_color: 'rgba(0,0,0,0.6)',
+        name_background_color: '#000000',
         grayscale_muted: false,
         grayscale_deafened: false,
         idle_opacity: 60,
@@ -67,7 +67,7 @@ const THEMES = {
         name_color: '#00ff00',
         name_size: 14,
         name_background_enabled: true,
-        name_background_color: 'rgba(0,0,0,0.8)',
+        name_background_color: '#000000',
         grayscale_muted: true,
         grayscale_deafened: true,
         idle_opacity: 70,
@@ -114,7 +114,7 @@ const THEMES = {
         name_color: '#feca57',
         name_size: 16,
         name_background_enabled: true,
-        name_background_color: 'rgba(0,0,0,0.7)',
+        name_background_color: '#000000',
         grayscale_muted: false,
         grayscale_deafened: true,
         idle_opacity: 100,
@@ -344,7 +344,7 @@ function applyTheme(themeName) {
     setVal('setting-name-color', theme.name_color);
     setVal('setting-name-size', theme.name_size);
     setVal('setting-name-bg', theme.name_background_enabled);
-    if (theme.name_background_color) setVal('setting-name-bg-color', theme.name_background_color.slice(0, 7));
+    if (theme.name_background_color) setVal('setting-name-bg-color', theme.name_background_color);
 
     setVal('setting-idle-opacity', theme.idle_opacity);
 

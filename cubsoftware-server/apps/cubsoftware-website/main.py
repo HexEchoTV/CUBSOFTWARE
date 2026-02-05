@@ -1188,7 +1188,16 @@ def cubreactive_home():
     return render_template('cubreactive.html',
         cubreactive_user=cubreactive_user,
         user_config=user_config,
-        discord_client_id=os.environ.get('DISCORD_CLIENT_ID', '')
+        discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', ''))
+    )
+
+@app.route('/apps/cubreactive/overlay/group')
+def cubreactive_overlay_group():
+    """CubReactive - Group overlay browser source (shows all voice channel participants)"""
+    return render_template('cubreactive-overlay.html',
+        mode='group',
+        target_user_id=None,
+        discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', ''))
     )
 
 @app.route('/apps/cubreactive/overlay/<user_id>')
@@ -1200,16 +1209,7 @@ def cubreactive_overlay_individual(user_id):
         mode='individual',
         target_user_id=user_id,
         user_config=user_config,
-        discord_client_id=os.environ.get('DISCORD_CLIENT_ID', '')
-    )
-
-@app.route('/apps/cubreactive/overlay/group')
-def cubreactive_overlay_group():
-    """CubReactive - Group overlay browser source (shows all voice channel participants)"""
-    return render_template('cubreactive-overlay.html',
-        mode='group',
-        target_user_id=None,
-        discord_client_id=os.environ.get('DISCORD_CLIENT_ID', '')
+        discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', ''))
     )
 
 # CubReactive OAuth Routes
