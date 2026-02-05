@@ -1191,12 +1191,15 @@ def cubreactive_home():
         discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', ''))
     )
 
-@app.route('/apps/cubreactive/overlay/group')
-def cubreactive_overlay_group():
-    """CubReactive - Group overlay browser source (shows all voice channel participants)"""
+@app.route('/apps/cubreactive/overlay/group/<user_id>')
+def cubreactive_overlay_group(user_id):
+    """CubReactive - Group overlay browser source (shows all voice channel participants, uses this user's settings)"""
+    users = load_cubreactive_users()
+    user_config = users.get(user_id, {})
     return render_template('cubreactive-overlay.html',
         mode='group',
-        target_user_id=None,
+        target_user_id=user_id,
+        user_config=user_config,
         discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', ''))
     )
 
