@@ -30,15 +30,7 @@
     font-size: 1.5rem;
 }
 
-.logo-text {
-    font-family: 'Orbitron', monospace;
-    font-size: 1.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
+/* Logo text inherits 2-color format from shared.css */
 
 .nav-links {
     display: flex;
@@ -489,62 +481,62 @@
     line-height: 1.5;
 }
 
-/* Footer */
+/* Footer - scoped to .cleanme-footer to avoid overriding standard footer */
 .cleanme-footer {
     padding: 3rem 2rem;
     border-top: 1px solid var(--border-color);
 }
 
-.footer-content {
+.cleanme-footer .footer-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
 }
 
-.footer-brand {
+.cleanme-footer .footer-brand {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
 }
 
-.footer-brand .logo-icon,
-.footer-brand .logo-text {
+.cleanme-footer .footer-brand .logo-icon,
+.cleanme-footer .footer-brand .logo-text {
     display: inline;
 }
 
-.footer-brand p {
+.cleanme-footer .footer-brand p {
     color: var(--text-muted);
     font-size: 0.85rem;
 }
 
-.footer-links {
+.cleanme-footer .footer-links {
     display: flex;
     gap: 2rem;
 }
 
-.footer-links a {
+.cleanme-footer .footer-links a {
     color: var(--text-muted);
     text-decoration: none;
     font-size: 0.9rem;
 }
 
-.footer-links a:hover {
+.cleanme-footer .footer-links a:hover {
     color: var(--text-light);
 }
 
-.footer-bottom {
+.cleanme-footer .footer-bottom {
     text-align: center;
     padding-top: 2rem;
     border-top: 1px solid var(--border-color);
 }
 
-.footer-bottom p {
+.cleanme-footer .footer-bottom p {
     color: var(--text-muted);
     font-size: 0.9rem;
 }
 
-.footer-bottom a {
+.cleanme-footer .footer-bottom a {
     color: var(--primary);
     text-decoration: none;
 }
@@ -607,13 +599,13 @@
         text-align: center;
     }
 
-    .footer-content {
+    .cleanme-footer .footer-content {
         flex-direction: column;
         gap: 1.5rem;
         text-align: center;
     }
 
-    .footer-links {
+    .cleanme-footer .footer-links {
         flex-wrap: wrap;
         justify-content: center;
     }

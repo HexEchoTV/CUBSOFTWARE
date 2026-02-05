@@ -187,6 +187,12 @@
     border: 1px solid var(--border-color);
 }
 
+.feature-badge.disabled {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
 /* Disabled/Coming Soon Cards */
 .feature-card-disabled {
     opacity: 0.6;

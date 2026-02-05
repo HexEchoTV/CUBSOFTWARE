@@ -3,14 +3,41 @@ import os
 import threading
 import time
 import uuid
+import json
 from datetime import datetime, timedelta
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
+WEBSITE_DATA_PATH = os.path.join(APP_DIR, '..', '..', 'data')
+DISABLED_FEATURES_FILE = os.path.join(WEBSITE_DATA_PATH, 'disabled_features.json')
+
+def is_feature_disabled():
+    """Check if social-media-saver is disabled"""
+    if os.path.exists(DISABLED_FEATURES_FILE):
+        try:
+            with open(DISABLED_FEATURES_FILE, 'r') as f:
+                disabled = json.load(f)
+                return 'social-media-saver' in disabled
+        except:
+            pass
+    return False
 
 social_media_bp = Blueprint('social_media_saver', __name__,
                             template_folder=os.path.join(APP_DIR, 'templates'),
                             static_folder=os.path.join(APP_DIR, 'static'),
                             static_url_path='/static')
+
+@social_media_bp.before_request
+def check_feature_status():
+    """Check if feature is disabled before processing any request"""
+    if is_feature_disabled():
+        if request.is_json or request.path.startswith('/api/'):
+            return jsonify({
+                'error': 'Feature disabled',
+                'feature': 'social-media-saver',
+                'message': 'This feature is currently disabled for maintenance.'
+            }), 503
+        else:
+            return render_template('feature-disabled.html', feature='social-media-saver'), 503
 
 DOWNLOAD_FOLDER = os.path.join(APP_DIR, 'downloads')
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)

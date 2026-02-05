@@ -910,3 +910,423 @@
         opacity: 0.7;
     }
 }
+
+/* ==================== REPORTS SECTION ==================== */
+.reports-section {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.reports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.reports-header h2 {
+    font-size: 1.1rem;
+    color: var(--text-light);
+}
+
+.reports-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.reports-controls select {
+    padding: 0.5rem 1rem;
+    background: var(--dark-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.reports-stats {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: var(--dark-bg);
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+}
+
+.reports-stats .stat-card {
+    flex: 1;
+    min-width: 100px;
+    padding: 0.75rem 1rem;
+    background: var(--surface-color);
+    border-radius: 10px;
+    text-align: center;
+    border-left: 3px solid var(--border-color);
+}
+
+.reports-stats .stat-card.pending {
+    border-left-color: #f59e0b;
+}
+
+.reports-stats .stat-card.investigating {
+    border-left-color: #3b82f6;
+}
+
+.reports-stats .stat-card.resolved {
+    border-left-color: #22c55e;
+}
+
+.reports-stats .stat-card.closed {
+    border-left-color: #6b7280;
+}
+
+.reports-stats .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.reports-stats .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.reports-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.report-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.report-item:hover {
+    background: rgba(88, 101, 242, 0.05);
+}
+
+.report-item:last-child {
+    border-bottom: none;
+}
+
+.report-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.report-type {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: rgba(88, 101, 242, 0.15);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-right: 0.5rem;
+}
+
+.report-subject {
+    font-weight: 500;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.report-description {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 500px;
+}
+
+.report-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    margin-left: 1rem;
+}
+
+.report-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.report-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.report-status.pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.report-status.investigating {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.report-status.resolved {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.report-status.closed {
+    background: rgba(107, 114, 128, 0.15);
+    color: #6b7280;
+}
+
+/* Report Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 1rem;
+}
+
+.modal-content {
+    background: #1a1a2e;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    color: var(--text-light);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.status-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.status-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.status-btn:hover {
+    border-color: currentColor;
+}
+
+.status-btn.pending:hover {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.status-btn.investigating:hover {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.status-btn.resolved:hover {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.status-btn.closed:hover {
+    color: #6b7280;
+    background: rgba(107, 114, 128, 0.1);
+}
+
+.delete-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid #ef4444;
+    background: transparent;
+    color: #ef4444;
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Report Detail Content */
+.report-detail-section {
+    margin-bottom: 1.5rem;
+}
+
+.report-detail-section h4 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.report-detail-value {
+    color: var(--text-light);
+    background: var(--dark-bg);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+.report-detail-value.code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+}
+
+.report-tracking-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.tracking-item {
+    background: var(--dark-bg);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+}
+
+.tracking-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.tracking-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    word-break: break-all;
+}
+
+.empty-reports {
+    padding: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-reports svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+    .reports-stats {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .reports-stats .stat-card {
+        flex: 1 1 calc(50% - 0.5rem);
+        min-width: 80px;
+    }
+
+    .report-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .report-meta {
+        flex-direction: row;
+        align-items: center;
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    .status-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+}

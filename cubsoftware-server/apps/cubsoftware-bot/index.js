@@ -56,6 +56,28 @@ function loadAuditFile() {
     return {};
 }
 
+function saveLinksFile(data) {
+    try {
+        fs.mkdirSync(path.dirname(LINKS_FILE), { recursive: true });
+        fs.writeFileSync(LINKS_FILE, JSON.stringify(data, null, 2));
+        return true;
+    } catch (e) {
+        console.error('Error saving links file:', e);
+        return false;
+    }
+}
+
+function saveAuditFile(data) {
+    try {
+        fs.mkdirSync(path.dirname(LINKS_AUDIT_FILE), { recursive: true });
+        fs.writeFileSync(LINKS_AUDIT_FILE, JSON.stringify(data, null, 2));
+        return true;
+    } catch (e) {
+        console.error('Error saving audit file:', e);
+        return false;
+    }
+}
+
 function loadBannedIps() {
     try {
         if (fs.existsSync(BANNED_IPS_FILE)) {
@@ -261,6 +283,138 @@ terminal.addCommand('feature', {
     }
 });
 
+// Link management terminal commands
+terminal.addCommand('link-find', {
+    description: 'Find information about a shortened link',
+    usage: 'link-find <code>',
+    execute: async (args) => {
+        let code = args[0];
+        if (!code) {
+            return '❌ Usage: `>link-find <code>`';
+        }
+
+        // Extract code from full URL if provided
+        if (code.includes('cubsw.link/')) {
+            code = code.split('cubsw.link/')[1].split(/[?#]/)[0];
+        }
+        if (code.includes('/')) {
+            code = code.split('/').pop();
+        }
+
+        const links = loadLinksFile();
+        const audit = loadAuditFile();
+
+        if (links[code]) {
+            const link = links[code];
+            return `**Link Found (Active)**
+• Code: \`${code}\`
+• URL: ${link.url.substring(0, 200)}
+• Clicks: ${link.clicks || 0}
+• Created: ${new Date(link.created * 1000).toLocaleString()}
+• IP: ||${link.ip || 'Unknown'}||`;
+        }
+
+        if (audit[code]) {
+            const entry = audit[code];
+            return `**Link Found (Deleted)**
+• Code: \`${code}\`
+• Original URL: ${entry.original_url.substring(0, 200)}
+• Created: ${new Date(entry.created_at * 1000).toLocaleString()}
+• IP: ||${entry.ip_address}||`;
+        }
+
+        return `❌ No link found with code: \`${code}\``;
+    }
+});
+
+terminal.addCommand('link-delete', {
+    description: 'Delete a shortened link',
+    usage: 'link-delete <code>',
+    execute: async (args) => {
+        let code = args[0];
+        if (!code) {
+            return '❌ Usage: `>link-delete <code>`';
+        }
+
+        // Extract code from full URL if provided
+        if (code.includes('cubsw.link/')) {
+            code = code.split('cubsw.link/')[1].split(/[?#]/)[0];
+        }
+        if (code.includes('/')) {
+            code = code.split('/').pop();
+        }
+
+        const links = loadLinksFile();
+        const audit = loadAuditFile();
+
+        if (!links[code]) {
+            if (audit[code]) {
+                return `⚠️ Link \`${code}\` was already deleted.`;
+            }
+            return `❌ No link found with code: \`${code}\``;
+        }
+
+        const linkData = links[code];
+
+        // Save to audit log
+        if (!audit[code]) {
+            audit[code] = {
+                original_url: linkData.url,
+                created_at: linkData.created,
+                ip_address: linkData.ip || 'Unknown',
+                history: []
+            };
+        }
+
+        audit[code].history = audit[code].history || [];
+        audit[code].history.push({
+            action: 'deleted',
+            timestamp: Math.floor(Date.now() / 1000),
+            ip: 'Discord Terminal',
+            clicks: linkData.clicks || 0
+        });
+
+        // Delete the link
+        delete links[code];
+
+        const linksSaved = saveLinksFile(links);
+        saveAuditFile(audit);
+
+        if (linksSaved) {
+            return `✅ **Link Deleted**
+• Code: \`${code}\`
+• URL: ${linkData.url.substring(0, 200)}
+• Clicks: ${linkData.clicks || 0}`;
+        } else {
+            return '❌ Failed to delete link.';
+        }
+    }
+});
+
+terminal.addCommand('link-list', {
+    description: 'List recent shortened links',
+    usage: 'link-list [count]',
+    execute: async (args) => {
+        const count = Math.min(parseInt(args[0]) || 10, 25);
+        const links = loadLinksFile();
+
+        const sorted = Object.entries(links)
+            .sort((a, b) => (b[1].created || 0) - (a[1].created || 0))
+            .slice(0, count);
+
+        if (sorted.length === 0) {
+            return '📋 No links found.';
+        }
+
+        const list = sorted.map(([code, data]) => {
+            const url = data.url.length > 40 ? data.url.substring(0, 40) + '...' : data.url;
+            return `\`${code}\` → ${url} (${data.clicks || 0} clicks)`;
+        }).join('\n');
+
+        return `**Recent Links (${sorted.length})**\n${list}`;
+    }
+});
+
 // Slash commands
 const commands = [
     new SlashCommandBuilder()
@@ -307,6 +461,16 @@ const commands = [
     new SlashCommandBuilder()
         .setName('link-bans')
         .setDescription('List all banned IPs')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    new SlashCommandBuilder()
+        .setName('link-delete')
+        .setDescription('Delete a shortened link')
+        .addStringOption(option =>
+            option.setName('code')
+                .setDescription('The short code or full URL (e.g., abc123 or cubsw.link/abc123)')
+                .setRequired(true)
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     // Comprehensive IP ban commands
@@ -647,6 +811,94 @@ client.on('interactionCreate', async interaction => {
             .setTimestamp();
 
         return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    if (interaction.commandName === 'link-delete') {
+        if (!isOwner) {
+            return interaction.reply({ content: '❌ This command is restricted to bot owners.', ephemeral: true });
+        }
+
+        let code = interaction.options.getString('code');
+
+        // Extract code from full URL if provided
+        if (code.includes('cubsw.link/')) {
+            code = code.split('cubsw.link/')[1].split(/[?#]/)[0];
+        }
+        if (code.includes('/')) {
+            code = code.split('/').pop();
+        }
+
+        // Load link data
+        const links = loadLinksFile();
+        const audit = loadAuditFile();
+
+        // Check if link exists
+        if (!links[code]) {
+            // Check if it was already deleted
+            if (audit[code]) {
+                return interaction.reply({ content: `⚠️ Link \`${code}\` was already deleted.`, ephemeral: true });
+            }
+            return interaction.reply({ content: `❌ No link found with code: \`${code}\``, ephemeral: true });
+        }
+
+        const linkData = links[code];
+
+        // Save to audit log before deleting
+        if (!audit[code]) {
+            audit[code] = {
+                original_url: linkData.url,
+                created_at: linkData.created,
+                ip_address: linkData.ip || 'Unknown',
+                history: []
+            };
+        }
+
+        audit[code].history = audit[code].history || [];
+        audit[code].history.push({
+            action: 'deleted',
+            timestamp: Math.floor(Date.now() / 1000),
+            ip: 'Discord Bot',
+            deletedBy: interaction.user.id,
+            clicks: linkData.clicks || 0
+        });
+
+        // Delete the link
+        delete links[code];
+
+        // Save both files
+        const linksSaved = saveLinksFile(links);
+        const auditSaved = saveAuditFile(audit);
+
+        if (linksSaved) {
+            const embed = new EmbedBuilder()
+                .setColor(0xFF6B6B)
+                .setTitle('Link Deleted')
+                .addFields(
+                    { name: 'Short Code', value: code, inline: true },
+                    { name: 'Clicks', value: String(linkData.clicks || 0), inline: true },
+                    { name: 'Original URL', value: linkData.url.substring(0, 500), inline: false },
+                    { name: 'Creator IP', value: `||${linkData.ip || 'Unknown'}||`, inline: true },
+                    { name: 'Deleted By', value: `<@${interaction.user.id}>`, inline: true }
+                )
+                .setTimestamp();
+
+            // Log to links channel
+            try {
+                const linksChannel = await client.channels.fetch(config.linksLogChannelId).catch(() => null);
+                if (linksChannel) {
+                    await linksChannel.send({
+                        content: `🗑️ Link deleted by <@${interaction.user.id}>`,
+                        embeds: [embed]
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to log link deletion:', e);
+            }
+
+            return interaction.reply({ embeds: [embed], ephemeral: true });
+        } else {
+            return interaction.reply({ content: '❌ Failed to delete link.', ephemeral: true });
+        }
     }
 
     // Comprehensive IP ban commands

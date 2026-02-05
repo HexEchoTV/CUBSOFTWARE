@@ -141,6 +141,51 @@ def check_ban(feature=None):
         return decorated_function
     return decorator
 
+# ==================== FEATURE DISABLE SYSTEM ====================
+
+DISABLED_FEATURES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'disabled_features.json')
+
+def load_disabled_features():
+    """Load list of disabled features from file"""
+    if os.path.exists(DISABLED_FEATURES_FILE):
+        try:
+            with open(DISABLED_FEATURES_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return []
+
+def is_feature_disabled(feature_name):
+    """Check if a specific feature is disabled"""
+    disabled = load_disabled_features()
+    return feature_name in disabled
+
+def check_feature_enabled(feature_name):
+    """Decorator to check if a feature is enabled before allowing access"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if is_feature_disabled(feature_name):
+                if request.is_json or request.path.startswith('/api/'):
+                    return jsonify({
+                        'error': 'Feature disabled',
+                        'feature': feature_name,
+                        'message': 'This feature is currently disabled for maintenance.'
+                    }), 503
+                else:
+                    return render_template('feature-disabled.html', feature=feature_name), 503
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+# ==================== FEATURE STATUS API ====================
+
+@app.route('/api/features/status')
+def get_features_status():
+    """Return list of disabled features for the frontend"""
+    disabled = load_disabled_features()
+    return jsonify({'disabled': disabled})
+
 # ==================== RATE LIMITING ====================
 
 # Global rate limiting storage
@@ -208,7 +253,8 @@ def index():
     host = request.host.lower()
     if 'cubsw.link' in host:
         return redirect('https://cubsoftware.site')
-    return render_template('index.html')
+    disabled_features = load_disabled_features()
+    return render_template('index.html', disabled_features=disabled_features)
 
 @app.route('/terms')
 def terms():
@@ -275,6 +321,7 @@ def cubvault_index():
 
 @app.route('/apps/color-picker')
 @app.route('/apps/color-picker/')
+@check_feature_enabled('color-picker')
 def color_picker():
     """Color Picker - Pick colors, generate palettes, extract from images"""
     return render_template('color-picker.html')
@@ -283,6 +330,7 @@ def color_picker():
 
 @app.route('/apps/qr-generator')
 @app.route('/apps/qr-generator/')
+@check_feature_enabled('qr-generator')
 def qr_generator():
     """QR Code Generator - Create custom QR codes for links, text, contacts, and WiFi"""
     return render_template('qr-generator.html')
@@ -291,6 +339,7 @@ def qr_generator():
 
 @app.route('/apps/text-tools')
 @app.route('/apps/text-tools/')
+@check_feature_enabled('text-tools')
 def text_tools():
     """Text Tools - Word counter, case converter, lorem ipsum generator, and text formatting"""
     return render_template('text-tools.html')
@@ -299,6 +348,7 @@ def text_tools():
 
 @app.route('/apps/image-editor')
 @app.route('/apps/image-editor/')
+@check_feature_enabled('image-editor')
 def image_editor():
     """Image Editor - Edit, crop, resize, and enhance images"""
     return render_template('image-editor.html')
@@ -307,6 +357,7 @@ def image_editor():
 
 @app.route('/apps/file-converter')
 @app.route('/apps/file-converter/')
+@check_feature_enabled('file-converter')
 def file_converter():
     """File Converter - Convert images between PNG, JPG, WebP, GIF, BMP formats"""
     return render_template('file-converter.html')
@@ -315,6 +366,7 @@ def file_converter():
 
 @app.route('/apps/pdf-tools')
 @app.route('/apps/pdf-tools/')
+@check_feature_enabled('pdf-tools')
 def pdf_tools():
     """PDF Tools - Merge, split, compress PDFs and convert images to PDF"""
     return render_template('pdf-tools.html')
@@ -323,6 +375,7 @@ def pdf_tools():
 
 @app.route('/apps/unit-converter')
 @app.route('/apps/unit-converter/')
+@check_feature_enabled('unit-converter')
 def unit_converter():
     """Unit Converter - Convert between different units of measurement"""
     return render_template('unit-converter.html')
@@ -331,6 +384,7 @@ def unit_converter():
 
 @app.route('/apps/timestamp-converter')
 @app.route('/apps/timestamp-converter/')
+@check_feature_enabled('timestamp-converter')
 def timestamp_converter():
     """Timestamp Converter - Convert Unix timestamps to human readable dates"""
     return render_template('timestamp-converter.html')
@@ -360,6 +414,7 @@ def generate_countdown_id():
 
 @app.route('/apps/countdown-maker')
 @app.route('/apps/countdown-maker/')
+@check_feature_enabled('countdown-maker')
 def countdown_maker():
     """Countdown Maker - Create and share countdown timers"""
     return render_template('countdown-maker.html')
@@ -569,6 +624,7 @@ def generate_short_code(url):
 
 @app.route('/apps/link-shortener')
 @app.route('/apps/link-shortener/')
+@check_feature_enabled('link-shortener')
 def link_shortener():
     """Link Shortener - Create short URLs"""
     return render_template('link-shortener.html')
@@ -764,6 +820,7 @@ def redirect_short_code(code):
 
 @app.route('/apps/video-compressor')
 @app.route('/apps/video-compressor/')
+@check_feature_enabled('video-compressor')
 def video_compressor():
     """Video Compressor - Compress videos in browser"""
     return render_template('video-compressor.html')
@@ -793,6 +850,7 @@ def generate_resume_id():
 
 @app.route('/apps/resume-builder')
 @app.route('/apps/resume-builder/')
+@check_feature_enabled('resume-builder')
 def resume_builder():
     """Resume Builder - Create professional resumes and cover letters"""
     return render_template('resume-builder.html')
@@ -852,6 +910,7 @@ def get_resume(resume_id):
 
 @app.route('/apps/json-formatter')
 @app.route('/apps/json-formatter/')
+@check_feature_enabled('json-formatter')
 def json_formatter():
     """JSON Formatter - Beautify, minify, and validate JSON"""
     return render_template('json-formatter.html')
@@ -860,6 +919,7 @@ def json_formatter():
 
 @app.route('/apps/wheel-spinner')
 @app.route('/apps/wheel-spinner/')
+@check_feature_enabled('wheel-spinner')
 def wheel_spinner():
     """Wheel Spinner - Customizable spinning wheel for giveaways, decisions, and games"""
     return render_template('wheel-spinner.html')
@@ -868,6 +928,7 @@ def wheel_spinner():
 
 @app.route('/apps/random-picker')
 @app.route('/apps/random-picker/')
+@check_feature_enabled('random-picker')
 def random_picker():
     """Random Picker - Coin flip, dice roll, random number, pick from list"""
     return render_template('random-picker.html')
@@ -876,6 +937,7 @@ def random_picker():
 
 @app.route('/apps/calculator-suite')
 @app.route('/apps/calculator-suite/')
+@check_feature_enabled('calculator-suite')
 def calculator_suite():
     """Calculator Suite - Basic, Scientific, Mortgage, Tip, BMI, Age, and Percentage calculators"""
     return render_template('calculator-suite.html')
@@ -884,6 +946,7 @@ def calculator_suite():
 
 @app.route('/apps/password-generator')
 @app.route('/apps/password-generator/')
+@check_feature_enabled('password-generator')
 def password_generator():
     """Password Generator - Generate strong, secure passwords"""
     return render_template('password-generator.html')
@@ -892,6 +955,7 @@ def password_generator():
 
 @app.route('/apps/timer-tools')
 @app.route('/apps/timer-tools/')
+@check_feature_enabled('timer-tools')
 def timer_tools():
     """Timer Tools - Stopwatch, countdown timer, and Pomodoro"""
     return render_template('timer-tools.html')
@@ -900,6 +964,7 @@ def timer_tools():
 
 @app.route('/apps/world-clock')
 @app.route('/apps/world-clock/')
+@check_feature_enabled('world-clock')
 def world_clock():
     """World Clock - View current time across multiple time zones"""
     return render_template('world-clock.html')
@@ -908,6 +973,7 @@ def world_clock():
 
 @app.route('/apps/currency-converter')
 @app.route('/apps/currency-converter/')
+@check_feature_enabled('currency-converter')
 def currency_converter():
     """Currency Converter - Convert between world currencies with live exchange rates"""
     return render_template('currency-converter.html')
@@ -916,6 +982,7 @@ def currency_converter():
 
 @app.route('/apps/encoding-tools')
 @app.route('/apps/encoding-tools/')
+@check_feature_enabled('encoding-tools')
 def encoding_tools():
     """Encoding Tools - Hash, Base64, URL encode, HTML entities, encryption"""
     return render_template('encoding-tools.html')
@@ -924,6 +991,7 @@ def encoding_tools():
 
 @app.route('/apps/diff-checker')
 @app.route('/apps/diff-checker/')
+@check_feature_enabled('diff-checker')
 def diff_checker():
     """Diff Checker - Compare two texts and see the differences"""
     return render_template('diff-checker.html')
@@ -932,6 +1000,7 @@ def diff_checker():
 
 @app.route('/apps/regex-tester')
 @app.route('/apps/regex-tester/')
+@check_feature_enabled('regex-tester')
 def regex_tester():
     """Regex Tester - Test regular expressions in real-time"""
     return render_template('regex-tester.html')
@@ -940,6 +1009,7 @@ def regex_tester():
 
 @app.route('/apps/code-minifier')
 @app.route('/apps/code-minifier/')
+@check_feature_enabled('code-minifier')
 def code_minifier():
     """Code Minifier - Minify HTML, CSS, and JavaScript"""
     return render_template('code-minifier.html')
@@ -948,6 +1018,7 @@ def code_minifier():
 
 @app.route('/apps/markdown-editor')
 @app.route('/apps/markdown-editor/')
+@check_feature_enabled('markdown-editor')
 def markdown_editor():
     """Markdown Editor - Write and preview Markdown in real-time"""
     return render_template('markdown-editor.html')
@@ -956,6 +1027,7 @@ def markdown_editor():
 
 @app.route('/apps/notepad')
 @app.route('/apps/notepad/')
+@check_feature_enabled('notepad')
 def notepad():
     """Note Pad - Simple, distraction-free note taking"""
     return render_template('notepad.html')
@@ -964,6 +1036,7 @@ def notepad():
 
 @app.route('/apps/invoice-generator')
 @app.route('/apps/invoice-generator/')
+@check_feature_enabled('invoice-generator')
 def invoice_generator():
     """Invoice Generator - Create professional invoices and export to PDF"""
     return render_template('invoice-generator.html')
@@ -972,6 +1045,7 @@ def invoice_generator():
 
 @app.route('/apps/audio-trimmer')
 @app.route('/apps/audio-trimmer/')
+@check_feature_enabled('audio-trimmer')
 def audio_trimmer():
     """Audio Trimmer - Trim, cut, and edit audio files"""
     return render_template('audio-trimmer.html')
@@ -1004,6 +1078,7 @@ def generate_board_id():
 
 @app.route('/apps/sticky-board')
 @app.route('/apps/sticky-board/')
+@check_feature_enabled('sticky-board')
 def sticky_board():
     """Sticky Board - Virtual whiteboard with draggable sticky notes"""
     return render_template('sticky-board.html')
@@ -1766,7 +1841,11 @@ def cleanme_bot_record_copy():
 
 REPORTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'reports.json')
 BOT_REPORT_URL = 'http://127.0.0.1:3847/report'
-BOT_API_KEY = os.environ.get('BOT_API_KEY', '')
+
+def get_bot_api_key():
+    """Get bot API key from pm2_config.json or environment variable"""
+    config = load_pm2_config()
+    return config.get('bot_api_key', os.environ.get('BOT_API_KEY', os.environ.get('API_KEY', '')))
 
 def load_reports():
     """Load reports from file"""
@@ -1834,16 +1913,97 @@ def submit_report():
     save_reports(reports)
 
     # Send to Discord via CubSoftware Bot
-    if BOT_API_KEY:
+    bot_api_key = get_bot_api_key()
+    if bot_api_key:
         try:
-            requests.post(BOT_REPORT_URL, json={
-                'apiKey': BOT_API_KEY,
+            response = requests.post(BOT_REPORT_URL, json={
+                'apiKey': bot_api_key,
                 'report': report
             }, timeout=5)
+            if response.status_code != 200:
+                print(f'Failed to send report to bot: {response.status_code} - {response.text}')
         except Exception as e:
             print(f'Failed to send report to bot: {e}')
+    else:
+        print('Warning: No bot API key configured, report not sent to Discord')
 
     return jsonify({'success': True, 'reportId': report['id']})
+
+# Admin API for reports management
+@app.route('/api/reports')
+@pm2_auth_required
+def get_reports():
+    """Get all reports for admin dashboard"""
+    reports = load_reports()
+    status_filter = request.args.get('status', 'all')
+
+    if status_filter != 'all':
+        reports = [r for r in reports if r.get('status') == status_filter]
+
+    # Sort by timestamp descending (newest first)
+    reports.sort(key=lambda x: x.get('timestamp', 0), reverse=True)
+
+    return jsonify({
+        'reports': reports,
+        'total': len(reports),
+        'stats': {
+            'pending': len([r for r in load_reports() if r.get('status') == 'pending']),
+            'investigating': len([r for r in load_reports() if r.get('status') == 'investigating']),
+            'resolved': len([r for r in load_reports() if r.get('status') == 'resolved']),
+            'closed': len([r for r in load_reports() if r.get('status') == 'closed'])
+        }
+    })
+
+@app.route('/api/reports/<report_id>')
+@pm2_auth_required
+def get_report(report_id):
+    """Get a specific report"""
+    reports = load_reports()
+    for report in reports:
+        if report.get('id') == report_id:
+            return jsonify(report)
+    return jsonify({'error': 'Report not found'}), 404
+
+@app.route('/api/reports/<report_id>/update', methods=['POST'])
+@pm2_auth_required
+def update_report(report_id):
+    """Update a report's status or add notes"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    reports = load_reports()
+    for i, report in enumerate(reports):
+        if report.get('id') == report_id:
+            # Update allowed fields
+            if 'status' in data:
+                reports[i]['status'] = data['status']
+            if 'admin_notes' in data:
+                reports[i]['admin_notes'] = data['admin_notes']
+            if 'escalated' in data:
+                reports[i]['escalated'] = data['escalated']
+
+            reports[i]['updated_at'] = time.time()
+            reports[i]['updated_by'] = session.get('pm2_user', {}).get('username', 'Unknown')
+
+            save_reports(reports)
+            return jsonify({'success': True, 'report': reports[i]})
+
+    return jsonify({'error': 'Report not found'}), 404
+
+@app.route('/api/reports/<report_id>/delete', methods=['DELETE'])
+@pm2_auth_required
+def delete_report(report_id):
+    """Delete a report"""
+    reports = load_reports()
+    original_count = len(reports)
+    reports = [r for r in reports if r.get('id') != report_id]
+
+    if len(reports) == original_count:
+        return jsonify({'error': 'Report not found'}), 404
+
+    save_reports(reports)
+    return jsonify({'success': True, 'message': 'Report deleted'})
 
 # ==================== KERAPLAST CALCULATOR ====================
 
@@ -2369,6 +2529,325 @@ def pm2_bot_get_whitelist():
 
     whitelist = load_pm2_whitelist()
     return jsonify(whitelist)
+
+# ==================== ADMIN API ENDPOINTS ====================
+
+IP_BANS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'ip_bans.json')
+LINKS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'links.json')
+
+def load_ip_bans():
+    """Load IP bans from file"""
+    if os.path.exists(IP_BANS_FILE):
+        try:
+            with open(IP_BANS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {
+        'global': [],
+        'feature_specific': {},
+        'temporary': []
+    }
+
+def save_ip_bans(bans):
+    """Save IP bans to file"""
+    os.makedirs(os.path.dirname(IP_BANS_FILE), exist_ok=True)
+    with open(IP_BANS_FILE, 'w') as f:
+        json.dump(bans, f, indent=2)
+
+def is_ip_banned(ip, feature=None):
+    """Check if an IP is banned (globally or for a specific feature)"""
+    bans = load_ip_bans()
+
+    # Check global bans
+    if ip in bans.get('global', []):
+        return True
+
+    # Check temporary bans
+    current_time = datetime.now().timestamp()
+    for temp_ban in bans.get('temporary', []):
+        if temp_ban['ip'] == ip and temp_ban['expires'] > current_time:
+            return True
+
+    # Check feature-specific bans
+    if feature and feature in bans.get('feature_specific', {}):
+        if ip in bans['feature_specific'][feature]:
+            return True
+
+    return False
+
+def load_links():
+    """Load shortened links from file"""
+    if os.path.exists(LINKS_FILE):
+        try:
+            with open(LINKS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+def save_links(links):
+    """Save shortened links to file"""
+    os.makedirs(os.path.dirname(LINKS_FILE), exist_ok=True)
+    with open(LINKS_FILE, 'w') as f:
+        json.dump(links, f, indent=2)
+
+# Admin Links Management
+@app.route('/api/admin/links', methods=['GET'])
+@require_pm2_auth
+def admin_get_links():
+    """Get all shortened links for admin"""
+    links = load_links()
+    links_list = []
+    for code, data in links.items():
+        link_info = {
+            'code': code,
+            'url': data.get('url', ''),
+            'created_by': data.get('created_by', 'Unknown'),
+            'created_at': data.get('created_at', ''),
+            'clicks': data.get('clicks', 0),
+            'last_accessed': data.get('last_accessed', '')
+        }
+        links_list.append(link_info)
+    return jsonify({'links': links_list})
+
+@app.route('/api/admin/links/<code>', methods=['GET'])
+@require_pm2_auth
+def admin_get_link(code):
+    """Get single link details"""
+    links = load_links()
+    if code in links:
+        return jsonify({'link': {**links[code], 'code': code}})
+    return jsonify({'error': 'Link not found'}), 404
+
+@app.route('/api/admin/links/<code>', methods=['DELETE'])
+@require_pm2_auth
+def admin_delete_link(code):
+    """Delete a shortened link"""
+    links = load_links()
+    if code in links:
+        del links[code]
+        save_links(links)
+        return jsonify({'success': True, 'message': f'Link {code} deleted'})
+    return jsonify({'error': 'Link not found'}), 404
+
+# Admin Features Management
+@app.route('/api/admin/features', methods=['GET'])
+@require_pm2_auth
+def admin_get_features():
+    """Get all features and their status"""
+    disabled = load_disabled_features()
+
+    # Define all available features
+    all_features = [
+        {'id': 'link-shortener', 'name': 'Link Shortener', 'description': 'URL shortening service'},
+        {'id': 'social-media-saver', 'name': 'Social Media Saver', 'description': 'Download social media content'},
+        {'id': 'pdf-tools', 'name': 'PDF Tools', 'description': 'PDF manipulation tools'},
+        {'id': 'calculator-suite', 'name': 'Calculator Suite', 'description': 'Collection of calculators'},
+        {'id': 'color-picker', 'name': 'Color Picker', 'description': 'Color selection tool'},
+        {'id': 'unit-converter', 'name': 'Unit Converter', 'description': 'Unit conversion tool'},
+        {'id': 'qr-generator', 'name': 'QR Generator', 'description': 'QR code generator'},
+        {'id': 'password-generator', 'name': 'Password Generator', 'description': 'Secure password generator'},
+        {'id': 'timestamp-converter', 'name': 'Timestamp Converter', 'description': 'Unix timestamp converter'},
+        {'id': 'text-tools', 'name': 'Text Tools', 'description': 'Text manipulation tools'},
+        {'id': 'image-tools', 'name': 'Image Tools', 'description': 'Image processing tools'},
+        {'id': 'json-formatter', 'name': 'JSON Formatter', 'description': 'JSON formatting tool'},
+        {'id': 'base64-tools', 'name': 'Base64 Tools', 'description': 'Base64 encoding/decoding'},
+        {'id': 'hash-generator', 'name': 'Hash Generator', 'description': 'Hash generation tool'},
+        {'id': 'regex-tester', 'name': 'Regex Tester', 'description': 'Regular expression tester'},
+        {'id': 'ip-lookup', 'name': 'IP Lookup', 'description': 'IP address lookup'},
+        {'id': 'dns-lookup', 'name': 'DNS Lookup', 'description': 'DNS record lookup'},
+        {'id': 'whois-lookup', 'name': 'WHOIS Lookup', 'description': 'WHOIS information lookup'},
+        {'id': 'markdown-preview', 'name': 'Markdown Preview', 'description': 'Markdown preview tool'},
+        {'id': 'code-formatter', 'name': 'Code Formatter', 'description': 'Code formatting tool'},
+        {'id': 'color-palette', 'name': 'Color Palette', 'description': 'Color palette generator'},
+        {'id': 'gradient-generator', 'name': 'Gradient Generator', 'description': 'CSS gradient generator'},
+        {'id': 'box-shadow-generator', 'name': 'Box Shadow Generator', 'description': 'CSS box shadow generator'},
+        {'id': 'lorem-ipsum', 'name': 'Lorem Ipsum', 'description': 'Lorem ipsum text generator'},
+        {'id': 'cleanme', 'name': 'CleanMe', 'description': 'Discord bot management'},
+        {'id': 'admin-dashboard', 'name': 'Admin Dashboard', 'description': 'Admin control panel'},
+    ]
+
+    # Add status to each feature
+    for feature in all_features:
+        feature['enabled'] = feature['id'] not in disabled
+
+    return jsonify({'features': all_features})
+
+@app.route('/api/admin/features/enable', methods=['POST'])
+@require_pm2_auth
+def admin_enable_feature():
+    """Enable a feature"""
+    data = request.get_json()
+    if not data or 'feature' not in data:
+        return jsonify({'error': 'Feature ID is required'}), 400
+
+    feature_id = data['feature']
+    disabled = load_disabled_features()
+
+    if feature_id in disabled:
+        disabled.remove(feature_id)
+        save_disabled_features(disabled)
+        return jsonify({'success': True, 'message': f'Feature {feature_id} enabled'})
+
+    return jsonify({'success': True, 'message': f'Feature {feature_id} was already enabled'})
+
+@app.route('/api/admin/features/disable', methods=['POST'])
+@require_pm2_auth
+def admin_disable_feature():
+    """Disable a feature"""
+    data = request.get_json()
+    if not data or 'feature' not in data:
+        return jsonify({'error': 'Feature ID is required'}), 400
+
+    feature_id = data['feature']
+    disabled = load_disabled_features()
+
+    if feature_id not in disabled:
+        disabled.append(feature_id)
+        save_disabled_features(disabled)
+        return jsonify({'success': True, 'message': f'Feature {feature_id} disabled'})
+
+    return jsonify({'success': True, 'message': f'Feature {feature_id} was already disabled'})
+
+def save_disabled_features(features):
+    """Save disabled features to file"""
+    os.makedirs(os.path.dirname(DISABLED_FEATURES_FILE), exist_ok=True)
+    with open(DISABLED_FEATURES_FILE, 'w') as f:
+        json.dump(features, f, indent=2)
+
+# Admin IP Bans Management
+@app.route('/api/admin/ipbans', methods=['GET'])
+@require_pm2_auth
+def admin_get_ip_bans():
+    """Get all IP bans"""
+    bans = load_ip_bans()
+
+    # Clean up expired temporary bans
+    current_time = datetime.now().timestamp()
+    bans['temporary'] = [b for b in bans.get('temporary', []) if b['expires'] > current_time]
+    save_ip_bans(bans)
+
+    return jsonify({'bans': bans})
+
+@app.route('/api/admin/ipbans/add', methods=['POST'])
+@require_pm2_auth
+def admin_add_ip_ban():
+    """Add a permanent IP ban"""
+    data = request.get_json()
+    if not data or 'ip' not in data:
+        return jsonify({'error': 'IP address is required'}), 400
+
+    ip = data['ip']
+    ban_type = data.get('type', 'global')
+    feature = data.get('feature')
+    reason = data.get('reason', '')
+
+    bans = load_ip_bans()
+
+    if ban_type == 'global':
+        if ip not in bans['global']:
+            bans['global'].append(ip)
+    elif ban_type == 'feature' and feature:
+        if feature not in bans['feature_specific']:
+            bans['feature_specific'][feature] = []
+        if ip not in bans['feature_specific'][feature]:
+            bans['feature_specific'][feature].append(ip)
+
+    save_ip_bans(bans)
+    return jsonify({'success': True, 'message': f'IP {ip} banned'})
+
+@app.route('/api/admin/ipbans/temp', methods=['POST'])
+@require_pm2_auth
+def admin_add_temp_ip_ban():
+    """Add a temporary IP ban"""
+    data = request.get_json()
+    if not data or 'ip' not in data:
+        return jsonify({'error': 'IP address is required'}), 400
+
+    ip = data['ip']
+    duration = data.get('duration', 3600)  # Default 1 hour
+    reason = data.get('reason', '')
+
+    bans = load_ip_bans()
+
+    # Remove existing temp ban for this IP if any
+    bans['temporary'] = [b for b in bans.get('temporary', []) if b['ip'] != ip]
+
+    # Add new temp ban
+    bans['temporary'].append({
+        'ip': ip,
+        'expires': datetime.now().timestamp() + duration,
+        'reason': reason,
+        'created_at': datetime.now().isoformat()
+    })
+
+    save_ip_bans(bans)
+    return jsonify({'success': True, 'message': f'IP {ip} temporarily banned for {duration} seconds'})
+
+@app.route('/api/admin/ipbans/remove', methods=['POST'])
+@require_pm2_auth
+def admin_remove_ip_ban():
+    """Remove an IP ban"""
+    data = request.get_json()
+    if not data or 'ip' not in data:
+        return jsonify({'error': 'IP address is required'}), 400
+
+    ip = data['ip']
+    ban_type = data.get('type', 'global')
+    feature = data.get('feature')
+
+    bans = load_ip_bans()
+    removed = False
+
+    if ban_type == 'global':
+        if ip in bans['global']:
+            bans['global'].remove(ip)
+            removed = True
+    elif ban_type == 'feature' and feature:
+        if feature in bans['feature_specific'] and ip in bans['feature_specific'][feature]:
+            bans['feature_specific'][feature].remove(ip)
+            removed = True
+    elif ban_type == 'temporary':
+        original_len = len(bans.get('temporary', []))
+        bans['temporary'] = [b for b in bans.get('temporary', []) if b['ip'] != ip]
+        removed = len(bans['temporary']) < original_len
+
+    if removed:
+        save_ip_bans(bans)
+        return jsonify({'success': True, 'message': f'IP {ip} unbanned'})
+
+    return jsonify({'success': False, 'message': f'IP {ip} was not banned'})
+
+# IP Ban Middleware Check
+@app.before_request
+def check_ip_ban():
+    """Check if the requesting IP is banned"""
+    # Skip for static files and certain paths
+    if request.path.startswith('/static/') or request.path.startswith('/api/admin/'):
+        return None
+
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if client_ip and ',' in client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+
+    # Determine the feature from the path
+    feature = None
+    if '/apps/' in request.path:
+        parts = request.path.split('/apps/')
+        if len(parts) > 1:
+            feature = parts[1].split('/')[0]
+
+    if is_ip_banned(client_ip, feature):
+        if request.is_json or request.path.startswith('/api/'):
+            return jsonify({
+                'error': 'Access denied',
+                'message': 'Your IP address has been banned.'
+            }), 403
+        else:
+            return render_template('banned.html'), 403
+
+    return None
 
 # ==================== ERROR HANDLERS ====================
 

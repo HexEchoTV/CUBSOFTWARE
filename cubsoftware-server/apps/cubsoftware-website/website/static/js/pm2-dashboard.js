@@ -639,6 +639,248 @@
         }, 3000);
     }
 
+    // ==================== REPORTS MANAGEMENT ====================
+    let currentReportId = null;
+
+    // Initialize reports on page load
+    function initReports() {
+        const refreshReportsBtn = document.getElementById('refreshReportsBtn');
+        const reportStatusFilter = document.getElementById('reportStatusFilter');
+
+        if (refreshReportsBtn) {
+            refreshReportsBtn.addEventListener('click', loadReports);
+        }
+
+        if (reportStatusFilter) {
+            reportStatusFilter.addEventListener('change', loadReports);
+        }
+
+        // Load reports initially
+        loadReports();
+    }
+
+    async function loadReports() {
+        const reportsList = document.getElementById('reportsList');
+        const statusFilter = document.getElementById('reportStatusFilter')?.value || 'pending';
+
+        try {
+            const response = await fetch(`/api/reports?status=${statusFilter}`);
+            if (!response.ok) throw new Error('Failed to fetch reports');
+
+            const data = await response.json();
+
+            // Update stats
+            document.getElementById('pendingCount').textContent = data.stats?.pending || 0;
+            document.getElementById('investigatingCount').textContent = data.stats?.investigating || 0;
+            document.getElementById('resolvedCount').textContent = data.stats?.resolved || 0;
+            document.getElementById('closedCount').textContent = data.stats?.closed || 0;
+
+            // Render reports list
+            if (!data.reports || data.reports.length === 0) {
+                reportsList.innerHTML = `
+                    <div class="empty-reports">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <p>No ${statusFilter === 'all' ? '' : statusFilter} reports found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            reportsList.innerHTML = data.reports.map(report => `
+                <div class="report-item" onclick="openReportModal('${report.id}')">
+                    <div class="report-info">
+                        <span class="report-type">${escapeHtml(report.type || 'general')}</span>
+                        <div class="report-subject">${escapeHtml(report.subject || 'No subject')}</div>
+                        <div class="report-description">${escapeHtml((report.description || '').substring(0, 100))}${(report.description || '').length > 100 ? '...' : ''}</div>
+                    </div>
+                    <div class="report-meta">
+                        <span class="report-date">${formatReportDate(report.timestamp)}</span>
+                        <span class="report-status ${report.status || 'pending'}">${report.status || 'pending'}</span>
+                    </div>
+                </div>
+            `).join('');
+
+        } catch (error) {
+            console.error('Error loading reports:', error);
+            reportsList.innerHTML = `<div class="loading" style="color: #ef4444;">Error loading reports</div>`;
+        }
+    }
+
+    window.openReportModal = async function(reportId) {
+        currentReportId = reportId;
+        const modal = document.getElementById('reportModal');
+        const modalBody = document.getElementById('reportModalBody');
+
+        modal.style.display = 'flex';
+        modalBody.innerHTML = '<div class="loading">Loading report...</div>';
+
+        try {
+            const response = await fetch(`/api/reports/${reportId}`);
+            if (!response.ok) throw new Error('Failed to fetch report');
+
+            const report = await response.json();
+
+            modalBody.innerHTML = `
+                <div class="report-detail-section">
+                    <h4>Report Information</h4>
+                    <div class="report-tracking-grid">
+                        <div class="tracking-item">
+                            <div class="tracking-label">Report ID</div>
+                            <div class="tracking-value">${escapeHtml(report.id)}</div>
+                        </div>
+                        <div class="tracking-item">
+                            <div class="tracking-label">Type</div>
+                            <div class="tracking-value">${escapeHtml(report.type || 'general')}</div>
+                        </div>
+                        <div class="tracking-item">
+                            <div class="tracking-label">Status</div>
+                            <div class="tracking-value">${escapeHtml(report.status || 'pending')}</div>
+                        </div>
+                        <div class="tracking-item">
+                            <div class="tracking-label">Submitted</div>
+                            <div class="tracking-value">${formatReportDate(report.timestamp)}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-detail-section">
+                    <h4>Subject</h4>
+                    <div class="report-detail-value">${escapeHtml(report.subject || 'No subject')}</div>
+                </div>
+
+                <div class="report-detail-section">
+                    <h4>Description</h4>
+                    <div class="report-detail-value">${escapeHtml(report.description || 'No description')}</div>
+                </div>
+
+                ${report.url ? `
+                <div class="report-detail-section">
+                    <h4>Related URL</h4>
+                    <div class="report-detail-value code"><a href="${escapeHtml(report.url)}" target="_blank" style="color: var(--primary);">${escapeHtml(report.url)}</a></div>
+                </div>
+                ` : ''}
+
+                ${report.contact ? `
+                <div class="report-detail-section">
+                    <h4>Contact Info</h4>
+                    <div class="report-detail-value">${escapeHtml(report.contact)}</div>
+                </div>
+                ` : ''}
+
+                <div class="report-detail-section">
+                    <h4>User Tracking Information</h4>
+                    <div class="report-tracking-grid">
+                        <div class="tracking-item">
+                            <div class="tracking-label">IP Address</div>
+                            <div class="tracking-value">${escapeHtml(report.ip || 'Unknown')}</div>
+                        </div>
+                        <div class="tracking-item">
+                            <div class="tracking-label">Fingerprint</div>
+                            <div class="tracking-value">${escapeHtml(report.fingerprint || 'N/A')}</div>
+                        </div>
+                        <div class="tracking-item">
+                            <div class="tracking-label">Language</div>
+                            <div class="tracking-value">${escapeHtml(report.accept_language || 'Unknown')}</div>
+                        </div>
+                        <div class="tracking-item">
+                            <div class="tracking-label">Referer</div>
+                            <div class="tracking-value">${escapeHtml(report.referer || 'Direct')}</div>
+                        </div>
+                    </div>
+                    <div class="report-detail-section" style="margin-top: 1rem;">
+                        <h4>User Agent</h4>
+                        <div class="report-detail-value code" style="font-size: 0.8rem;">${escapeHtml(report.user_agent || 'Unknown')}</div>
+                    </div>
+                </div>
+
+                ${report.admin_notes ? `
+                <div class="report-detail-section">
+                    <h4>Admin Notes</h4>
+                    <div class="report-detail-value">${escapeHtml(report.admin_notes)}</div>
+                </div>
+                ` : ''}
+
+                ${report.updated_by ? `
+                <div class="report-detail-section">
+                    <h4>Last Updated</h4>
+                    <div class="report-detail-value">By ${escapeHtml(report.updated_by)} at ${formatReportDate(report.updated_at)}</div>
+                </div>
+                ` : ''}
+            `;
+
+        } catch (error) {
+            console.error('Error loading report:', error);
+            modalBody.innerHTML = `<div class="loading" style="color: #ef4444;">Error loading report details</div>`;
+        }
+    };
+
+    window.closeReportModal = function() {
+        document.getElementById('reportModal').style.display = 'none';
+        currentReportId = null;
+    };
+
+    window.updateReportStatus = async function(status) {
+        if (!currentReportId) return;
+
+        try {
+            const response = await fetch(`/api/reports/${currentReportId}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+
+            if (!response.ok) throw new Error('Failed to update report');
+
+            showToast(`Report status updated to ${status}`, 'success');
+            closeReportModal();
+            loadReports();
+
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    };
+
+    window.deleteReport = async function() {
+        if (!currentReportId) return;
+        if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) return;
+
+        try {
+            const response = await fetch(`/api/reports/${currentReportId}/delete`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) throw new Error('Failed to delete report');
+
+            showToast('Report deleted', 'success');
+            closeReportModal();
+            loadReports();
+
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    };
+
+    function formatReportDate(timestamp) {
+        if (!timestamp) return 'Unknown';
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleString();
+    }
+
+    // Close modal on outside click
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            closeReportModal();
+        }
+    });
+
     // Start
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', function() {
+        init();
+        initReports();
+    });
 })();
