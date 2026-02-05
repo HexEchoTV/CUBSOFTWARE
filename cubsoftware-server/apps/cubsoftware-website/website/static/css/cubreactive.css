@@ -739,6 +739,86 @@
     border-radius: 0;
 }
 
+.theme-preview.cyberpunk {
+    background: #0a0a0a;
+    border: 2px solid #ff00ff;
+    box-shadow: 0 0 10px #ff00ff, 0 0 5px #00ffff;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.theme-preview.fire {
+    background: linear-gradient(180deg, #ff4500, #ff6600, #ff8c00);
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ff4500;
+}
+
+.theme-preview.ice {
+    background: linear-gradient(135deg, #e0f7fa, #44aaff, #0066cc);
+    box-shadow: 0 0 10px #44aaff;
+}
+
+.theme-preview.sunset {
+    background: linear-gradient(135deg, #2d132c, #c44569, #f8a5c2);
+    border-radius: 50%;
+}
+
+.theme-preview.matrix {
+    background: #000;
+    border: 2px solid #00ff41;
+    border-radius: 0;
+}
+
+.theme-preview.pastel {
+    background: linear-gradient(135deg, #a8d8ea, #b8a9c9, #f6e6cb);
+    border-radius: 50%;
+}
+
+.theme-preview.gold {
+    background: linear-gradient(135deg, #b8860b, #ffd700, #daa520);
+    box-shadow: 0 0 10px #daa520;
+}
+
+.theme-preview.ocean {
+    background: linear-gradient(180deg, #03045e, #0077b6, #90e0ef);
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00b4d8;
+}
+
+.theme-preview.cherry {
+    background: linear-gradient(135deg, #880e4f, #e91e63, #f48fb1);
+    box-shadow: 0 0 8px #e91e63;
+}
+
+.theme-preview.toxic {
+    background: #0a0f00;
+    border: 2px solid #76ff03;
+    box-shadow: 0 0 10px #76ff03;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.theme-preview.galaxy {
+    background: linear-gradient(135deg, #12005e, #7c4dff, #ea80fc);
+    border-radius: 50%;
+    box-shadow: 0 0 10px #b388ff;
+}
+
+.theme-preview.stealth {
+    background: #1a1a1a;
+    border: 1px solid #333;
+}
+
+.theme-preview.candy {
+    background: linear-gradient(135deg, #ff6fff, #ffde59, #ff6fff);
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ff6fff;
+}
+
+.theme-preview.blood {
+    background: linear-gradient(180deg, #1a0000, #b71c1c, #d50000);
+    border-radius: 0;
+    box-shadow: 0 0 10px #d50000;
+}
+
 .theme-btn span {
     font-size: 0.75rem;
     font-weight: 500;

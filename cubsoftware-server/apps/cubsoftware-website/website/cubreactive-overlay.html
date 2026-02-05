@@ -152,5 +152,25 @@
         const WS_URL = "{{ ws_url }}";
     </script>
     <script src="/static/js/cubreactive-overlay.js?v={{ cache_bust }}"></script>
+    <script>
+        // Inline config auto-refresh (can't be cached separately)
+        (function() {
+            let lastConfig = JSON.stringify(USER_CONFIG);
+            setInterval(async function() {
+                if (!TARGET_USER_ID) return;
+                try {
+                    const r = await fetch(API_BASE + '/api/cubreactive/user/' + TARGET_USER_ID + '?_=' + Date.now());
+                    if (!r.ok) return;
+                    const c = await r.json();
+                    const newStr = JSON.stringify(c.settings) + JSON.stringify(c.images);
+                    const oldStr = JSON.stringify(USER_CONFIG.settings) + JSON.stringify(USER_CONFIG.images);
+                    if (newStr !== oldStr) {
+                        // Config changed - full page reload to pick up everything
+                        window.location.reload();
+                    }
+                } catch(e) {}
+            }, 3000);
+        })();
+    </script>
 </body>
 </html>

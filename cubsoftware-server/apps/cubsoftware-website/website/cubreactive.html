@@ -476,6 +476,11 @@
                                 <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'slide' %}active{% endif %}" data-transition="slide">Slide</button>
                                 <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'zoom' %}active{% endif %}" data-transition="zoom">Zoom</button>
                                 <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'flip' %}active{% endif %}" data-transition="flip">Flip</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'rotate' %}active{% endif %}" data-transition="rotate">Rotate</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'blur' %}active{% endif %}" data-transition="blur">Blur</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'swing' %}active{% endif %}" data-transition="swing">Swing</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'pop' %}active{% endif %}" data-transition="pop">Pop</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'drop' %}active{% endif %}" data-transition="drop">Drop</button>
                                 <button type="button" class="style-btn {% if user_config and user_config.settings.transition_style == 'none' %}active{% endif %}" data-transition="none">None</button>
                             </div>
                             <input type="hidden" id="setting-transition" value="{{ user_config.settings.transition_style if user_config and user_config.settings.transition_style else 'fade' }}">
@@ -583,6 +588,62 @@
                                 <button type="button" class="theme-btn" data-theme="retro" onclick="applyTheme('retro')">
                                     <div class="theme-preview retro"></div>
                                     <span>Retro</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="cyberpunk" onclick="applyTheme('cyberpunk')">
+                                    <div class="theme-preview cyberpunk"></div>
+                                    <span>Cyberpunk</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="fire" onclick="applyTheme('fire')">
+                                    <div class="theme-preview fire"></div>
+                                    <span>Fire</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="ice" onclick="applyTheme('ice')">
+                                    <div class="theme-preview ice"></div>
+                                    <span>Ice</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="sunset" onclick="applyTheme('sunset')">
+                                    <div class="theme-preview sunset"></div>
+                                    <span>Sunset</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="matrix" onclick="applyTheme('matrix')">
+                                    <div class="theme-preview matrix"></div>
+                                    <span>Matrix</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="pastel" onclick="applyTheme('pastel')">
+                                    <div class="theme-preview pastel"></div>
+                                    <span>Pastel</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="gold" onclick="applyTheme('gold')">
+                                    <div class="theme-preview gold"></div>
+                                    <span>Gold</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="ocean" onclick="applyTheme('ocean')">
+                                    <div class="theme-preview ocean"></div>
+                                    <span>Ocean</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="cherry" onclick="applyTheme('cherry')">
+                                    <div class="theme-preview cherry"></div>
+                                    <span>Cherry</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="toxic" onclick="applyTheme('toxic')">
+                                    <div class="theme-preview toxic"></div>
+                                    <span>Toxic</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="galaxy" onclick="applyTheme('galaxy')">
+                                    <div class="theme-preview galaxy"></div>
+                                    <span>Galaxy</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="stealth" onclick="applyTheme('stealth')">
+                                    <div class="theme-preview stealth"></div>
+                                    <span>Stealth</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="candy" onclick="applyTheme('candy')">
+                                    <div class="theme-preview candy"></div>
+                                    <span>Candy</span>
+                                </button>
+                                <button type="button" class="theme-btn" data-theme="blood" onclick="applyTheme('blood')">
+                                    <div class="theme-preview blood"></div>
+                                    <span>Blood</span>
                                 </button>
                             </div>
                         </div>
