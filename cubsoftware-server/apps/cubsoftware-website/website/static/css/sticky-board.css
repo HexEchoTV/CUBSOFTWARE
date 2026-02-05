@@ -4,17 +4,27 @@
     box-sizing: border-box;
 }
 
-/* Override body for sticky board */
+/* Override body/shared.css for sticky board - prevent scrolling */
 body {
-    overflow: hidden;
+    overflow: hidden !important;
+    min-height: 100vh;
+    height: 100vh;
 }
 
+/* Override shared.css .main-container to constrain to viewport */
 .main-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    min-height: 100vh !important;
     width: 100vw;
-    overflow: hidden;
+    overflow: hidden !important;
+}
+
+/* Override shared.css footer margin-top: auto which fights with flex layout */
+.main-container > .footer {
+    margin-top: 0;
 }
 
 /* Board Controls Bar */

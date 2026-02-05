@@ -324,15 +324,21 @@ class StickyBoard {
     createNote() {
         if (this.isViewOnly) return;
 
-        const boardRect = this.board.getBoundingClientRect();
+        // Position note within the visible area of the board
+        const containerRect = this.boardContainer.getBoundingClientRect();
+        const scrollLeft = this.boardContainer.scrollLeft;
+        const scrollTop = this.boardContainer.scrollTop;
+        const visibleWidth = containerRect.width / this.zoom;
+        const visibleHeight = containerRect.height / this.zoom;
+
         const note = {
             id: this.nextNoteId++,
             text: 'New note...',
             color: '#fff740',
             font: 'Poppins',
             fontSize: 14,
-            x: Math.random() * (boardRect.width - 200) + 50,
-            y: Math.random() * (boardRect.height - 200) + 50,
+            x: (scrollLeft / this.zoom) + Math.random() * Math.max(visibleWidth - 250, 50) + 25,
+            y: (scrollTop / this.zoom) + Math.random() * Math.max(visibleHeight - 250, 50) + 25,
             width: 200,
             height: 200,
             zIndex: this.getMaxZIndex() + 1
@@ -455,12 +461,15 @@ class StickyBoard {
 
         if (this.dragState) {
             const { note, el, startX, startY, origX, origY } = this.dragState;
-            const deltaX = clientX - startX;
-            const deltaY = clientY - startY;
+            // Divide delta by zoom so screen-space movement maps correctly to board-space
+            const deltaX = (clientX - startX) / this.zoom;
+            const deltaY = (clientY - startY) / this.zoom;
 
-            const boardRect = this.board.getBoundingClientRect();
-            const newX = Math.max(0, Math.min(boardRect.width - note.width, origX + deltaX));
-            const newY = Math.max(0, Math.min(boardRect.height - note.height, origY + deltaY));
+            // Use actual board dimensions (unscaled) for boundary constraints
+            const boardWidth = this.board.offsetWidth;
+            const boardHeight = this.board.offsetHeight;
+            const newX = Math.max(0, Math.min(boardWidth - note.width, origX + deltaX));
+            const newY = Math.max(0, Math.min(boardHeight - note.height, origY + deltaY));
 
             note.x = newX;
             note.y = newY;
@@ -470,8 +479,9 @@ class StickyBoard {
 
         if (this.resizeState) {
             const { note, el, startX, startY, origWidth, origHeight } = this.resizeState;
-            const deltaX = clientX - startX;
-            const deltaY = clientY - startY;
+            // Divide delta by zoom for correct resize at any zoom level
+            const deltaX = (clientX - startX) / this.zoom;
+            const deltaY = (clientY - startY) / this.zoom;
 
             const newWidth = Math.max(150, origWidth + deltaX);
             const newHeight = Math.max(150, origHeight + deltaY);
