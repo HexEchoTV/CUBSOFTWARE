@@ -1,9 +1,11 @@
 const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus, entersState } = require('@discordjs/voice');
 const DiscordTerminal = require('../../shared/discord-terminal');
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const WebSocket = require('ws');
 require('dotenv').config();
 
 const config = {
@@ -151,9 +153,191 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
+
+// ============================================
+// CubReactive Voice State Tracking
+// ============================================
+
+// Store voice states: { userId: { channelId, muted, deafened, speaking, ... } }
+const voiceStates = new Map();
+// Store connected overlay WebSockets: { userId: [ws1, ws2, ...] }
+const overlayConnections = new Map();
+// Store channel members: { channelId: Set(userId1, userId2, ...) }
+const channelMembers = new Map();
+// Track active voice connections: { channelId: VoiceConnection }
+const activeVoiceConnections = new Map();
+// Track which channels have overlay users: { channelId: Set(userId) }
+const overlayChannels = new Map();
+
+// CubReactive data file path
+const CUBREACTIVE_USERS_FILE = path.join(__dirname, '..', 'cubsoftware-website', 'data', 'cubreactive_users.json');
+
+function loadCubReactiveUsers() {
+    try {
+        if (fs.existsSync(CUBREACTIVE_USERS_FILE)) {
+            return JSON.parse(fs.readFileSync(CUBREACTIVE_USERS_FILE, 'utf8'));
+        }
+    } catch (e) {
+        console.error('Error loading CubReactive users:', e);
+    }
+    return {};
+}
+
+// Broadcast voice state update to connected overlays
+function broadcastVoiceUpdate(userId, data) {
+    // Broadcast to individual overlays for this user
+    const userConnections = overlayConnections.get(userId) || [];
+    userConnections.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'VOICE_STATE_UPDATE', userId, data }));
+        }
+    });
+
+    // Also broadcast to group overlays that include this user
+    overlayConnections.forEach((connections, overlayUserId) => {
+        if (overlayUserId !== userId) {
+            connections.forEach(ws => {
+                if (ws.readyState === WebSocket.OPEN && ws.isGroupMode) {
+                    // Check if they're in the same channel
+                    const overlayUserState = voiceStates.get(overlayUserId);
+                    const targetUserState = voiceStates.get(userId);
+                    if (overlayUserState && targetUserState &&
+                        overlayUserState.channelId === targetUserState.channelId) {
+                        ws.send(JSON.stringify({ type: 'VOICE_STATE_UPDATE', userId, data }));
+                    }
+                }
+            });
+        }
+    });
+}
+
+// Broadcast channel members update
+function broadcastChannelUpdate(channelId) {
+    const members = channelMembers.get(channelId) || new Set();
+    const memberList = Array.from(members).map(userId => {
+        const state = voiceStates.get(userId);
+        return state ? { userId, ...state } : null;
+    }).filter(Boolean);
+
+    // Find all overlays that are tracking users in this channel
+    overlayConnections.forEach((connections, userId) => {
+        const userState = voiceStates.get(userId);
+        if (userState && userState.channelId === channelId) {
+            connections.forEach(ws => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'CHANNEL_UPDATE', channelId, members: memberList }));
+                }
+            });
+        }
+    });
+}
+
+// ============================================
+// Voice Connection Management (for speaking detection)
+// ============================================
+
+// Join a voice channel to detect speaking
+async function joinChannelForSpeaking(channelId, guildId) {
+    if (activeVoiceConnections.has(channelId)) return; // Already connected
+
+    try {
+        const guild = client.guilds.cache.get(guildId);
+        if (!guild) return;
+
+        const channel = guild.channels.cache.get(channelId);
+        if (!channel) return;
+
+        console.log(`[CubReactive] Joining voice channel: ${channel.name} (${channelId})`);
+
+        const connection = joinVoiceChannel({
+            channelId: channelId,
+            guildId: guildId,
+            adapterCreator: guild.voiceAdapterCreator,
+            selfDeaf: true,
+            selfMute: true
+        });
+
+        activeVoiceConnections.set(channelId, connection);
+
+        // Listen for speaking events
+        connection.receiver.speaking.on('start', (userId) => {
+            const state = voiceStates.get(userId);
+            if (state) {
+                state.speaking = true;
+                voiceStates.set(userId, state);
+                broadcastVoiceUpdate(userId, state);
+            }
+        });
+
+        connection.receiver.speaking.on('end', (userId) => {
+            const state = voiceStates.get(userId);
+            if (state) {
+                state.speaking = false;
+                voiceStates.set(userId, state);
+                broadcastVoiceUpdate(userId, state);
+            }
+        });
+
+        // Handle disconnection
+        connection.on(VoiceConnectionStatus.Disconnected, async () => {
+            try {
+                await Promise.race([
+                    entersState(connection, VoiceConnectionStatus.Signalling, 5000),
+                    entersState(connection, VoiceConnectionStatus.Connecting, 5000),
+                ]);
+                // Reconnecting
+            } catch (e) {
+                // Truly disconnected
+                connection.destroy();
+                activeVoiceConnections.delete(channelId);
+                console.log(`[CubReactive] Disconnected from channel: ${channelId}`);
+            }
+        });
+
+        connection.on(VoiceConnectionStatus.Destroyed, () => {
+            activeVoiceConnections.delete(channelId);
+        });
+
+    } catch (e) {
+        console.error(`[CubReactive] Failed to join voice channel ${channelId}:`, e);
+    }
+}
+
+// Leave a voice channel when no more overlay users need it
+function leaveChannelIfUnneeded(channelId) {
+    const overlayUsers = overlayChannels.get(channelId);
+    if (!overlayUsers || overlayUsers.size === 0) {
+        overlayChannels.delete(channelId);
+        const connection = activeVoiceConnections.get(channelId);
+        if (connection) {
+            console.log(`[CubReactive] Leaving voice channel: ${channelId} (no overlay users)`);
+            connection.destroy();
+            activeVoiceConnections.delete(channelId);
+        }
+    }
+}
+
+// Track overlay user in a channel (call when overlay subscribes and user is in voice)
+function trackOverlayUser(userId, channelId, guildId) {
+    if (!overlayChannels.has(channelId)) {
+        overlayChannels.set(channelId, new Set());
+    }
+    overlayChannels.get(channelId).add(userId);
+    joinChannelForSpeaking(channelId, guildId);
+}
+
+// Untrack overlay user from a channel
+function untrackOverlayUser(userId, channelId) {
+    const overlayUsers = overlayChannels.get(channelId);
+    if (overlayUsers) {
+        overlayUsers.delete(userId);
+        leaveChannelIfUnneeded(channelId);
+    }
+}
 
 const terminal = new DiscordTerminal(client, {
     prefix: '>',
@@ -1220,12 +1404,218 @@ async function registerCommands() {
     console.log('Commands registered');
 }
 
+// ============================================
+// Voice State Update Handler
+// ============================================
+client.on('voiceStateUpdate', async (oldState, newState) => {
+    const userId = newState.member?.id || oldState.member?.id;
+    if (!userId) return;
+
+    // Ignore bot's own voice state changes
+    if (userId === client.user.id) return;
+
+    const oldChannelId = oldState.channelId;
+    const newChannelId = newState.channelId;
+    const guildId = newState.guild?.id || oldState.guild?.id;
+
+    // Get user info
+    const member = newState.member || oldState.member;
+    const username = member?.displayName || member?.user?.username || 'Unknown';
+    const avatar = member?.user?.avatarURL({ size: 256 }) ||
+                   `https://cdn.discordapp.com/embed/avatars/${parseInt(member?.user?.discriminator || '0') % 5}.png`;
+
+    // User left a channel
+    if (oldChannelId && (!newChannelId || oldChannelId !== newChannelId)) {
+        // Remove from old channel
+        const oldMembers = channelMembers.get(oldChannelId);
+        if (oldMembers) {
+            oldMembers.delete(userId);
+            if (oldMembers.size === 0) {
+                channelMembers.delete(oldChannelId);
+            }
+        }
+
+        // If this user has an overlay, untrack from old channel
+        if (overlayConnections.has(userId)) {
+            untrackOverlayUser(userId, oldChannelId);
+        }
+
+        // Broadcast leave to overlays watching this channel
+        broadcastChannelUpdate(oldChannelId);
+    }
+
+    // User joined a channel
+    if (newChannelId) {
+        // Add to new channel
+        if (!channelMembers.has(newChannelId)) {
+            channelMembers.set(newChannelId, new Set());
+        }
+        channelMembers.get(newChannelId).add(userId);
+
+        // Update voice state
+        const state = {
+            channelId: newChannelId,
+            guildId: guildId,
+            username,
+            avatar,
+            muted: newState.selfMute || newState.serverMute || false,
+            deafened: newState.selfDeaf || newState.serverDeaf || false,
+            speaking: voiceStates.get(userId)?.speaking || false,
+            streaming: newState.streaming || false,
+            video: newState.selfVideo || false
+        };
+
+        voiceStates.set(userId, state);
+
+        // If this user has an overlay, join the channel for speaking detection
+        if (overlayConnections.has(userId)) {
+            trackOverlayUser(userId, newChannelId, guildId);
+        }
+
+        // Broadcast update
+        broadcastVoiceUpdate(userId, state);
+        broadcastChannelUpdate(newChannelId);
+    } else {
+        // User completely left voice
+        voiceStates.delete(userId);
+        broadcastVoiceUpdate(userId, { left: true });
+    }
+
+    // Handle mute/deafen changes within same channel
+    if (oldChannelId === newChannelId && newChannelId) {
+        const currentState = voiceStates.get(userId);
+        if (currentState) {
+            currentState.muted = newState.selfMute || newState.serverMute || false;
+            currentState.deafened = newState.selfDeaf || newState.serverDeaf || false;
+            currentState.streaming = newState.streaming || false;
+            currentState.video = newState.selfVideo || false;
+            voiceStates.set(userId, currentState);
+            broadcastVoiceUpdate(userId, currentState);
+        }
+    }
+});
+
+// ============================================
+// CubReactive WebSocket Server
+// ============================================
+const CUBREACTIVE_WS_PORT = process.env.CUBREACTIVE_WS_PORT || 3848;
+let wss = null;
+
+function startCubReactiveWebSocket() {
+    wss = new WebSocket.Server({ port: CUBREACTIVE_WS_PORT });
+
+    wss.on('connection', (ws, req) => {
+        console.log('[CubReactive] New WebSocket connection');
+
+        ws.isAlive = true;
+        ws.userId = null;
+        ws.isGroupMode = false;
+
+        ws.on('pong', () => { ws.isAlive = true; });
+
+        ws.on('message', (message) => {
+            try {
+                const data = JSON.parse(message);
+
+                if (data.type === 'SUBSCRIBE') {
+                    // Check if user has CubReactive enabled
+                    const cubUsers = loadCubReactiveUsers();
+                    const userConfig = cubUsers[data.userId];
+                    if (userConfig && userConfig.enabled === false) {
+                        ws.send(JSON.stringify({ type: 'DISABLED', userId: data.userId }));
+                        ws.close();
+                        return;
+                    }
+
+                    // Subscribe to voice updates for a user
+                    ws.userId = data.userId;
+                    ws.isGroupMode = data.mode === 'group';
+
+                    // Add to connections map
+                    if (!overlayConnections.has(data.userId)) {
+                        overlayConnections.set(data.userId, []);
+                    }
+                    overlayConnections.get(data.userId).push(ws);
+
+                    console.log(`[CubReactive] Subscribed: ${data.userId} (${data.mode || 'individual'})`);
+
+                    // Send current state if user is in voice
+                    const currentState = voiceStates.get(data.userId);
+                    if (currentState) {
+                        ws.send(JSON.stringify({ type: 'VOICE_STATE_UPDATE', userId: data.userId, data: currentState }));
+
+                        // Join the voice channel for speaking detection
+                        if (currentState.channelId && currentState.guildId) {
+                            trackOverlayUser(data.userId, currentState.channelId, currentState.guildId);
+                        }
+
+                        // If group mode, send all channel members
+                        if (ws.isGroupMode && currentState.channelId) {
+                            broadcastChannelUpdate(currentState.channelId);
+                        }
+                    } else {
+                        // User not in voice
+                        ws.send(JSON.stringify({ type: 'NOT_IN_VOICE', userId: data.userId }));
+                    }
+                }
+
+                if (data.type === 'PING') {
+                    ws.send(JSON.stringify({ type: 'PONG' }));
+                }
+
+            } catch (e) {
+                console.error('[CubReactive] Message parse error:', e);
+            }
+        });
+
+        ws.on('close', () => {
+            // Remove from connections
+            if (ws.userId) {
+                const connections = overlayConnections.get(ws.userId);
+                if (connections) {
+                    const index = connections.indexOf(ws);
+                    if (index > -1) {
+                        connections.splice(index, 1);
+                    }
+                    if (connections.length === 0) {
+                        overlayConnections.delete(ws.userId);
+
+                        // No more overlays for this user - leave voice if we joined for them
+                        const userState = voiceStates.get(ws.userId);
+                        if (userState && userState.channelId) {
+                            untrackOverlayUser(ws.userId, userState.channelId);
+                        }
+                    }
+                }
+            }
+            console.log('[CubReactive] WebSocket disconnected');
+        });
+
+        // Send ready message
+        ws.send(JSON.stringify({ type: 'READY' }));
+    });
+
+    // Heartbeat to detect dead connections
+    const interval = setInterval(() => {
+        wss.clients.forEach((ws) => {
+            if (ws.isAlive === false) return ws.terminate();
+            ws.isAlive = false;
+            ws.ping();
+        });
+    }, 30000);
+
+    wss.on('close', () => clearInterval(interval));
+
+    console.log(`[CubReactive] WebSocket server running on port ${CUBREACTIVE_WS_PORT}`);
+}
+
 client.once('ready', () => {
     console.log(`[CubSoftware Bot] Online as ${client.user.tag}`);
     client.user.setPresence({ activities: [{ name: 'cubsoftware.site', type: 3 }], status: 'online' });
     terminal.init();
     registerCommands();
     startLogServer();
+    startCubReactiveWebSocket();
 });
 
 // HTTP server for receiving logs from websites

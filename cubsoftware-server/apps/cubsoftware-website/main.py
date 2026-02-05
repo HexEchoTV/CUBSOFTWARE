@@ -1145,6 +1145,7 @@ CUBREACTIVE_UPLOADS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)
 # Discord OAuth for CubReactive (uses same credentials as CleanMe)
 CUBREACTIVE_REDIRECT_URI = os.environ.get('CUBREACTIVE_REDIRECT_URI', 'https://cubsoftware.site/apps/cubreactive/auth/callback')
 CUBREACTIVE_RPC_REDIRECT_URI = os.environ.get('CUBREACTIVE_RPC_REDIRECT_URI', 'https://cubsoftware.site/apps/cubreactive/auth/rpc/callback')
+CUBREACTIVE_WS_URL = os.environ.get('CUBREACTIVE_WS_URL', 'wss://cubsoftware.site/cubreactive-ws')
 
 def load_cubreactive_users():
     """Load CubReactive user configurations"""
@@ -1201,7 +1202,7 @@ def cubreactive_overlay_group(user_id):
         mode='group',
         target_user_id=user_id,
         user_config=user_config,
-        discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', ''))
+        ws_url=CUBREACTIVE_WS_URL
     )
 
 @app.route('/apps/cubreactive/overlay/<user_id>')
@@ -1213,7 +1214,7 @@ def cubreactive_overlay_individual(user_id):
         mode='individual',
         target_user_id=user_id,
         user_config=user_config,
-        discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', ''))
+        ws_url=CUBREACTIVE_WS_URL
     )
 
 # CubReactive OAuth Routes
@@ -1295,6 +1296,7 @@ def cubreactive_callback():
             users[user_data['id']] = {
                 'username': user_data.get('global_name') or user_data.get('username'),
                 'avatar_url': avatar_url,
+                'enabled': True,
                 'images': {
                     'speaking': None,
                     'idle': None,
@@ -1677,6 +1679,22 @@ def cubreactive_delete_image():
             save_cubreactive_users(users)
 
     return jsonify({'success': True})
+
+@app.route('/api/cubreactive/toggle', methods=['POST'])
+@cubreactive_auth_required
+def cubreactive_toggle():
+    """Enable or disable CubReactive for the user"""
+    user = session.get('cubreactive_user')
+    data = request.get_json()
+    enabled = data.get('enabled', True)
+
+    users = load_cubreactive_users()
+    if user['id'] in users:
+        users[user['id']]['enabled'] = enabled
+        save_cubreactive_users(users)
+        return jsonify({'success': True, 'enabled': enabled})
+
+    return jsonify({'error': 'User not found'}), 404
 
 # Serve CubReactive uploads
 @app.route('/uploads/cubreactive/<filename>')

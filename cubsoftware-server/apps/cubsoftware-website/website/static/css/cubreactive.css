@@ -181,6 +181,32 @@
     color: var(--accent-pink);
 }
 
+/* Master Toggle */
+.cubreactive-toggle {
+    margin-left: auto;
+    text-align: right;
+}
+
+.cubreactive-toggle .master-toggle {
+    font-size: 1rem;
+}
+
+.cubreactive-toggle .toggle-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.cubreactive-toggle .status-on {
+    color: #57f287;
+    font-weight: 600;
+}
+
+.cubreactive-toggle .status-off {
+    color: #ed4245;
+    font-weight: 600;
+}
+
 /* Upload Section */
 .upload-section {
     background: var(--card-bg);

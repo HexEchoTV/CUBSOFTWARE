@@ -1,18 +1,15 @@
-// CubReactive Overlay - Discord RPC Connection & Rendering
+// CubReactive Overlay - Bot WebSocket Connection & Rendering
 
 class CubReactiveOverlay {
     constructor() {
         this.ws = null;
-        this.authenticated = false;
-        this.currentChannel = null;
+        this.connected = false;
+        this.disabled = false;
         this.participants = new Map();
         this.userConfigs = new Map();
-        this.accessToken = null;
-        this.minPort = 6463;
-        this.maxPort = 6472;
-        this.currentUserId = null; // The user viewing the overlay
-        this.resolveConnect = null;
-        this.rejectConnect = null;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 10;
+        this.reconnectDelay = 2000;
 
         // Store initial config if provided
         if (TARGET_USER_ID && USER_CONFIG && Object.keys(USER_CONFIG).length > 0) {
@@ -21,301 +18,182 @@ class CubReactiveOverlay {
     }
 
     async init() {
-        this.showStatus('Connecting to Discord...', 'connecting');
-
-        try {
-            // First, fetch the RPC token from our server
-            await this.fetchRpcToken();
-
-            if (!this.accessToken) {
-                this.showStatus('Please connect Discord RPC in your CubReactive dashboard first.', 'error');
-                return;
-            }
-
-            await this.connect();
-        } catch (error) {
-            console.error('Connection failed:', error);
-
-            if (error.message === 'needs_auth') {
-                this.showStatus('Please connect Discord RPC in your CubReactive dashboard.', 'error');
-            } else {
-                this.showStatus('Could not connect to Discord. Make sure Discord is running.', 'error');
-                // Retry after 5 seconds
-                setTimeout(() => this.init(), 5000);
-            }
-        }
-    }
-
-    async fetchRpcToken() {
-        try {
-            const response = await fetch(`${API_BASE}/api/cubreactive/rpc-token?user_id=${TARGET_USER_ID}`);
-            const data = await response.json();
-
-            if (data.error) {
-                if (data.needs_auth) {
-                    throw new Error('needs_auth');
-                }
-                throw new Error(data.error);
-            }
-
-            this.accessToken = data.access_token;
-            console.log('Got RPC token from server');
-        } catch (error) {
-            console.error('Failed to fetch RPC token:', error);
-            throw error;
-        }
+        this.showStatus('Connecting to CubReactive...', 'connecting');
+        await this.connect();
     }
 
     async connect() {
-        for (let port = this.minPort; port <= this.maxPort; port++) {
-            try {
-                await this.tryConnect(port);
-                console.log(`Connected to Discord on port ${port}`);
-                return;
-            } catch (error) {
-                console.log(`Port ${port} failed:`, error.message, 'trying next...');
-            }
-        }
-        throw new Error('Could not connect to any Discord RPC port');
-    }
-
-    tryConnect(port) {
         return new Promise((resolve, reject) => {
-            // Use our app's client_id
-            const url = `ws://127.0.0.1:${port}/?v=1&client_id=${DISCORD_CLIENT_ID}&encoding=json`;
+            // Connect to our bot's WebSocket server
+            const wsUrl = WS_URL || `wss://${window.location.hostname}:3848`;
+            console.log('Connecting to CubReactive WebSocket:', wsUrl);
 
-            console.log('Connecting to:', url);
-            this.ws = new WebSocket(url);
-            this.resolveConnect = resolve;
-            this.rejectConnect = reject;
+            try {
+                this.ws = new WebSocket(wsUrl);
+            } catch (e) {
+                console.error('WebSocket creation failed:', e);
+                this.handleReconnect();
+                return;
+            }
 
             const timeout = setTimeout(() => {
-                this.ws.close();
-                reject(new Error('Connection timeout'));
-            }, 5000);
+                if (this.ws.readyState !== WebSocket.OPEN) {
+                    this.ws.close();
+                    this.handleReconnect();
+                }
+            }, 10000);
 
             this.ws.onopen = () => {
                 clearTimeout(timeout);
-                console.log('WebSocket connected, waiting for READY...');
+                console.log('WebSocket connected, subscribing...');
+                this.connected = true;
+                this.reconnectAttempts = 0;
+
+                // Subscribe to voice updates for our target user
+                this.send({
+                    type: 'SUBSCRIBE',
+                    userId: TARGET_USER_ID,
+                    mode: MODE
+                });
             };
 
             this.ws.onmessage = (event) => {
-                console.log('Raw message:', event.data.substring(0, 500));
-                const data = JSON.parse(event.data);
-                this.handleMessage(data);
+                try {
+                    const data = JSON.parse(event.data);
+                    this.handleMessage(data);
+                } catch (e) {
+                    console.error('Message parse error:', e);
+                }
             };
 
             this.ws.onerror = (error) => {
                 clearTimeout(timeout);
                 console.error('WebSocket error:', error);
-                reject(error);
             };
 
             this.ws.onclose = (event) => {
                 clearTimeout(timeout);
-                console.log('WebSocket closed, code:', event.code, 'reason:', event.reason);
-                this.authenticated = false;
-
-                // If closed with 4001, origin is rejected
-                if (event.code === 4001) {
-                    reject(new Error('Invalid Origin - origin not whitelisted'));
-                    return;
-                }
-
-                if (this.currentChannel) {
-                    setTimeout(() => this.init(), 3000);
+                console.log('WebSocket closed, code:', event.code);
+                this.connected = false;
+                if (!this.disabled) {
+                    this.handleReconnect();
                 }
             };
         });
     }
 
+    handleReconnect() {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.reconnectAttempts++;
+            const delay = this.reconnectDelay * Math.min(this.reconnectAttempts, 5);
+            console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
+            this.showStatus('Reconnecting...', 'connecting');
+            setTimeout(() => this.connect(), delay);
+        } else {
+            this.showStatus('Connection failed. Please refresh the page.', 'error');
+        }
+    }
+
     handleMessage(data) {
-        console.log('Received:', data.cmd, data.evt);
+        console.log('Received:', data.type, data);
 
-        switch (data.cmd) {
-            case 'DISPATCH':
-                if (data.evt === 'READY') {
-                    // Got READY, now authenticate directly with our token
-                    console.log('Got READY, authenticating with pre-obtained token...');
-                    this.authenticate();
-                } else {
-                    this.handleDispatch(data);
-                }
+        switch (data.type) {
+            case 'READY':
+                console.log('Server ready');
                 break;
 
-            case 'AUTHENTICATE':
-                if (data.evt === 'ERROR') {
-                    console.error('Auth error:', data.data);
-                    this.showStatus('Authentication failed: ' + (data.data?.message || 'Unknown error'), 'error');
-                    if (this.rejectConnect) this.rejectConnect(new Error('Auth failed'));
-                } else {
-                    this.authenticated = true;
-                    this.currentUserId = data.data?.user?.id;
-                    this.showStatus('');
-                    console.log('Authenticated successfully, user:', this.currentUserId);
-                    this.subscribeToVoice();
-                    if (this.resolveConnect) this.resolveConnect();
-                }
-                break;
-
-            case 'SUBSCRIBE':
-                console.log('Subscribed to:', data.evt);
-                break;
-
-            case 'GET_SELECTED_VOICE_CHANNEL':
-                if (data.data) {
-                    this.handleVoiceChannel(data.data);
-                }
-                break;
-        }
-    }
-
-    authenticate() {
-        // Use our pre-obtained access token directly
-        console.log('Sending AUTHENTICATE with access token');
-        this.send({
-            cmd: 'AUTHENTICATE',
-            args: {
-                access_token: this.accessToken
-            },
-            nonce: this.nonce()
-        });
-    }
-
-    subscribeToVoice() {
-        this.send({
-            cmd: 'GET_SELECTED_VOICE_CHANNEL',
-            args: {},
-            nonce: this.nonce()
-        });
-
-        this.send({
-            cmd: 'SUBSCRIBE',
-            args: {},
-            evt: 'VOICE_CHANNEL_SELECT',
-            nonce: this.nonce()
-        });
-    }
-
-    handleVoiceChannel(channel) {
-        if (!channel || !channel.id) {
-            console.log('Not in a voice channel');
-            this.currentChannel = null;
-            this.participants.clear();
-            this.render();
-            return;
-        }
-
-        console.log('Voice channel:', channel.name);
-        this.currentChannel = channel;
-
-        const events = [
-            'SPEAKING_START',
-            'SPEAKING_STOP',
-            'VOICE_STATE_CREATE',
-            'VOICE_STATE_UPDATE',
-            'VOICE_STATE_DELETE'
-        ];
-
-        events.forEach(evt => {
-            this.send({
-                cmd: 'SUBSCRIBE',
-                args: { channel_id: channel.id },
-                evt: evt,
-                nonce: this.nonce()
-            });
-        });
-
-        if (channel.voice_states) {
-            channel.voice_states.forEach(state => {
-                this.handleVoiceState(state);
-            });
-        }
-
-        this.render();
-    }
-
-    handleDispatch(data) {
-        switch (data.evt) {
-            case 'VOICE_CHANNEL_SELECT':
-                if (data.data.channel_id) {
-                    this.send({
-                        cmd: 'GET_SELECTED_VOICE_CHANNEL',
-                        args: {},
-                        nonce: this.nonce()
-                    });
-                } else {
-                    this.currentChannel = null;
-                    this.participants.clear();
-                    this.render();
-                }
-                break;
-
-            case 'SPEAKING_START':
-                this.setSpeaking(data.data.user_id, true);
-                break;
-
-            case 'SPEAKING_STOP':
-                this.setSpeaking(data.data.user_id, false);
-                break;
-
-            case 'VOICE_STATE_CREATE':
             case 'VOICE_STATE_UPDATE':
-                this.handleVoiceState(data.data);
+                this.handleVoiceStateUpdate(data.userId, data.data);
                 break;
 
-            case 'VOICE_STATE_DELETE':
-                this.removeParticipant(data.data.user.id);
+            case 'CHANNEL_UPDATE':
+                this.handleChannelUpdate(data.channelId, data.members);
+                break;
+
+            case 'NOT_IN_VOICE':
+                this.showStatus('Join a voice channel to see your avatar', 'info');
+                this.participants.clear();
+                this.render();
+                break;
+
+            case 'DISABLED':
+                this.disabled = true;
+                this.showStatus('CubReactive is disabled for this user', 'error');
+                this.participants.clear();
+                this.render();
+                break;
+
+            case 'PONG':
+                // Heartbeat response
                 break;
         }
     }
 
-    async handleVoiceState(state) {
-        const userId = state.user?.id || state.user_id;
-        if (!userId) return;
+    async handleVoiceStateUpdate(userId, state) {
+        if (state.left) {
+            // User left voice
+            this.participants.delete(userId);
 
-        if (MODE === 'individual' && TARGET_USER_ID && userId !== TARGET_USER_ID) {
-            return;
-        }
+            if (userId === TARGET_USER_ID) {
+                this.showStatus('Join a voice channel to see your avatar', 'info');
+            }
+        } else {
+            // Update participant state
+            const participant = {
+                id: userId,
+                username: state.username || 'Unknown',
+                avatar: state.avatar || '',
+                speaking: state.speaking || false,
+                muted: state.muted || false,
+                deafened: state.deafened || false,
+                channelId: state.channelId
+            };
 
-        const participant = {
-            id: userId,
-            username: state.user?.username || state.nick || 'Unknown',
-            avatar: this.getAvatarUrl(state.user),
-            speaking: this.participants.get(userId)?.speaking || false,
-            muted: state.voice_state?.mute || state.voice_state?.self_mute || false,
-            deafened: state.voice_state?.deaf || state.voice_state?.self_deaf || false
-        };
+            this.participants.set(userId, participant);
 
-        this.participants.set(userId, participant);
+            // Fetch user config if we don't have it
+            if (!this.userConfigs.has(userId)) {
+                await this.fetchUserConfig(userId);
+            }
 
-        if (!this.userConfigs.has(userId)) {
-            await this.fetchUserConfig(userId);
+            this.showStatus('');
         }
 
         this.render();
     }
 
-    removeParticipant(userId) {
-        this.participants.delete(userId);
+    handleChannelUpdate(channelId, members) {
+        console.log('Channel update:', channelId, members);
+
+        // Clear participants not in this channel
+        this.participants.forEach((participant, oduserId) => {
+            if (!members.find(m => m.userId === oduserId)) {
+                this.participants.delete(oduserId);
+            }
+        });
+
+        // Update all members
+        members.forEach(async (member) => {
+            const participant = {
+                id: member.userId,
+                username: member.username || 'Unknown',
+                avatar: member.avatar || '',
+                speaking: member.speaking || false,
+                muted: member.muted || false,
+                deafened: member.deafened || false,
+                channelId: channelId
+            };
+
+            this.participants.set(member.userId, participant);
+
+            // Fetch user config if we don't have it
+            if (!this.userConfigs.has(member.userId)) {
+                await this.fetchUserConfig(member.userId);
+            }
+        });
+
+        this.showStatus('');
         this.render();
-    }
-
-    setSpeaking(userId, speaking) {
-        const participant = this.participants.get(userId);
-        if (participant) {
-            participant.speaking = speaking;
-            this.render();
-        }
-    }
-
-    getAvatarUrl(user) {
-        if (!user) return '';
-        if (user.avatar) {
-            return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256`;
-        }
-        const discriminator = parseInt(user.discriminator || '0');
-        return `https://cdn.discordapp.com/embed/avatars/${discriminator % 5}.png`;
     }
 
     async fetchUserConfig(userId) {
@@ -433,8 +311,8 @@ class CubReactiveOverlay {
         const mainSettings = mainConfig?.settings || this.getDefaultSettings();
 
         // Apply hide self
-        if (mainSettings.hide_self && this.currentUserId) {
-            participantsToRender = participantsToRender.filter(p => p.id !== this.currentUserId);
+        if (mainSettings.hide_self && TARGET_USER_ID) {
+            participantsToRender = participantsToRender.filter(p => p.id !== TARGET_USER_ID);
         }
 
         // Apply max participants
@@ -494,7 +372,6 @@ class CubReactiveOverlay {
             const showStatusIcons = settings.show_status_icons !== false;
             const idleOpacity = settings.idle_opacity || 100;
             const flipHorizontal = settings.flip_horizontal || false;
-            const transitionStyle = settings.transition_style || 'fade';
 
             const wrapper = document.createElement('div');
             wrapper.className = 'avatar-wrapper';
@@ -707,10 +584,6 @@ class CubReactiveOverlay {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(payload));
         }
-    }
-
-    nonce() {
-        return Math.random().toString(36).substring(2);
     }
 
     showStatus(message, type = '') {

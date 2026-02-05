@@ -123,6 +123,32 @@ const THEMES = {
     }
 };
 
+// Toggle CubReactive on/off
+async function toggleCubReactive(enabled) {
+    try {
+        const res = await fetch('/api/cubreactive/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const statusEl = document.getElementById('enabled-status');
+            if (enabled) {
+                statusEl.textContent = 'Enabled';
+                statusEl.className = 'status-on';
+                showToast('CubReactive enabled');
+            } else {
+                statusEl.textContent = 'Disabled';
+                statusEl.className = 'status-off';
+                showToast('CubReactive disabled - overlay will stop working', 'error');
+            }
+        }
+    } catch (e) {
+        showToast('Failed to update', 'error');
+    }
+}
+
 // Show toast notification
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');

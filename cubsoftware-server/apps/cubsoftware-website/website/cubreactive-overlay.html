@@ -143,11 +143,13 @@
         // Configuration passed from server
         const MODE = "{{ mode }}";
         const TARGET_USER_ID = "{{ target_user_id or '' }}";
-        const DISCORD_CLIENT_ID = "{{ discord_client_id }}";
         const USER_CONFIG = {{ user_config | tojson | safe }};
 
         // API base URL
         const API_BASE = window.location.origin;
+
+        // WebSocket URL for CubReactive bot
+        const WS_URL = "{{ ws_url }}";
     </script>
     <script src="/static/js/cubreactive-overlay.js"></script>
 </body>
