@@ -1273,6 +1273,7 @@ def cubreactive_callback():
         }, headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
         if token_response.status_code != 200:
+            app.logger.error(f'CubReactive token exchange failed: {token_response.status_code} {token_response.text}')
             return redirect('/apps/cubreactive?error=token_failed')
 
         tokens = token_response.json()

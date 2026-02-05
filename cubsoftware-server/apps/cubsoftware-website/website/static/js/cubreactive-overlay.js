@@ -21,14 +21,35 @@ class CubReactiveOverlay {
     async init() {
         this.showStatus('Connecting to CubReactive...', 'connecting');
         await this.connect();
+        this.startConfigPoll();
+    }
+
+    // Poll for config changes every 5 seconds so OBS picks up saves automatically
+    startConfigPoll() {
+        this.configPollInterval = setInterval(async () => {
+            if (!TARGET_USER_ID || this.participants.size === 0) return;
+            try {
+                const response = await fetch(`${API_BASE}/api/cubreactive/user/${TARGET_USER_ID}`);
+                if (!response.ok) return;
+                const newConfig = await response.json();
+                newConfig.hasCubReactive = true;
+                const oldConfig = this.userConfigs.get(TARGET_USER_ID);
+                // Compare serialized configs to detect changes
+                if (JSON.stringify(oldConfig?.settings) !== JSON.stringify(newConfig.settings) ||
+                    JSON.stringify(oldConfig?.images) !== JSON.stringify(newConfig.images)) {
+                    this.userConfigs.set(TARGET_USER_ID, newConfig);
+                    this.render();
+                }
+            } catch (e) {
+                // Ignore poll errors
+            }
+        }, 5000);
     }
 
     async connect() {
         return new Promise((resolve, reject) => {
             // Connect to our bot's WebSocket server
             const wsUrl = WS_URL || `wss://${window.location.hostname}:3848`;
-            console.log('Connecting to CubReactive WebSocket:', wsUrl);
-
             try {
                 this.ws = new WebSocket(wsUrl);
             } catch (e) {
@@ -101,11 +122,8 @@ class CubReactiveOverlay {
     }
 
     handleMessage(data) {
-        console.log('Received:', data.type, data);
-
         switch (data.type) {
             case 'READY':
-                console.log('Server ready');
                 break;
 
             case 'VOICE_STATE_UPDATE':
@@ -123,7 +141,6 @@ class CubReactiveOverlay {
                 break;
 
             case 'CONFIG_UPDATED':
-                console.log('Config updated, refreshing...');
                 const refreshId = data.userId || TARGET_USER_ID;
                 if (refreshId) {
                     this.fetchUserConfig(refreshId).then(() => this.render());
@@ -177,7 +194,6 @@ class CubReactiveOverlay {
     }
 
     handleChannelUpdate(channelId, members) {
-        console.log('Channel update:', channelId, members);
 
         // Clear participants not in this channel
         this.participants.forEach((participant, oduserId) => {
@@ -217,17 +233,14 @@ class CubReactiveOverlay {
                 const config = await response.json();
                 config.hasCubReactive = true;
                 this.userConfigs.set(userId, config);
-                console.log(`Loaded CubReactive config for user ${userId}`);
             } else {
                 this.userConfigs.set(userId, {
                     hasCubReactive: false,
                     images: {},
                     settings: this.getDefaultSettings()
                 });
-                console.log(`User ${userId} doesn't have CubReactive - using Discord avatar`);
             }
         } catch (error) {
-            console.log(`Error fetching config for user ${userId}:`, error);
             this.userConfigs.set(userId, {
                 hasCubReactive: false,
                 images: {},
