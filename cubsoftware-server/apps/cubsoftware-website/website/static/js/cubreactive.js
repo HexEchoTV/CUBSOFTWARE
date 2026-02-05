@@ -837,7 +837,7 @@ function getShapeStyles(shape) {
         'diamond': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' },
         'octagon': { borderRadius: '0', clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' },
         'star': { borderRadius: '0', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' },
-        'heart': { borderRadius: '0', clipPath: 'polygon(50% 15%, 90% 0%, 100% 35%, 50% 100%, 0% 35%, 10% 0%)' },
+        'heart': { borderRadius: '0', clipPath: 'polygon(50% 20%, 55% 12%, 65% 5%, 78% 3%, 90% 10%, 97% 25%, 95% 45%, 80% 65%, 50% 100%, 20% 65%, 5% 45%, 3% 25%, 10% 10%, 22% 3%, 35% 5%, 45% 12%)' },
         'shield': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 10%, 100% 60%, 50% 100%, 0% 60%, 0% 10%)' },
         'blob': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', clipPath: '' }
     };

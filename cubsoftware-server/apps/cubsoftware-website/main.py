@@ -1152,16 +1152,41 @@ def load_cubreactive_users():
     if os.path.exists(CUBREACTIVE_USERS_FILE):
         try:
             with open(CUBREACTIVE_USERS_FILE, 'r') as f:
-                return json.load(f)
-        except:
-            pass
+                data = json.load(f)
+                return data
+        except json.JSONDecodeError as e:
+            print(f"[CubReactive] ERROR: JSON parse error in {CUBREACTIVE_USERS_FILE}: {e}")
+            # Try to backup the corrupted file
+            try:
+                import shutil
+                backup_path = CUBREACTIVE_USERS_FILE + '.corrupted.' + str(int(time.time()))
+                shutil.copy(CUBREACTIVE_USERS_FILE, backup_path)
+                print(f"[CubReactive] Backed up corrupted file to {backup_path}")
+            except:
+                pass
+        except Exception as e:
+            print(f"[CubReactive] ERROR: Failed to load {CUBREACTIVE_USERS_FILE}: {e}")
     return {}
 
 def save_cubreactive_users(data):
     """Save CubReactive user configurations"""
     os.makedirs(os.path.dirname(CUBREACTIVE_USERS_FILE), exist_ok=True)
-    with open(CUBREACTIVE_USERS_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+    try:
+        # Write to temp file first, then rename (atomic operation)
+        temp_file = CUBREACTIVE_USERS_FILE + '.tmp'
+        with open(temp_file, 'w') as f:
+            json.dump(data, f, indent=2)
+        # Atomic rename
+        import shutil
+        shutil.move(temp_file, CUBREACTIVE_USERS_FILE)
+    except Exception as e:
+        print(f"[CubReactive] ERROR: Failed to save {CUBREACTIVE_USERS_FILE}: {e}")
+        # Try direct write as fallback
+        try:
+            with open(CUBREACTIVE_USERS_FILE, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e2:
+            print(f"[CubReactive] ERROR: Fallback save also failed: {e2}")
 
 def notify_cubreactive_overlay(user_id):
     """Notify the bot to send CONFIG_UPDATED to overlay WebSocket clients"""
@@ -1496,13 +1521,17 @@ def cubreactive_get_user(user_id):
     user_config = users.get(user_id)
 
     if not user_config:
+        print(f"[CubReactive] User {user_id} not found. Total users in file: {len(users)}")
         return jsonify({'error': 'User not found'}), 404
+
+    images = user_config.get('images', {})
+    print(f"[CubReactive] Returning config for {user_id} - images: {list(images.keys()) if images else 'none'}")
 
     # Return public config (images and settings only)
     return jsonify({
         'username': user_config.get('username'),
         'avatar_url': user_config.get('avatar_url'),
-        'images': user_config.get('images', {}),
+        'images': images,
         'settings': user_config.get('settings', {})
     })
 
@@ -1624,7 +1653,8 @@ def cubreactive_upload_image():
 
     # Update user config
     users = load_cubreactive_users()
-    if user['id'] not in users:
+    is_new_user = user['id'] not in users
+    if is_new_user:
         users[user['id']] = {
             'username': user['username'],
             'avatar_url': user['avatar'],
@@ -1633,13 +1663,20 @@ def cubreactive_upload_image():
             'created': time.time()
         }
 
-    users[user['id']]['images'][state] = f"/uploads/cubreactive/{filename}"
+    image_path = f"/uploads/cubreactive/{filename}"
+    users[user['id']]['images'][state] = image_path
     save_cubreactive_users(users)
+
+    # Verify the save worked
+    verify_users = load_cubreactive_users()
+    saved_ok = verify_users.get(user['id'], {}).get('images', {}).get(state) == image_path
+    print(f"[CubReactive] Image uploaded for {user['id']} ({user['username']}): {state}={image_path}, new_user={is_new_user}, verified={saved_ok}")
+
     notify_cubreactive_overlay(user['id'])
 
     return jsonify({
         'success': True,
-        'image_url': f"/uploads/cubreactive/{filename}",
+        'image_url': image_path,
         'state': state
     })
 

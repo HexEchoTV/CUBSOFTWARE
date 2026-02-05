@@ -11,15 +11,25 @@ class CubReactiveOverlay {
         this.maxReconnectAttempts = 10;
         this.reconnectDelay = 2000;
 
-        // Store initial config if provided
+        // Store initial config if provided (as fallback)
         if (TARGET_USER_ID && USER_CONFIG && Object.keys(USER_CONFIG).length > 0) {
             USER_CONFIG.hasCubReactive = true;
             this.userConfigs.set(TARGET_USER_ID, USER_CONFIG);
+            console.log('[CubReactive] Initial config loaded from page:', USER_CONFIG);
+        } else {
+            console.log('[CubReactive] No initial config on page, will fetch from API');
         }
     }
 
     async init() {
         this.showStatus('Connecting to CubReactive...', 'connecting');
+
+        // Always fetch fresh config from API on init to ensure we have latest data
+        if (TARGET_USER_ID) {
+            console.log('[CubReactive] Fetching fresh config for user:', TARGET_USER_ID);
+            await this.fetchUserConfig(TARGET_USER_ID, true); // Force refresh
+        }
+
         await this.connect();
         this.startConfigPoll();
     }
@@ -191,9 +201,16 @@ class CubReactiveOverlay {
 
             this.participants.set(userId, participant);
 
-            // Fetch user config if we don't have it
-            if (!this.userConfigs.has(userId)) {
-                await this.fetchUserConfig(userId);
+            // Fetch user config if we don't have it or if it has no images
+            const existingConfig = this.userConfigs.get(userId);
+            const needsRefresh = !existingConfig ||
+                                 !existingConfig.hasCubReactive ||
+                                 !existingConfig.images ||
+                                 Object.keys(existingConfig.images).length === 0;
+
+            if (needsRefresh) {
+                console.log('[CubReactive] Fetching config for participant:', userId, needsRefresh ? '(needs refresh)' : '');
+                await this.fetchUserConfig(userId, true);
             }
 
             this.showStatus('');
@@ -235,26 +252,55 @@ class CubReactiveOverlay {
         this.render();
     }
 
-    async fetchUserConfig(userId) {
+    async fetchUserConfig(userId, forceRefresh = false) {
+        // Skip if we already have config and not forcing refresh
+        if (!forceRefresh && this.userConfigs.has(userId)) {
+            const existing = this.userConfigs.get(userId);
+            if (existing?.hasCubReactive && existing?.images && Object.keys(existing.images).length > 0) {
+                console.log('[CubReactive] Using cached config for:', userId);
+                return;
+            }
+        }
+
         try {
-            const response = await fetch(`${API_BASE}/api/cubreactive/user/${userId}`);
+            const cacheBust = Date.now();
+            const response = await fetch(`${API_BASE}/api/cubreactive/user/${userId}?_=${cacheBust}`);
             if (response.ok) {
                 const config = await response.json();
                 config.hasCubReactive = true;
+
+                // Add cache bust to image URLs
+                if (config.images) {
+                    for (const key of Object.keys(config.images)) {
+                        if (config.images[key]) {
+                            config.images[key] = config.images[key].split('?')[0] + '?v=' + cacheBust;
+                        }
+                    }
+                }
+
                 this.userConfigs.set(userId, config);
+                console.log('[CubReactive] Fetched config for', userId, '- images:', config.images);
             } else {
+                console.warn('[CubReactive] API returned', response.status, 'for user:', userId);
+                // Only set default if we don't have any existing config
+                if (!this.userConfigs.has(userId)) {
+                    this.userConfigs.set(userId, {
+                        hasCubReactive: false,
+                        images: {},
+                        settings: this.getDefaultSettings()
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('[CubReactive] Failed to fetch config for', userId, ':', error);
+            // Only set default if we don't have any existing config
+            if (!this.userConfigs.has(userId)) {
                 this.userConfigs.set(userId, {
                     hasCubReactive: false,
                     images: {},
                     settings: this.getDefaultSettings()
                 });
             }
-        } catch (error) {
-            this.userConfigs.set(userId, {
-                hasCubReactive: false,
-                images: {},
-                settings: this.getDefaultSettings()
-            });
         }
     }
 
@@ -286,22 +332,47 @@ class CubReactiveOverlay {
         const config = this.userConfigs.get(participant.id);
         const images = config?.images || {};
 
+        // Debug logging
+        const debugInfo = {
+            userId: participant.id,
+            hasCubReactive: config?.hasCubReactive,
+            hasImages: Object.keys(images).length > 0,
+            images: images,
+            speaking: participant.speaking,
+            muted: participant.muted,
+            deafened: participant.deafened
+        };
+
         if (config?.hasCubReactive) {
             if (participant.deafened && images.deafened) {
+                console.log('[CubReactive] Using deafened image for', participant.id);
                 return images.deafened;
             }
             if (participant.muted && images.muted) {
+                console.log('[CubReactive] Using muted image for', participant.id);
                 return images.muted;
             }
             if (participant.speaking && images.speaking) {
+                console.log('[CubReactive] Using speaking image for', participant.id);
                 return images.speaking;
             }
+            // When not speaking, muted, or deafened - use idle image
             if (images.idle) {
+                console.log('[CubReactive] Using idle image for', participant.id);
+                return images.idle;
+            }
+            // Fallback: if speaking but no speaking image, try idle
+            if (participant.speaking && images.idle) {
+                console.log('[CubReactive] No speaking image, using idle for', participant.id);
                 return images.idle;
             }
             if (config.avatar_url) {
+                console.log('[CubReactive] Using avatar_url for', participant.id);
                 return config.avatar_url;
             }
+            console.log('[CubReactive] hasCubReactive but no images found:', debugInfo);
+        } else {
+            console.log('[CubReactive] hasCubReactive is false, using Discord avatar:', debugInfo);
         }
 
         return participant.avatar;
@@ -316,7 +387,7 @@ class CubReactiveOverlay {
             'diamond': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' },
             'octagon': { borderRadius: '0', clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' },
             'star': { borderRadius: '0', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)' },
-            'heart': { borderRadius: '0', clipPath: 'polygon(50% 15%, 100% 0%, 100% 35%, 50% 100%, 0% 35%, 0% 0%)' },
+            'heart': { borderRadius: '0', clipPath: 'polygon(50% 20%, 55% 12%, 65% 5%, 78% 3%, 90% 10%, 97% 25%, 95% 45%, 80% 65%, 50% 100%, 20% 65%, 5% 45%, 3% 25%, 10% 10%, 22% 3%, 35% 5%, 45% 12%)' },
             'shield': { borderRadius: '0', clipPath: 'polygon(50% 0%, 100% 10%, 100% 60%, 50% 100%, 0% 60%, 0% 10%)' },
             'blob': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%', clipPath: '' }
         };
