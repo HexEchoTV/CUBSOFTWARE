@@ -105,17 +105,25 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                             <span>Images</span>
                         </button>
-                        <button type="button" class="tab-btn" data-tab="appearance">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20 10 10 0 0 0 0-20z"/></svg>
-                            <span>Appearance</span>
+                        <button type="button" class="tab-btn" data-tab="avatar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                            <span>Avatar</span>
                         </button>
-                        <button type="button" class="tab-btn" data-tab="animation">
+                        <button type="button" class="tab-btn" data-tab="style">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                            <span>Style</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="effects">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                            <span>Animation</span>
+                            <span>Effects</span>
                         </button>
-                        <button type="button" class="tab-btn" data-tab="group">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            <span>Group & Filter</span>
+                        <button type="button" class="tab-btn" data-tab="extras">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                            <span>Extras</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="filter">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                            <span>Filter</span>
                         </button>
                         <button type="button" class="tab-btn" data-tab="themes">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -123,8 +131,18 @@
                         </button>
                         <button type="button" class="tab-btn" data-tab="overlay">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                            <span>Get Overlay</span>
+                            <span>Overlay</span>
                         </button>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="settings-search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        <input type="text" id="settings-search" placeholder="Search settings..." autocomplete="off">
+                        <button type="button" class="search-clear" id="search-clear" style="display:none;">&times;</button>
                     </div>
 
                     <!-- Tab: Images -->
@@ -278,10 +296,10 @@
                     </div>
                     </div><!-- End tab-images -->
 
-                    <!-- Tab: Appearance -->
-                    <div class="tab-content" id="tab-appearance">
+                    <!-- Tab: Avatar -->
+                    <div class="tab-content" id="tab-avatar">
                     <div class="settings-section">
-                        <h2>Appearance Settings</h2>
+                        <h2>Avatar Settings</h2>
 
                         <!-- Basic Settings -->
                         <div class="settings-group">
@@ -607,6 +625,13 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    </div><!-- End tab-avatar -->
+
+                    <!-- Tab: Style -->
+                    <div class="tab-content" id="tab-style">
+                    <div class="settings-section">
+                        <h2>Style & Transitions</h2>
 
                         <!-- Transition Settings -->
                         <div class="settings-group">
@@ -706,103 +731,90 @@
                             </div>
                         </div>
                     </div>
-                    </div><!-- End tab-appearance (includes animations) -->
+                    </div><!-- End tab-style -->
 
-                    <!-- Tab: Group & Filter -->
-                    <div class="tab-content" id="tab-group">
+                    <!-- Tab: Member Filter -->
+                    <div class="tab-content" id="tab-filter">
                     <div class="settings-section">
-                        <h2>Group Mode & Member Filter</h2>
+                        <h2>Member Filter</h2>
+                        <p class="section-description">Control which members appear in your overlay using whitelist or blacklist mode.</p>
 
-                        <!-- Group Options -->
+                        <!-- Filter Mode -->
                         <div class="settings-group">
-                            <h3>Group Display Options</h3>
-                            <div class="settings-grid">
-                                <label class="setting-toggle">
-                                    <input type="checkbox" id="setting-flip" {% if user_config and user_config.settings.flip_horizontal %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                    <span class="setting-label">Flip avatar horizontally</span>
-                                </label>
-                                <label class="setting-toggle">
-                                    <input type="checkbox" id="setting-hide-self" {% if user_config and user_config.settings.hide_self %}checked{% endif %}>
-                                    <span class="toggle-slider"></span>
-                                    <span class="setting-label">Hide self in group view</span>
-                                </label>
+                            <h3>Filter Mode</h3>
+                            <p class="setting-description">Choose how to filter members in your overlay</p>
+                            <div class="filter-mode-buttons" style="margin-top: 0.75rem;">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.member_filter_mode or user_config.settings.member_filter_mode == 'none' %}active{% endif %}" data-filter-mode="none">Show All</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.member_filter_mode == 'whitelist' %}active{% endif %}" data-filter-mode="whitelist">Whitelist Only</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}active{% endif %}" data-filter-mode="blacklist">Blacklist</button>
                             </div>
-                            <div class="slider-setting" style="margin-top: 1rem;">
-                                <label>Max Participants (0 = unlimited)</label>
-                                <input type="range" id="setting-max-participants" min="0" max="10" value="{{ user_config.settings.max_participants if user_config and user_config.settings.max_participants else 0 }}">
-                                <span class="slider-value" id="max-participants-value">{{ user_config.settings.max_participants if user_config and user_config.settings.max_participants else 0 }}</span>
+                            <input type="hidden" id="setting-member-filter-mode" value="{{ user_config.settings.member_filter_mode if user_config and user_config.settings.member_filter_mode else 'none' }}">
+                            <div class="filter-mode-info" style="margin-top: 1rem; padding: 1rem; background: var(--bg-primary); border-radius: 8px;">
+                                <p style="margin: 0; color: var(--text-muted); font-size: 0.85rem;">
+                                    <strong>Show All:</strong> Everyone in your voice channel is visible<br>
+                                    <strong>Whitelist:</strong> Only users you add will be shown<br>
+                                    <strong>Blacklist:</strong> Everyone is shown except users you add
+                                </p>
                             </div>
+                        </div>
 
-                            <!-- Member Filter (Whitelist/Blacklist) -->
-                            <div class="member-filter-setting" style="margin-top: 1.5rem;">
-                                <label>Member Filter</label>
-                                <p class="setting-description">Control which members appear in the overlay by their Discord User ID</p>
-                                <div class="filter-mode-buttons" style="margin-top: 0.75rem;">
-                                    <button type="button" class="style-btn {% if not user_config or not user_config.settings.member_filter_mode or user_config.settings.member_filter_mode == 'none' %}active{% endif %}" data-filter-mode="none">Show All</button>
-                                    <button type="button" class="style-btn {% if user_config and user_config.settings.member_filter_mode == 'whitelist' %}active{% endif %}" data-filter-mode="whitelist">Whitelist Only</button>
-                                    <button type="button" class="style-btn {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}active{% endif %}" data-filter-mode="blacklist">Blacklist</button>
-                                </div>
-                                <input type="hidden" id="setting-member-filter-mode" value="{{ user_config.settings.member_filter_mode if user_config and user_config.settings.member_filter_mode else 'none' }}">
-
-                                <!-- Current Voice Channel Members -->
-                                <div class="voice-members-section" id="voice-members-section" style="margin-top: 1rem;">
-                                    <label>Current Voice Channel Members</label>
-                                    <p class="setting-description">Click a member to add their ID to the filter list</p>
-                                    <div class="voice-members-list" id="voice-members-list">
-                                        <div class="voice-member-placeholder">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                                <circle cx="9" cy="7" r="4"/>
-                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                                            </svg>
-                                            <span>Join a voice channel to see members here</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="member-list-container" id="member-list-container" style="{% if not user_config or not user_config.settings.member_filter_mode or user_config.settings.member_filter_mode == 'none' %}display:none{% endif %}">
-                                    <label id="member-list-label" style="margin-top: 1rem;">
-                                        {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}
-                                        Hidden Members (User IDs)
-                                        {% else %}
-                                        Allowed Members (User IDs)
-                                        {% endif %}
-                                    </label>
-                                    <p class="setting-description" id="member-list-hint">
-                                        {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}
-                                        These members will be hidden from the overlay
-                                        {% else %}
-                                        Only these members will appear in the overlay
-                                        {% endif %}
-                                    </p>
-                                    <div class="member-ids-input-container">
-                                        <div class="member-ids-list" id="member-ids-list">
-                                            <!-- Member ID tags will be added here -->
-                                        </div>
-                                        <div class="member-id-add">
-                                            <input type="text" id="member-id-input" placeholder="Enter Discord User ID" pattern="[0-9]*">
-                                            <button type="button" class="btn-add-member" id="add-member-btn">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                                </svg>
-                                                Add
-                                            </button>
-                                        </div>
-                                        <p class="setting-description" style="margin-top: 0.5rem; font-size: 0.75rem;">
-                                            To find a User ID: Enable Developer Mode in Discord Settings > Advanced, then right-click a user and select "Copy User ID"
-                                        </p>
-                                    </div>
-                                    <input type="hidden" id="setting-member-filter-list" value="{{ user_config.settings.member_filter_list | join(',') if user_config and user_config.settings.member_filter_list else '' }}">
+                        <!-- Current Voice Channel Members -->
+                        <div class="settings-group">
+                            <h3>Current Voice Channel Members <span class="voice-connection-status" id="voice-connection-status"></span></h3>
+                            <p class="setting-description">Click a member to add their ID to the filter list below</p>
+                            <div class="voice-members-list" id="voice-members-list">
+                                <div class="voice-member-placeholder">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    <span>Join a voice channel to see members here</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    </div><!-- End tab-group -->
 
-                    <!-- Tab: Animation (Effects) -->
-                    <div class="tab-content" id="tab-animation">
+                        <!-- Member List -->
+                        <div class="settings-group" id="member-list-container" style="{% if not user_config or not user_config.settings.member_filter_mode or user_config.settings.member_filter_mode == 'none' %}display:none{% endif %}">
+                            <h3 id="member-list-label">
+                                {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}
+                                Hidden Members (Blacklist)
+                                {% else %}
+                                Allowed Members (Whitelist)
+                                {% endif %}
+                            </h3>
+                            <p class="setting-description" id="member-list-hint">
+                                {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}
+                                These members will be hidden from your overlay
+                                {% else %}
+                                Only these members will appear in your overlay
+                                {% endif %}
+                            </p>
+                            <div class="member-ids-input-container">
+                                <div class="member-ids-list" id="member-ids-list">
+                                    <!-- Member ID tags will be added here -->
+                                </div>
+                                <div class="member-id-add">
+                                    <input type="text" id="member-id-input" placeholder="Enter Discord User ID" pattern="[0-9]*">
+                                    <button type="button" class="btn-add-member" id="add-member-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        </svg>
+                                        Add
+                                    </button>
+                                </div>
+                                <p class="setting-description" style="margin-top: 0.5rem; font-size: 0.75rem;">
+                                    To find a User ID: Enable Developer Mode in Discord Settings > Advanced, then right-click a user and select "Copy User ID"
+                                </p>
+                            </div>
+                            <input type="hidden" id="setting-member-filter-list" value="{{ user_config.settings.member_filter_list | join(',') if user_config and user_config.settings.member_filter_list else '' }}">
+                        </div>
+                    </div>
+                    </div><!-- End tab-filter -->
+
+                    <!-- Tab: Effects -->
+                    <div class="tab-content" id="tab-effects">
                     <div class="settings-section">
                         <h2>Effects & Animations</h2>
 
@@ -919,6 +931,13 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    </div><!-- End tab-effects -->
+
+                    <!-- Tab: Extras -->
+                    <div class="tab-content" id="tab-extras">
+                    <div class="settings-section">
+                        <h2>Extras & Decorations</h2>
 
                         <!-- Avatar Accessories -->
                         <div class="settings-group">
@@ -1083,6 +1102,28 @@
                             </div>
                         </div>
 
+                        <!-- Group Display Options -->
+                        <div class="settings-group">
+                            <h3>Group Display Options</h3>
+                            <div class="settings-grid">
+                                <label class="setting-toggle">
+                                    <input type="checkbox" id="setting-flip" {% if user_config and user_config.settings.flip_horizontal %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                    <span class="setting-label">Flip avatar horizontally</span>
+                                </label>
+                                <label class="setting-toggle">
+                                    <input type="checkbox" id="setting-hide-self" {% if user_config and user_config.settings.hide_self %}checked{% endif %}>
+                                    <span class="toggle-slider"></span>
+                                    <span class="setting-label">Hide self in group view</span>
+                                </label>
+                            </div>
+                            <div class="slider-setting" style="margin-top: 1rem;">
+                                <label>Max Participants (0 = unlimited)</label>
+                                <input type="range" id="setting-max-participants" min="0" max="10" value="{{ user_config.settings.max_participants if user_config and user_config.settings.max_participants else 0 }}">
+                                <span class="slider-value" id="max-participants-value">{{ user_config.settings.max_participants if user_config and user_config.settings.max_participants else 0 }}</span>
+                            </div>
+                        </div>
+
                         <!-- Group Layout -->
                         <div class="settings-group">
                             <h3>Group Layout</h3>
@@ -1122,7 +1163,7 @@
                             <input type="hidden" id="setting-sort-order" value="{{ user_config.settings.sort_order if user_config and user_config.settings.sort_order else 'join-order' }}">
                         </div>
                     </div>
-                    </div><!-- End tab-animation -->
+                    </div><!-- End tab-extras -->
 
                     <!-- Tab: Themes -->
                     <div class="tab-content" id="tab-themes">

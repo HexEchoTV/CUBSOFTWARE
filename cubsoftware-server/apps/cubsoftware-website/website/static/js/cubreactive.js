@@ -1754,10 +1754,80 @@ function initTabNavigation() {
     });
 }
 
+// Initialize settings search
+function initSettingsSearch() {
+    const searchInput = document.getElementById('settings-search');
+    const clearBtn = document.getElementById('search-clear');
+    if (!searchInput) return;
+
+    const allSettingsGroups = document.querySelectorAll('.settings-group');
+    const allTabContents = document.querySelectorAll('.tab-content');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const dashboardSection = document.querySelector('.dashboard-section');
+
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase().trim();
+        clearBtn.style.display = query ? 'block' : 'none';
+
+        if (!query) {
+            // Reset to normal view
+            dashboardSection?.classList.remove('search-active');
+            allTabContents.forEach(tab => tab.classList.remove('active'));
+            allSettingsGroups.forEach(group => {
+                group.classList.remove('search-match', 'search-hidden');
+            });
+            // Activate the first tab or previously active tab
+            const activeBtn = document.querySelector('.tab-btn.active');
+            if (activeBtn) {
+                const tabId = activeBtn.dataset.tab;
+                document.getElementById(`tab-${tabId}`)?.classList.add('active');
+            }
+            return;
+        }
+
+        // Search mode - show all tabs and filter settings
+        dashboardSection?.classList.add('search-active');
+        allTabContents.forEach(tab => tab.classList.add('active'));
+
+        allSettingsGroups.forEach(group => {
+            const text = group.textContent.toLowerCase();
+            const h3 = group.querySelector('h3');
+            const labels = group.querySelectorAll('label, .setting-label, .setting-description, button');
+
+            let matches = false;
+            if (h3 && h3.textContent.toLowerCase().includes(query)) {
+                matches = true;
+            }
+            labels.forEach(label => {
+                if (label.textContent.toLowerCase().includes(query)) {
+                    matches = true;
+                }
+            });
+
+            if (matches) {
+                group.classList.add('search-match');
+                group.classList.remove('search-hidden');
+            } else {
+                group.classList.remove('search-match');
+                group.classList.add('search-hidden');
+            }
+        });
+    });
+
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
+        searchInput.focus();
+    });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize tab navigation
     initTabNavigation();
+
+    // Initialize settings search
+    initSettingsSearch();
 
     // Set up file upload listeners
     ['speaking', 'idle', 'muted', 'deafened'].forEach(state => {
@@ -1999,18 +2069,18 @@ function handleVoiceMessage(data) {
 }
 
 function updateVoiceConnectionStatus(status) {
-    const container = document.getElementById('voice-members-list');
-    if (!container) return;
+    const statusEl = document.getElementById('voice-connection-status');
+    if (!statusEl) return;
 
-    // Remove existing status indicator
-    const existing = container.querySelector('.voice-connection-status');
-    if (existing) existing.remove();
-
-    if (status !== 'connected') {
-        const statusEl = document.createElement('div');
-        statusEl.className = 'voice-connection-status';
-        statusEl.innerHTML = `<span class="dot ${status === 'connecting' ? 'connecting' : ''}"></span> ${status === 'connecting' ? 'Connecting...' : 'Disconnected'}`;
-        container.appendChild(statusEl);
+    if (status === 'connected') {
+        statusEl.innerHTML = '<span class="dot connected"></span> Connected';
+        statusEl.className = 'voice-connection-status connected';
+    } else if (status === 'connecting') {
+        statusEl.innerHTML = '<span class="dot connecting"></span> Connecting...';
+        statusEl.className = 'voice-connection-status connecting';
+    } else {
+        statusEl.innerHTML = '<span class="dot"></span> Disconnected';
+        statusEl.className = 'voice-connection-status disconnected';
     }
 }
 
@@ -2019,6 +2089,7 @@ function renderVoiceMembers() {
     if (!container) return;
 
     const filterList = getMemberFilterList();
+    const currentMode = document.getElementById('setting-member-filter-mode')?.value || 'none';
 
     if (voiceMembers.size === 0) {
         container.innerHTML = `
@@ -2038,30 +2109,147 @@ function renderVoiceMembers() {
     voiceMembers.forEach(member => {
         const isInList = filterList.includes(member.id);
         const card = document.createElement('div');
-        card.className = 'voice-member-card' + (isInList ? ' added' : '');
-        card.title = isInList ? 'Already in filter list' : 'Click to add to filter list';
+        card.className = 'voice-member-card' + (isInList ? ' in-list' : '');
+
+        // Determine which list they're in
+        let listStatus = '';
+        if (isInList && currentMode === 'whitelist') {
+            listStatus = '<span class="member-list-badge whitelist">Whitelisted</span>';
+        } else if (isInList && currentMode === 'blacklist') {
+            listStatus = '<span class="member-list-badge blacklist">Blacklisted</span>';
+        } else if (isInList) {
+            listStatus = '<span class="member-list-badge">In List</span>';
+        }
+
         card.innerHTML = `
             <img src="${member.avatar || '/static/images/default-avatar.png'}" alt="">
             <div class="voice-member-info">
                 <span class="voice-member-name">${escapeHtml(member.username)}</span>
                 <span class="voice-member-id">${member.id}</span>
+                ${listStatus}
             </div>
             <div class="voice-member-status">
                 ${member.speaking ? '<svg class="speaking" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>' : ''}
                 ${member.muted ? '<svg class="muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/></svg>' : ''}
                 ${member.deafened ? '<svg class="deafened" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>' : ''}
             </div>
+            <div class="voice-member-actions">
+                <button type="button" class="btn-whitelist" title="Add to Whitelist" ${isInList && currentMode === 'whitelist' ? 'disabled' : ''}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </button>
+                <button type="button" class="btn-blacklist" title="Add to Blacklist" ${isInList && currentMode === 'blacklist' ? 'disabled' : ''}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                </button>
+                <button type="button" class="btn-remove" title="Remove from List" ${!isInList ? 'disabled' : ''}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                </button>
+            </div>
         `;
 
-        if (!isInList) {
-            card.addEventListener('click', () => {
-                addMemberId(member.id);
-                renderVoiceMembers(); // Re-render to show "added" state
-            });
-        }
+        // Add event listeners for buttons
+        const whitelistBtn = card.querySelector('.btn-whitelist');
+        const blacklistBtn = card.querySelector('.btn-blacklist');
+        const removeBtn = card.querySelector('.btn-remove');
+
+        whitelistBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addToWhitelist(member.id);
+        });
+
+        blacklistBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addToBlacklist(member.id);
+        });
+
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeMemberId(member.id);
+            renderVoiceMembers();
+        });
 
         container.appendChild(card);
     });
+}
+
+// Add member to whitelist
+function addToWhitelist(id) {
+    // Set mode to whitelist
+    const modeInput = document.getElementById('setting-member-filter-mode');
+    if (modeInput) {
+        modeInput.value = 'whitelist';
+        // Update button states
+        document.querySelectorAll('[data-filter-mode]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filterMode === 'whitelist');
+        });
+        // Show member list container
+        const container = document.getElementById('member-list-container');
+        if (container) container.style.display = '';
+        // Update labels
+        updateMemberFilterLabels('whitelist');
+    }
+
+    // Add to list if not already there
+    const list = getMemberFilterList();
+    if (!list.includes(id)) {
+        list.push(id);
+        setMemberFilterList(list);
+    }
+
+    renderMemberIdTags();
+    renderVoiceMembers();
+    updatePreview();
+    showToast('Added to whitelist');
+}
+
+// Add member to blacklist
+function addToBlacklist(id) {
+    // Set mode to blacklist
+    const modeInput = document.getElementById('setting-member-filter-mode');
+    if (modeInput) {
+        modeInput.value = 'blacklist';
+        // Update button states
+        document.querySelectorAll('[data-filter-mode]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filterMode === 'blacklist');
+        });
+        // Show member list container
+        const container = document.getElementById('member-list-container');
+        if (container) container.style.display = '';
+        // Update labels
+        updateMemberFilterLabels('blacklist');
+    }
+
+    // Add to list if not already there
+    const list = getMemberFilterList();
+    if (!list.includes(id)) {
+        list.push(id);
+        setMemberFilterList(list);
+    }
+
+    renderMemberIdTags();
+    renderVoiceMembers();
+    updatePreview();
+    showToast('Added to blacklist');
+}
+
+// Update member filter labels based on mode
+function updateMemberFilterLabels(mode) {
+    const label = document.getElementById('member-list-label');
+    const hint = document.getElementById('member-list-hint');
+    if (label) {
+        label.textContent = mode === 'blacklist' ? 'Hidden Members (Blacklist)' : 'Allowed Members (Whitelist)';
+    }
+    if (hint) {
+        hint.textContent = mode === 'blacklist' ? 'These members will be hidden from your overlay' : 'Only these members will appear in your overlay';
+    }
 }
 
 function escapeHtml(str) {
