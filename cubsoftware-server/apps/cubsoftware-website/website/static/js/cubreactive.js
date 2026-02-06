@@ -1102,7 +1102,10 @@ function updatePreview() {
         if (animBorderEnabled && isSpeaking) {
             animBorderEl.style.display = 'block';
             animBorderEl.className = `preview-anim-border anim-border-${animBorderType}`;
-            animBorderEl.style.inset = '-4px';
+            animBorderEl.style.top = '-4px';
+            animBorderEl.style.right = '-4px';
+            animBorderEl.style.bottom = '-4px';
+            animBorderEl.style.left = '-4px';
             animBorderEl.style.borderRadius = shapeStyles.borderRadius;
         } else {
             animBorderEl.style.display = 'none';
@@ -1135,7 +1138,10 @@ function updatePreview() {
     if (outlineEl) {
         if (outlineEnabled) {
             outlineEl.style.display = 'block';
-            outlineEl.style.inset = `-${outlineOffset}px`;
+            outlineEl.style.top = `-${outlineOffset}px`;
+            outlineEl.style.right = `-${outlineOffset}px`;
+            outlineEl.style.bottom = `-${outlineOffset}px`;
+            outlineEl.style.left = `-${outlineOffset}px`;
             outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
             outlineEl.style.borderRadius = shapeStyles.borderRadius;
         } else {
@@ -1153,7 +1159,10 @@ function updatePreview() {
             frameEl.style.display = 'block';
             frameEl.className = `preview-frame avatar-frame-${frame}`;
             frameEl.style.setProperty('--frame-color', frameColor);
-            frameEl.style.inset = '-8px';
+            frameEl.style.top = '-8px';
+            frameEl.style.right = '-8px';
+            frameEl.style.bottom = '-8px';
+            frameEl.style.left = '-8px';
             frameEl.style.borderRadius = shapeStyles.borderRadius;
         } else {
             frameEl.style.display = 'none';

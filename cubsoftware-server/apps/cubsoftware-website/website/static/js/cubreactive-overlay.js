@@ -625,6 +625,8 @@ class CubReactiveOverlay {
                 imgWrapper.style.width = '100%';
                 imgWrapper.style.height = '100%';
                 imgWrapper.style.overflow = 'hidden';
+                imgWrapper.style.position = 'relative';
+                imgWrapper.style.zIndex = '5';
 
                 // Image
                 const img = document.createElement('img');
@@ -735,6 +737,8 @@ class CubReactiveOverlay {
                 imgWrapper.style.borderRadius = shapeStyles.borderRadius;
                 imgWrapper.style.clipPath = shapeStyles.clipPath || 'none';
                 imgWrapper.style.overflow = 'hidden';
+                imgWrapper.style.position = 'relative';
+                imgWrapper.style.zIndex = '5';
             }
 
             // Box shadow (speaking ring + glow)
@@ -881,7 +885,10 @@ class CubReactiveOverlay {
                     animBorderEl.className = `anim-border anim-border-${animBorderStyle}`;
                     const speedSeconds = (11 - animBorderSpeed) * 0.5;
                     animBorderEl.style.setProperty('--anim-border-speed', `${speedSeconds}s`);
-                    animBorderEl.style.inset = '-4px';
+                    animBorderEl.style.top = '-4px';
+                    animBorderEl.style.right = '-4px';
+                    animBorderEl.style.bottom = '-4px';
+                    animBorderEl.style.left = '-4px';
                     animBorderEl.style.borderRadius = shapeStyles.borderRadius;
                 } else {
                     animBorderEl.style.display = 'none';
@@ -906,7 +913,10 @@ class CubReactiveOverlay {
             if (outlineEl) {
                 if (outlineEnabled) {
                     outlineEl.style.display = 'block';
-                    outlineEl.style.inset = `-${outlineOffset}px`;
+                    outlineEl.style.top = `-${outlineOffset}px`;
+                    outlineEl.style.right = `-${outlineOffset}px`;
+                    outlineEl.style.bottom = `-${outlineOffset}px`;
+                    outlineEl.style.left = `-${outlineOffset}px`;
                     outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
                     outlineEl.style.borderRadius = shapeStyles.borderRadius;
                 } else {
@@ -921,7 +931,10 @@ class CubReactiveOverlay {
                     frameEl.style.display = 'block';
                     frameEl.className = `avatar-frame avatar-frame-${frame}`;
                     frameEl.style.setProperty('--frame-color', frameColor);
-                    frameEl.style.inset = '-8px';
+                    frameEl.style.top = '-8px';
+                    frameEl.style.right = '-8px';
+                    frameEl.style.bottom = '-8px';
+                    frameEl.style.left = '-8px';
                     frameEl.style.borderRadius = shapeStyles.borderRadius;
                 } else {
                     frameEl.style.display = 'none';
@@ -1335,7 +1348,10 @@ class CubReactiveOverlay {
             /* Particles - contained within avatar shape */
             .particles-container {
                 position: absolute;
-                inset: 0;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
                 overflow: hidden;
                 pointer-events: none;
                 z-index: 5;
@@ -1627,7 +1643,10 @@ class CubReactiveOverlay {
             /* Background Effects */
             .bg-effect {
                 position: absolute;
-                inset: calc(var(--bg-effect-size, 20px) * -1);
+                top: calc(var(--bg-effect-size, 20px) * -1);
+                right: calc(var(--bg-effect-size, 20px) * -1);
+                bottom: calc(var(--bg-effect-size, 20px) * -1);
+                left: calc(var(--bg-effect-size, 20px) * -1);
                 pointer-events: none;
                 z-index: -1;
             }
@@ -2061,7 +2080,10 @@ class CubReactiveOverlay {
             .highlight-ring::after {
                 content: '';
                 position: absolute;
-                inset: -8px;
+                top: -8px;
+                right: -8px;
+                bottom: -8px;
+                left: -8px;
                 border: 3px solid var(--speaking-ring-color, #57f287);
                 border-radius: inherit;
                 animation: cr-highlight-ring 1s ease-out infinite;
