@@ -240,9 +240,65 @@ function broadcastChannelUpdate(channelId) {
 // Voice Connection Management (for speaking detection)
 // ============================================
 
+// Scan existing members in a voice channel and add them to voiceStates
+function scanChannelMembers(channel) {
+    if (!channel || !channel.members) return;
+
+    const guildId = channel.guild?.id;
+    const channelId = channel.id;
+
+    console.log(`[CubReactive] Scanning ${channel.members.size} existing members in: ${channel.name}`);
+
+    // Initialize channel members set
+    if (!channelMembers.has(channelId)) {
+        channelMembers.set(channelId, new Set());
+    }
+
+    channel.members.forEach((member) => {
+        // Skip bots
+        if (member.user.bot) return;
+
+        const userId = member.id;
+        const voiceState = member.voice;
+
+        // Add to channel members
+        channelMembers.get(channelId).add(userId);
+
+        // Only add to voiceStates if not already there (preserve speaking state)
+        if (!voiceStates.has(userId)) {
+            const avatar = member.user.avatarURL({ size: 256 }) ||
+                          `https://cdn.discordapp.com/embed/avatars/${parseInt(member.user.discriminator || '0') % 5}.png`;
+
+            const state = {
+                channelId: channelId,
+                guildId: guildId,
+                username: member.displayName || member.user.username || 'Unknown',
+                avatar: avatar,
+                muted: voiceState?.selfMute || voiceState?.serverMute || false,
+                deafened: voiceState?.selfDeaf || voiceState?.serverDeaf || false,
+                speaking: false,
+                streaming: voiceState?.streaming || false,
+                video: voiceState?.selfVideo || false
+            };
+
+            voiceStates.set(userId, state);
+            console.log(`[CubReactive] Added existing member to state: ${state.username} (${userId})`);
+        }
+    });
+}
+
 // Join a voice channel to detect speaking
 async function joinChannelForSpeaking(channelId, guildId) {
-    if (activeVoiceConnections.has(channelId)) return; // Already connected
+    if (activeVoiceConnections.has(channelId)) {
+        // Already connected, but still scan for members we might have missed
+        const guild = client.guilds.cache.get(guildId);
+        const channel = guild?.channels.cache.get(channelId);
+        if (channel) {
+            scanChannelMembers(channel);
+            broadcastChannelUpdate(channelId);
+        }
+        return;
+    }
 
     try {
         const guild = client.guilds.cache.get(guildId);
@@ -257,10 +313,15 @@ async function joinChannelForSpeaking(channelId, guildId) {
             return;
         }
 
+        // Scan existing members BEFORE joining
+        scanChannelMembers(channel);
+
         // Check bot has permission to connect
         const permissions = channel.permissionsFor(guild.members.me);
         if (!permissions || !permissions.has('Connect')) {
             console.log(`[CubReactive] No Connect permission for channel: ${channel.name}`);
+            // Still broadcast what we found from scanning
+            broadcastChannelUpdate(channelId);
             return;
         }
 
@@ -276,15 +337,51 @@ async function joinChannelForSpeaking(channelId, guildId) {
 
         activeVoiceConnections.set(channelId, connection);
 
+        // Broadcast channel update now that we've scanned members
+        broadcastChannelUpdate(channelId);
+
         // Wait for ready state before setting up listeners
         connection.on(VoiceConnectionStatus.Ready, () => {
             console.log(`[CubReactive] Voice connection ready in: ${channel.name}`);
+            // Re-scan and broadcast in case members changed during connection
+            scanChannelMembers(channel);
+            broadcastChannelUpdate(channelId);
         });
 
         // Listen for speaking events
-        connection.receiver.speaking.on('start', (userId) => {
-            const state = voiceStates.get(userId);
-            if (state) {
+        connection.receiver.speaking.on('start', async (userId) => {
+            let state = voiceStates.get(userId);
+            if (!state) {
+                // User not in voiceStates yet - try to add them
+                try {
+                    const member = await guild.members.fetch(userId);
+                    if (member && !member.user.bot) {
+                        const avatar = member.user.avatarURL({ size: 256 }) ||
+                                      `https://cdn.discordapp.com/embed/avatars/${parseInt(member.user.discriminator || '0') % 5}.png`;
+                        state = {
+                            channelId: channelId,
+                            guildId: guildId,
+                            username: member.displayName || member.user.username || 'Unknown',
+                            avatar: avatar,
+                            muted: member.voice?.selfMute || member.voice?.serverMute || false,
+                            deafened: member.voice?.selfDeaf || member.voice?.serverDeaf || false,
+                            speaking: true,
+                            streaming: member.voice?.streaming || false,
+                            video: member.voice?.selfVideo || false
+                        };
+                        voiceStates.set(userId, state);
+                        if (!channelMembers.has(channelId)) {
+                            channelMembers.set(channelId, new Set());
+                        }
+                        channelMembers.get(channelId).add(userId);
+                        console.log(`[CubReactive] Added speaking user to state: ${state.username} (${userId})`);
+                        broadcastVoiceUpdate(userId, state);
+                        broadcastChannelUpdate(channelId);
+                    }
+                } catch (e) {
+                    console.log(`[CubReactive] Could not fetch member ${userId}: ${e.message}`);
+                }
+            } else {
                 state.speaking = true;
                 voiceStates.set(userId, state);
                 broadcastVoiceUpdate(userId, state);
@@ -1643,7 +1740,65 @@ client.once('ready', () => {
     registerCommands();
     startLogServer();
     startCubReactiveWebSocket();
+
+    // Scan all voice channels on startup to capture users already in voice
+    scanAllVoiceChannels();
 });
+
+// Scan all voice channels across all guilds to capture existing voice states
+function scanAllVoiceChannels() {
+    console.log('[CubReactive] Scanning all voice channels for existing members...');
+    let totalMembers = 0;
+
+    client.guilds.cache.forEach(guild => {
+        guild.channels.cache.forEach(channel => {
+            // Only process voice channels with members
+            if ((channel.type === 2 || channel.type === 13) && channel.members && channel.members.size > 0) {
+                const channelId = channel.id;
+                const guildId = guild.id;
+
+                // Initialize channel members set
+                if (!channelMembers.has(channelId)) {
+                    channelMembers.set(channelId, new Set());
+                }
+
+                channel.members.forEach((member) => {
+                    // Skip bots
+                    if (member.user.bot) return;
+
+                    const userId = member.id;
+                    const voiceState = member.voice;
+
+                    // Add to channel members
+                    channelMembers.get(channelId).add(userId);
+
+                    // Add to voiceStates
+                    if (!voiceStates.has(userId)) {
+                        const avatar = member.user.avatarURL({ size: 256 }) ||
+                                      `https://cdn.discordapp.com/embed/avatars/${parseInt(member.user.discriminator || '0') % 5}.png`;
+
+                        const state = {
+                            channelId: channelId,
+                            guildId: guildId,
+                            username: member.displayName || member.user.username || 'Unknown',
+                            avatar: avatar,
+                            muted: voiceState?.selfMute || voiceState?.serverMute || false,
+                            deafened: voiceState?.selfDeaf || voiceState?.serverDeaf || false,
+                            speaking: false,
+                            streaming: voiceState?.streaming || false,
+                            video: voiceState?.selfVideo || false
+                        };
+
+                        voiceStates.set(userId, state);
+                        totalMembers++;
+                    }
+                });
+            }
+        });
+    });
+
+    console.log(`[CubReactive] Startup scan complete: found ${totalMembers} users in voice channels`);
+}
 
 // HTTP server for receiving logs from websites
 function startLogServer() {
