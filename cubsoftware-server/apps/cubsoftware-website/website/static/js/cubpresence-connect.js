@@ -82,6 +82,16 @@ class CubPresenceConnection {
 
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
+                this.log('Received: ' + msg.cmd + (msg.evt ? '/' + msg.evt : ''), 'info');
+
+                // Handle errors
+                if (msg.evt === 'ERROR') {
+                    this.log('Discord error: ' + (msg.data?.message || JSON.stringify(msg.data)), 'error');
+                    clearTimeout(timeout);
+                    reject(new Error(msg.data?.message || 'Discord RPC error'));
+                    try { ws.close(); } catch(e) {}
+                    return;
+                }
 
                 // DISPATCH READY — initial handshake complete
                 if (msg.cmd === 'DISPATCH' && msg.evt === 'READY') {
@@ -99,7 +109,7 @@ class CubPresenceConnection {
                     const cb = this.pendingCallbacks[msg.nonce];
                     delete this.pendingCallbacks[msg.nonce];
                     if (msg.evt === 'ERROR') {
-                        cb.reject(new Error(msg.data.message || 'RPC Error'));
+                        cb.reject(new Error(msg.data?.message || 'RPC Error'));
                     } else {
                         cb.resolve(msg);
                     }
@@ -107,17 +117,19 @@ class CubPresenceConnection {
                 }
             };
 
-            ws.onerror = () => {
+            ws.onerror = (err) => {
+                this.log('WebSocket error on port ' + port, 'error');
                 clearTimeout(timeout);
                 reject(new Error('Connection failed'));
             };
 
             ws.onclose = (event) => {
+                this.log('Connection closed on port ' + port + ' (code: ' + event.code + ', reason: ' + (event.reason || 'none') + ')', 'error');
                 clearTimeout(timeout);
                 if (this.ws === ws) {
                     this.onDisconnected(event);
                 } else {
-                    reject(new Error('Connection closed'));
+                    reject(new Error('Connection closed: ' + event.code));
                 }
             };
         });
