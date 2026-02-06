@@ -1811,6 +1811,11 @@ def cubpresence_connect(config_id):
         config=config
     )
 
+@app.route('/apps/cubpresence/extension')
+def cubpresence_extension():
+    """CubPresence - Extension download page"""
+    return render_template('cubpresence-extension.html')
+
 # CubPresence API Routes
 @app.route('/api/cubpresence/config', methods=['POST'])
 def cubpresence_create_config():

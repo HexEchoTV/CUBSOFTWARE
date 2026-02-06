@@ -825,3 +825,111 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Extension Status */
+.extension-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 1rem;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.extension-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #666;
+}
+
+.extension-status-dot.installed {
+    background: #faa61a;
+}
+
+.extension-status-dot.installed.connected {
+    background: #57f287;
+}
+
+.extension-status-dot.installed.connecting {
+    background: #faa61a;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.extension-status-dot.not-installed {
+    background: #ed4245;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* Extension Install Prompt */
+.extension-install {
+    margin-top: 1rem;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.2), rgba(138, 43, 226, 0.2));
+    border: 1px solid rgba(88, 101, 242, 0.3);
+    border-radius: 10px;
+}
+
+.extension-install-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.extension-install-content svg {
+    flex-shrink: 0;
+    color: #5865f2;
+}
+
+.extension-install-content div {
+    flex: 1;
+}
+
+.extension-install-content strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.extension-install-content p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.btn-install-ext {
+    padding: 10px 20px;
+    background: #5865f2;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.btn-install-ext:hover {
+    background: #4752c4;
+}
+
+/* Disconnect button */
+.btn-disconnect {
+    padding: 12px 24px;
+    background: #ed4245;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-disconnect:hover {
+    background: #c93b3e;
+}

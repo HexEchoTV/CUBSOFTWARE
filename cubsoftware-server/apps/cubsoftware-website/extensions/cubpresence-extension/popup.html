@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 300px;
+            padding: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #ffffff;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #333;
+        }
+        .header img {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+        }
+        .header h1 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: #252540;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #666;
+        }
+        .status-dot.connected {
+            background: #57f287;
+        }
+        .status-dot.connecting {
+            background: #faa61a;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        .status-dot.disconnected {
+            background: #ed4245;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .status-text {
+            flex: 1;
+        }
+        .status-title {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .status-detail {
+            font-size: 11px;
+            color: #888;
+            margin-top: 2px;
+        }
+        .presence-info {
+            background: #252540;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .presence-info h3 {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .presence-row {
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .presence-row span {
+            color: #888;
+        }
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary {
+            background: #5865f2;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4752c4;
+        }
+        .btn-danger {
+            background: #ed4245;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c93b3e;
+        }
+        .btn-secondary {
+            background: #4f545c;
+            color: white;
+            margin-top: 8px;
+        }
+        .btn-secondary:hover {
+            background: #5d6269;
+        }
+        .no-config {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .no-config p {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        a {
+            color: #5865f2;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="icons/icon48.png" alt="CubPresence">
+        <h1>CubPresence</h1>
+    </div>
+
+    <div class="status">
+        <div class="status-dot" id="statusDot"></div>
+        <div class="status-text">
+            <div class="status-title" id="statusTitle">Checking...</div>
+            <div class="status-detail" id="statusDetail"></div>
+        </div>
+    </div>
+
+    <div id="presenceInfo" class="presence-info" style="display: none;">
+        <h3>Current Presence</h3>
+        <div class="presence-row"><span>Details:</span> <span id="infoDetails">-</span></div>
+        <div class="presence-row"><span>State:</span> <span id="infoState">-</span></div>
+    </div>
+
+    <div id="connectedActions" style="display: none;">
+        <button class="btn btn-danger" id="disconnectBtn">Disconnect</button>
+    </div>
+
+    <div id="noConfig" class="no-config" style="display: none;">
+        <p>No active presence configuration.</p>
+        <a href="https://cubsoftware.site/apps/cubpresence" target="_blank">Open CubPresence</a>
+    </div>
+
+    <button class="btn btn-secondary" id="openSiteBtn">Open CubPresence Website</button>
+
+    <script src="popup.js"></script>
+</body>
+</html>
