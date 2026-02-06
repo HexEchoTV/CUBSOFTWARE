@@ -1786,17 +1786,8 @@ def generate_config_id():
 @app.route('/apps/cubpresence/')
 @check_feature_enabled('cubpresence')
 def cubpresence_home():
-    """CubPresence - Discord Custom Rich Presence"""
-    config_id = request.args.get('config')
-    config = None
-    if config_id:
-        configs = load_cubpresence_configs()
-        config = configs.get(config_id)
-
-    return render_template('cubpresence.html',
-        config_id=config_id,
-        config=config
-    )
+    """CubPresence - Redirect to download page"""
+    return redirect('/apps/cubpresence/download')
 
 @app.route('/apps/cubpresence/connect/<config_id>')
 def cubpresence_connect(config_id):
