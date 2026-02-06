@@ -1152,13 +1152,14 @@
     align-items: center;
     cursor: pointer;
     transition: all 0.3s ease;
+    position: relative; /* For positioned children (frame, outline, etc.) */
 }
 
 .preview-stage .avatar {
     width: 180px;
     height: 180px;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
     transition: all 0.2s ease;
     position: relative;
 }
@@ -1183,6 +1184,59 @@
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     text-align: center;
     transition: all 0.2s ease;
+}
+
+/* Name position styles */
+.preview-stage .avatar-wrapper.name-top {
+    flex-direction: column-reverse;
+}
+
+.preview-stage .avatar-wrapper.name-top .username {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.preview-stage .avatar-wrapper.name-left {
+    flex-direction: row-reverse;
+    align-items: center;
+}
+
+.preview-stage .avatar-wrapper.name-left .username {
+    margin-top: 0;
+    margin-right: 12px;
+}
+
+.preview-stage .avatar-wrapper.name-right {
+    flex-direction: row;
+    align-items: center;
+}
+
+.preview-stage .avatar-wrapper.name-right .username {
+    margin-top: 0;
+    margin-left: 12px;
+}
+
+.preview-stage .avatar-wrapper.name-bottom {
+    flex-direction: column;
+}
+
+.preview-stage .avatar-wrapper.name-inside-bottom .username,
+.preview-stage .avatar-wrapper.name-inside-top .username {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+}
+
+.preview-stage .avatar-wrapper.name-inside-bottom .username {
+    bottom: 8px;
+}
+
+.preview-stage .avatar-wrapper.name-inside-top .username {
+    top: 8px;
 }
 
 /* Speaking state */
@@ -1340,12 +1394,13 @@
 .preview-stage .avatar {
     position: relative;
     overflow: visible;
+    z-index: 10; /* Above frame/outline elements */
 }
 
 #preview-particles {
     position: absolute;
-    inset: -20px;
-    overflow: visible;
+    inset: 0;
+    overflow: hidden;
     pointer-events: none;
     z-index: 10;
 }
@@ -1422,22 +1477,22 @@
 }
 
 @keyframes preview-particle-float {
-    0%, 100% {
-        transform: translateY(0) translateX(0);
-        opacity: 0.8;
-    }
-    50% {
-        transform: translateY(-25px) translateX(8px);
+    0% {
+        transform: translateY(0) translateX(0) scale(var(--scale, 1));
         opacity: 1;
+    }
+    100% {
+        transform: translateY(-150px) translateX(10px) scale(var(--scale, 1));
+        opacity: 0;
     }
 }
 
 #preview-anim-border {
     position: absolute;
-    inset: -4px;
     border: 3px solid transparent;
     pointer-events: none;
     z-index: 5;
+    box-sizing: border-box;
 }
 
 #preview-anim-border.anim-border-rainbow {
@@ -1532,16 +1587,17 @@
 }
 
 #preview-outline {
+    position: absolute;
     pointer-events: none;
-    z-index: 4;
+    z-index: 1;
+    box-sizing: border-box;
 }
 
 #preview-frame {
     position: absolute;
-    inset: -8px;
     pointer-events: none;
-    z-index: 6;
-    border-radius: inherit;
+    z-index: 2;
+    box-sizing: border-box;
 }
 
 #preview-frame.avatar-frame-simple {

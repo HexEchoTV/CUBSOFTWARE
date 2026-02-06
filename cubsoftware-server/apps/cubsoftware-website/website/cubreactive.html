@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="/static/images/company-logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;500;600;700&family=Press+Start+2P&family=VT323&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/shared.css">
     <link rel="stylesheet" href="/static/css/cubreactive.css">
 </head>
@@ -1247,6 +1247,10 @@
                         <div class="preview-stage" id="preview-stage">
                             <div class="avatar-wrapper" id="preview-wrapper" onclick="togglePreviewSpeaking()">
                                 <div class="preview-bg-effect" id="preview-bg-effect"></div>
+                                <!-- Frame, outline, animated border are now OUTSIDE avatar (siblings) -->
+                                <div class="preview-anim-border" id="preview-anim-border"></div>
+                                <div class="preview-outline" id="preview-outline"></div>
+                                <div class="preview-frame" id="preview-frame"></div>
                                 <div class="avatar" id="preview-avatar">
                                     <div class="img-wrapper">
                                         {% if user_config and user_config.images.idle %}
@@ -1257,10 +1261,8 @@
                                         <img src="{{ cubreactive_user.avatar }}" alt="Preview" id="preview-image">
                                         {% endif %}
                                     </div>
+                                    <!-- Particles stay INSIDE avatar so they get clipped -->
                                     <div class="preview-particles" id="preview-particles"></div>
-                                    <div class="preview-anim-border" id="preview-anim-border"></div>
-                                    <div class="preview-outline" id="preview-outline"></div>
-                                    <div class="preview-frame" id="preview-frame"></div>
                                     <div class="preview-accessory" id="preview-accessory"></div>
                                 </div>
                                 <div class="preview-mirror" id="preview-mirror"></div>

@@ -981,10 +981,26 @@ function updatePreview() {
     }
 
     // Update username visibility and style
+    const nameFont = getVal('setting-name-font', 'default');
+    const namePosition = getVal('setting-name-position', 'bottom');
+
+    const fontMap = {
+        'default': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        'gaming': '"Orbitron", sans-serif',
+        'handwritten': '"Comic Sans MS", cursive',
+        'retro': '"Press Start 2P", monospace',
+        'monospace': '"Courier New", monospace',
+        'elegant': '"Playfair Display", serif',
+        'bold': '"Impact", sans-serif',
+        'pixel': '"VT323", monospace'
+    };
+
     if (username) {
         username.style.display = showName ? 'block' : 'none';
         username.style.color = nameColor;
         username.style.fontSize = nameSize + 'px';
+        username.style.fontFamily = fontMap[nameFont] || fontMap['default'];
+
         if (nameBgEnabled) {
             username.style.background = nameBgColor + '80';
             username.style.padding = '2px 8px';
@@ -1004,6 +1020,24 @@ function updatePreview() {
             textShadows.push(`0 0 20px ${nameGlowColor}`);
         }
         username.style.textShadow = textShadows.length > 0 ? textShadows.join(', ') : '0 2px 4px rgba(0,0,0,0.5)';
+    }
+
+    // Apply name position to wrapper
+    if (wrapper) {
+        wrapper.classList.remove('name-top', 'name-left', 'name-right', 'name-bottom', 'name-inside-bottom', 'name-inside-top');
+        if (namePosition === 'top') {
+            wrapper.classList.add('name-top');
+        } else if (namePosition === 'left') {
+            wrapper.classList.add('name-left');
+        } else if (namePosition === 'right') {
+            wrapper.classList.add('name-right');
+        } else if (namePosition === 'inside-bottom') {
+            wrapper.classList.add('name-inside-bottom');
+        } else if (namePosition === 'inside-top') {
+            wrapper.classList.add('name-inside-top');
+        } else {
+            wrapper.classList.add('name-bottom');
+        }
     }
 
     // Update image based on speaking state
@@ -1028,7 +1062,7 @@ function updatePreview() {
 
     // === NEW EFFECT PREVIEWS ===
 
-    // Particles
+    // Particles - stays inside avatar and gets clipped by avatar shape
     const particlesEnabled = getVal('setting-particles', false);
     const particleType = getVal('setting-particle-type', 'sparkles');
     const particleColor = getVal('setting-particle-color', '#ffdd00');
@@ -1038,13 +1072,17 @@ function updatePreview() {
     if (particlesContainer) {
         if (particlesEnabled && isSpeaking) {
             particlesContainer.style.display = 'block';
+            // Apply clip-path and overflow to keep particles inside avatar shape
+            particlesContainer.style.clipPath = shapeStyles.clipPath || 'none';
+            particlesContainer.style.borderRadius = shapeStyles.borderRadius;
+            particlesContainer.style.overflow = 'hidden';
             updatePreviewParticles(particlesContainer, particleType, particleColor, parseInt(particleCount));
         } else {
             particlesContainer.style.display = 'none';
         }
     }
 
-    // Animated Border
+    // Animated Border - now positioned as sibling of avatar
     const animBorderEnabled = getVal('setting-animated-border', false);
     const animBorderType = getVal('setting-animated-border-type', 'rainbow');
     const animBorderEl = document.getElementById('preview-anim-border');
@@ -1053,7 +1091,18 @@ function updatePreview() {
         if (animBorderEnabled && isSpeaking) {
             animBorderEl.style.display = 'block';
             animBorderEl.className = `preview-anim-border anim-border-${animBorderType}`;
+            // Position and size as sibling of avatar
+            animBorderEl.style.position = 'absolute';
+            animBorderEl.style.width = `${size + 8}px`;
+            animBorderEl.style.height = `${size + 8}px`;
+            animBorderEl.style.left = '-4px';
+            animBorderEl.style.top = '-4px';
             animBorderEl.style.borderRadius = shapeStyles.borderRadius;
+            if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
+                animBorderEl.style.clipPath = shapeStyles.clipPath;
+            } else {
+                animBorderEl.style.clipPath = 'none';
+            }
         } else {
             animBorderEl.style.display = 'none';
         }
@@ -1075,7 +1124,7 @@ function updatePreview() {
         }
     }
 
-    // Outline
+    // Outline - now positioned as sibling of avatar
     const outlineEnabled = getVal('setting-outline', false);
     const outlineColor = getVal('setting-outline-color', '#ffffff');
     const outlineWidth = getVal('setting-outline-width', 2);
@@ -1086,16 +1135,34 @@ function updatePreview() {
         if (outlineEnabled) {
             outlineEl.style.display = 'block';
             outlineEl.style.position = 'absolute';
-            outlineEl.style.inset = `-${outlineOffset}px`;
-            outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
-            outlineEl.style.borderRadius = shapeStyles.borderRadius;
             outlineEl.style.pointerEvents = 'none';
+            outlineEl.style.boxSizing = 'border-box';
+            // Position and size based on avatar size and offset
+            const outlineTotalOffset = outlineOffset + outlineWidth;
+            outlineEl.style.width = `${size + (outlineTotalOffset * 2)}px`;
+            outlineEl.style.height = `${size + (outlineTotalOffset * 2)}px`;
+            outlineEl.style.left = `-${outlineTotalOffset}px`;
+            outlineEl.style.top = `-${outlineTotalOffset}px`;
+
+            // For clip-path shapes, create a filled shape
+            if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
+                outlineEl.style.background = outlineColor;
+                outlineEl.style.clipPath = shapeStyles.clipPath;
+                outlineEl.style.border = 'none';
+                outlineEl.style.borderRadius = shapeStyles.borderRadius;
+            } else {
+                // For border-radius shapes, use border
+                outlineEl.style.background = 'transparent';
+                outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
+                outlineEl.style.borderRadius = shapeStyles.borderRadius;
+                outlineEl.style.clipPath = 'none';
+            }
         } else {
             outlineEl.style.display = 'none';
         }
     }
 
-    // Frame
+    // Frame - now positioned as sibling of avatar
     const frame = getVal('setting-frame', 'none');
     const frameColor = getVal('setting-frame-color', '#ffd700');
     const frameEl = document.getElementById('preview-frame');
@@ -1105,9 +1172,17 @@ function updatePreview() {
             frameEl.style.display = 'block';
             frameEl.className = `preview-frame avatar-frame-${frame}`;
             frameEl.style.setProperty('--frame-color', frameColor);
+            frameEl.style.position = 'absolute';
+            frameEl.style.boxSizing = 'border-box';
+            // Position based on avatar size with frame offset
+            const frameOffset = 10;
+            frameEl.style.width = `${size + (frameOffset * 2)}px`;
+            frameEl.style.height = `${size + (frameOffset * 2)}px`;
+            frameEl.style.left = `-${frameOffset}px`;
+            frameEl.style.top = `-${frameOffset}px`;
             // Apply shape to frame
             frameEl.style.borderRadius = shapeStyles.borderRadius;
-            if (shapeStyles.clipPath) {
+            if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
                 frameEl.style.clipPath = shapeStyles.clipPath;
             } else {
                 frameEl.style.clipPath = 'none';
@@ -1177,22 +1252,6 @@ function updatePreview() {
             statusTextEl.style.display = 'none';
         }
     }
-
-    // Name font
-    const nameFont = getVal('setting-name-font', 'default');
-    const fontMap = {
-        'default': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        'gaming': '"Orbitron", sans-serif',
-        'handwritten': '"Comic Sans MS", cursive',
-        'retro': '"Press Start 2P", monospace',
-        'monospace': '"Courier New", monospace',
-        'elegant': '"Playfair Display", serif',
-        'bold': '"Impact", sans-serif',
-        'pixel': '"VT323", monospace'
-    };
-    if (username) {
-        username.style.fontFamily = fontMap[nameFont] || fontMap['default'];
-    }
 }
 
 // Helper function to update preview particles
@@ -1206,13 +1265,17 @@ function updatePreviewParticles(container, type, color, count) {
             const particle = document.createElement('div');
             particle.className = `particle particle-${type}`;
             particle.style.setProperty('--particle-color', color);
+            // Random horizontal position
             particle.style.left = `${Math.random() * 100}%`;
-            particle.style.bottom = `${Math.random() * 100}%`;
-            const duration = 1.5 + Math.random() * 1.5;
+            // Start particles at the bottom (0-20% from bottom)
+            particle.style.bottom = `${Math.random() * 20}%`;
+            // Use negative delay to spread particles across their animation cycle
+            const duration = 2 + Math.random() * 2;
             particle.style.animationDelay = `${-Math.random() * duration}s`;
             particle.style.animationDuration = `${duration}s`;
+            // Random size variation
             const scale = 0.6 + Math.random() * 0.8;
-            particle.style.transform = `scale(${scale})`;
+            particle.style.setProperty('--scale', scale);
             container.appendChild(particle);
         }
     }

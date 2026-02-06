@@ -611,12 +611,14 @@ class CubReactiveOverlay {
                 wrapper.className = 'avatar-wrapper';
                 wrapper.dataset.userId = participant.id;
                 wrapper.style.transition = `all ${transitionDuration}ms ease`;
+                wrapper.style.position = 'relative'; // For positioned children
 
                 // Avatar container
                 const avatar = document.createElement('div');
                 avatar.className = 'avatar';
                 avatar.style.position = 'relative';
                 avatar.style.overflow = 'visible';
+                avatar.style.zIndex = '10'; // Above frame/outline elements
 
                 // Image wrapper (for clipping)
                 const imgWrapper = document.createElement('div');
@@ -654,32 +656,32 @@ class CubReactiveOverlay {
                 statusTextEl.className = 'status-text';
                 wrapper.appendChild(statusTextEl);
 
-                // Particles container
+                // Particles container - inside avatar so particles get clipped
                 const particlesContainer = document.createElement('div');
                 particlesContainer.className = 'particles-container';
                 avatar.appendChild(particlesContainer);
 
-                // Animated border container
-                const animBorder = document.createElement('div');
-                animBorder.className = 'anim-border';
-                avatar.appendChild(animBorder);
-
-                // Background effect container
+                // Background effect container - behind avatar
                 const bgEffect = document.createElement('div');
                 bgEffect.className = 'bg-effect';
                 wrapper.insertBefore(bgEffect, avatar);
 
-                // Outline element
+                // Animated border container - OUTSIDE avatar (sibling) so not clipped
+                const animBorder = document.createElement('div');
+                animBorder.className = 'anim-border';
+                wrapper.insertBefore(animBorder, avatar);
+
+                // Outline element - OUTSIDE avatar (sibling) so not clipped
                 const outlineEl = document.createElement('div');
                 outlineEl.className = 'avatar-outline';
-                avatar.appendChild(outlineEl);
+                wrapper.insertBefore(outlineEl, avatar);
 
-                // Frame element
+                // Frame element - OUTSIDE avatar (sibling) so not clipped
                 const frameEl = document.createElement('div');
                 frameEl.className = 'avatar-frame';
-                avatar.appendChild(frameEl);
+                wrapper.insertBefore(frameEl, avatar);
 
-                // Accessory element
+                // Accessory element - stays inside avatar
                 const accessoryEl = document.createElement('div');
                 accessoryEl.className = 'avatar-accessory';
                 avatar.appendChild(accessoryEl);
@@ -803,6 +805,14 @@ class CubReactiveOverlay {
                 // Apply font family
                 const fontMap = {
                     'default': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    'gaming': '"Orbitron", sans-serif',
+                    'handwritten': '"Comic Sans MS", cursive',
+                    'retro': '"Press Start 2P", monospace',
+                    'monospace': '"Courier New", monospace',
+                    'elegant': '"Playfair Display", serif',
+                    'bold': '"Impact", sans-serif',
+                    'pixel': '"VT323", monospace',
+                    // Legacy font names for backwards compatibility
                     'roboto': '"Roboto", sans-serif',
                     'poppins': '"Poppins", sans-serif',
                     'montserrat': '"Montserrat", sans-serif',
@@ -818,13 +828,17 @@ class CubReactiveOverlay {
                 username.style.fontFamily = fontMap[fontFamily] || fontMap['default'];
 
                 // Apply name position
-                wrapper.classList.remove('name-top', 'name-left', 'name-right', 'name-hidden');
+                wrapper.classList.remove('name-top', 'name-left', 'name-right', 'name-hidden', 'name-inside-bottom', 'name-inside-top');
                 if (namePosition === 'top') {
                     wrapper.classList.add('name-top');
                 } else if (namePosition === 'left') {
                     wrapper.classList.add('name-left');
                 } else if (namePosition === 'right') {
                     wrapper.classList.add('name-right');
+                } else if (namePosition === 'inside-bottom') {
+                    wrapper.classList.add('name-inside-bottom');
+                } else if (namePosition === 'inside-top') {
+                    wrapper.classList.add('name-inside-top');
                 }
 
                 // Apply name animation
@@ -838,20 +852,24 @@ class CubReactiveOverlay {
 
             // === NEW EFFECTS ===
 
-            // Particles effect
+            // Particles effect - inside avatar so they get clipped by avatar shape
             const particlesContainer = wrapper.querySelector('.particles-container');
             if (particlesContainer) {
                 if (particlesEnabled && participant.speaking) {
                     particlesContainer.style.display = 'block';
                     particlesContainer.dataset.type = particleType;
                     particlesContainer.style.setProperty('--particle-color', particleColor);
+                    // Apply same clip-path as avatar to clip particles within shape
+                    particlesContainer.style.clipPath = shapeStyles.clipPath || 'none';
+                    particlesContainer.style.borderRadius = shapeStyles.borderRadius;
+                    particlesContainer.style.overflow = 'hidden';
                     this.updateParticles(particlesContainer, particleType, particleColor, particleCount);
                 } else {
                     particlesContainer.style.display = 'none';
                 }
             }
 
-            // Animated border
+            // Animated border - now positioned relative to wrapper, outside avatar
             const animBorderEl = wrapper.querySelector('.anim-border');
             if (animBorderEl) {
                 if (animBorderEnabled && participant.speaking) {
@@ -860,8 +878,18 @@ class CubReactiveOverlay {
                     // Speed is 1-10, convert to seconds (10 = fastest = 0.5s, 1 = slowest = 5s)
                     const speedSeconds = (11 - animBorderSpeed) * 0.5;
                     animBorderEl.style.setProperty('--anim-border-speed', `${speedSeconds}s`);
+                    // Position to match avatar size
+                    animBorderEl.style.width = `${avatarSize + 8}px`;
+                    animBorderEl.style.height = `${avatarSize + 8}px`;
+                    animBorderEl.style.left = '-4px';
+                    animBorderEl.style.top = '-4px';
                     animBorderEl.style.borderRadius = shapeStyles.borderRadius;
-                    animBorderEl.style.clipPath = shapeStyles.clipPath || 'none';
+                    // For clip-path shapes, use clip-path on a pseudo-element or background approach
+                    if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
+                        animBorderEl.style.clipPath = shapeStyles.clipPath;
+                    } else {
+                        animBorderEl.style.clipPath = 'none';
+                    }
                 } else {
                     animBorderEl.style.display = 'none';
                 }
@@ -880,32 +908,63 @@ class CubReactiveOverlay {
                 }
             }
 
-            // Outline effect
+            // Outline effect - now positioned relative to wrapper, outside avatar
             const outlineEl = wrapper.querySelector('.avatar-outline');
             if (outlineEl) {
                 if (outlineEnabled) {
                     outlineEl.style.display = 'block';
                     outlineEl.style.position = 'absolute';
-                    outlineEl.style.inset = `-${outlineOffset}px`;
-                    outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
-                    outlineEl.style.borderRadius = shapeStyles.borderRadius;
-                    outlineEl.style.clipPath = shapeStyles.clipPath;
+                    // Position based on avatar size and offset
+                    const outlineTotalOffset = outlineOffset + outlineWidth;
+                    outlineEl.style.width = `${avatarSize + (outlineTotalOffset * 2)}px`;
+                    outlineEl.style.height = `${avatarSize + (outlineTotalOffset * 2)}px`;
+                    outlineEl.style.left = `-${outlineTotalOffset}px`;
+                    outlineEl.style.top = `-${outlineTotalOffset}px`;
                     outlineEl.style.pointerEvents = 'none';
+                    outlineEl.style.boxSizing = 'border-box';
+
+                    // For clip-path shapes, create a filled shape with clip-path
+                    if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
+                        outlineEl.style.background = outlineColor;
+                        outlineEl.style.clipPath = shapeStyles.clipPath;
+                        outlineEl.style.border = 'none';
+                        outlineEl.style.borderRadius = shapeStyles.borderRadius;
+                    } else {
+                        // For border-radius shapes, use border
+                        outlineEl.style.background = 'transparent';
+                        outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
+                        outlineEl.style.borderRadius = shapeStyles.borderRadius;
+                        outlineEl.style.clipPath = 'none';
+                    }
                 } else {
                     outlineEl.style.display = 'none';
                 }
             }
 
-            // Frame effect
+            // Frame effect - now positioned relative to wrapper, outside avatar
             const frameEl = wrapper.querySelector('.avatar-frame');
             if (frameEl) {
                 if (frame !== 'none') {
                     frameEl.style.display = 'block';
                     frameEl.className = `avatar-frame avatar-frame-${frame}`;
                     frameEl.style.setProperty('--frame-color', frameColor);
-                    // Apply shape to frame
-                    frameEl.style.borderRadius = shapeStyles.borderRadius;
-                    frameEl.style.clipPath = shapeStyles.clipPath || 'none';
+                    // Position based on avatar size with frame offset
+                    const frameOffset = 10; // How much larger than avatar
+                    frameEl.style.width = `${avatarSize + (frameOffset * 2)}px`;
+                    frameEl.style.height = `${avatarSize + (frameOffset * 2)}px`;
+                    frameEl.style.left = `-${frameOffset}px`;
+                    frameEl.style.top = `-${frameOffset}px`;
+                    frameEl.style.boxSizing = 'border-box';
+
+                    // For clip-path shapes, create a filled shape effect
+                    if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
+                        frameEl.style.clipPath = shapeStyles.clipPath;
+                        frameEl.style.borderRadius = shapeStyles.borderRadius;
+                    } else {
+                        // For border-radius shapes
+                        frameEl.style.clipPath = 'none';
+                        frameEl.style.borderRadius = shapeStyles.borderRadius;
+                    }
                 } else {
                     frameEl.style.display = 'none';
                 }
@@ -1026,18 +1085,18 @@ class CubReactiveOverlay {
                 particle.style.setProperty('--particle-color', color);
                 // Random horizontal position
                 particle.style.left = `${Math.random() * 100}%`;
-                // Random starting vertical position (spread across the avatar)
-                const startY = Math.random() * 100;
-                particle.style.bottom = `${startY}%`;
-                // Use negative delay to start particles at random points in their animation
-                // This creates the effect of particles already being in motion
-                const duration = 1.5 + Math.random() * 1.5;
+                // Start particles at the bottom (0-20% from bottom)
+                // Using negative delay will show them at different points in their rise
+                particle.style.bottom = `${Math.random() * 20}%`;
+                // Use negative delay to spread particles across their animation cycle
+                // This creates the effect of particles at different stages of rising
+                const duration = 2 + Math.random() * 2;
                 const negativeDelay = -Math.random() * duration;
                 particle.style.animationDelay = `${negativeDelay}s`;
                 particle.style.animationDuration = `${duration}s`;
                 // Random size variation
                 const scale = 0.6 + Math.random() * 0.8;
-                particle.style.transform = `scale(${scale})`;
+                particle.style.setProperty('--scale', scale);
                 container.appendChild(particle);
             }
         }
@@ -1315,11 +1374,11 @@ class CubReactiveOverlay {
 
             /* ========== NEW FEATURE STYLES ========== */
 
-            /* Particles */
+            /* Particles - contained within avatar shape */
             .particles-container {
                 position: absolute;
-                inset: -20px;
-                overflow: visible;
+                inset: 0;
+                overflow: hidden;
                 pointer-events: none;
                 z-index: 10;
             }
@@ -1403,110 +1462,137 @@ class CubReactiveOverlay {
                 color: var(--particle-color, #ffffff);
             }
 
-            /* Particle animations - designed to work with random starting positions */
+            /* Particle animations - rise from bottom to top */
             @keyframes cr-particle-float {
-                0%, 100% {
+                0% {
                     transform: translateY(0) translateX(0) scale(var(--scale, 1));
-                    opacity: 0.8;
-                }
-                50% {
-                    transform: translateY(-30px) translateX(10px) scale(var(--scale, 1));
                     opacity: 1;
+                }
+                100% {
+                    transform: translateY(-150px) translateX(10px) scale(var(--scale, 1));
+                    opacity: 0;
                 }
             }
 
             @keyframes cr-particle-sparkle {
-                0%, 100% {
-                    transform: scale(0.5);
-                    opacity: 0.3;
+                0% {
+                    transform: translateY(0) scale(var(--scale, 1));
+                    opacity: 1;
+                    box-shadow: 0 0 6px var(--particle-color, #ffffff);
                 }
                 50% {
-                    transform: scale(1.2);
-                    opacity: 1;
                     box-shadow: 0 0 12px var(--particle-color, #ffffff);
+                }
+                100% {
+                    transform: translateY(-150px) scale(var(--scale, 1));
+                    opacity: 0;
+                    box-shadow: 0 0 6px var(--particle-color, #ffffff);
                 }
             }
 
             @keyframes cr-particle-bubble {
-                0%, 100% {
-                    transform: translateY(0) scale(0.8);
-                    opacity: 0.6;
+                0% {
+                    transform: translateY(0) scale(var(--scale, 0.8));
+                    opacity: 1;
                 }
                 50% {
-                    transform: translateY(-25px) scale(1.1);
-                    opacity: 1;
+                    transform: translateY(-75px) scale(calc(var(--scale, 0.8) * 1.2));
+                }
+                100% {
+                    transform: translateY(-150px) scale(var(--scale, 0.8));
+                    opacity: 0;
                 }
             }
 
             @keyframes cr-particle-twinkle {
-                0%, 100% {
-                    transform: rotate(0deg) scale(0.6);
-                    opacity: 0.4;
+                0% {
+                    transform: translateY(0) rotate(0deg) scale(var(--scale, 1));
+                    opacity: 1;
                 }
                 50% {
-                    transform: rotate(180deg) scale(1);
-                    opacity: 1;
+                    transform: translateY(-75px) rotate(180deg) scale(var(--scale, 1));
+                }
+                100% {
+                    transform: translateY(-150px) rotate(360deg) scale(var(--scale, 1));
+                    opacity: 0;
                 }
             }
 
             @keyframes cr-particle-heart {
-                0%, 100% {
-                    transform: translateY(0) scale(0.8);
-                    opacity: 0.6;
+                0% {
+                    transform: translateY(0) scale(var(--scale, 1));
+                    opacity: 1;
                 }
                 50% {
-                    transform: translateY(-20px) scale(1.2);
-                    opacity: 1;
+                    transform: translateY(-75px) scale(calc(var(--scale, 1) * 1.3));
+                }
+                100% {
+                    transform: translateY(-150px) scale(var(--scale, 1));
+                    opacity: 0;
                 }
             }
 
             @keyframes cr-particle-confetti {
-                0%, 100% {
-                    transform: translateY(0) rotate(0deg);
-                    opacity: 0.8;
-                }
-                50% {
-                    transform: translateY(-20px) rotate(180deg);
+                0% {
+                    transform: translateY(0) rotate(0deg) scale(var(--scale, 1));
                     opacity: 1;
+                }
+                100% {
+                    transform: translateY(-150px) rotate(360deg) scale(var(--scale, 1));
+                    opacity: 0;
                 }
             }
 
             @keyframes cr-particle-fire {
-                0%, 100% {
-                    transform: translateY(0) scale(1);
-                    opacity: 0.9;
+                0% {
+                    transform: translateY(0) scale(var(--scale, 1));
+                    opacity: 1;
                 }
                 50% {
-                    transform: translateY(-40px) scale(0.3);
-                    opacity: 0.2;
+                    transform: translateY(-75px) scale(calc(var(--scale, 1) * 0.7));
+                    opacity: 0.8;
+                }
+                100% {
+                    transform: translateY(-150px) scale(calc(var(--scale, 1) * 0.3));
+                    opacity: 0;
                 }
             }
 
             @keyframes cr-particle-music {
-                0%, 100% {
-                    transform: translateY(0) rotate(-15deg);
-                    opacity: 0.6;
+                0% {
+                    transform: translateY(0) rotate(-15deg) scale(var(--scale, 1));
+                    opacity: 1;
                 }
                 50% {
-                    transform: translateY(-25px) rotate(15deg);
-                    opacity: 1;
+                    transform: translateY(-75px) rotate(15deg) scale(var(--scale, 1));
+                }
+                100% {
+                    transform: translateY(-150px) rotate(-15deg) scale(var(--scale, 1));
+                    opacity: 0;
                 }
             }
 
             @keyframes cr-particle-snow {
-                0% { transform: translateY(0) translateX(0); opacity: 1; }
-                50% { transform: translateY(-40px) translateX(10px); }
-                100% { transform: translateY(-80px) translateX(-10px); opacity: 0; }
+                0% {
+                    transform: translateY(0) translateX(0) scale(var(--scale, 1));
+                    opacity: 1;
+                }
+                50% {
+                    transform: translateY(-75px) translateX(15px) scale(var(--scale, 1));
+                }
+                100% {
+                    transform: translateY(-150px) translateX(-15px) scale(var(--scale, 1));
+                    opacity: 0;
+                }
             }
 
-            /* Animated Border */
+            /* Animated Border - positioned as sibling of avatar */
             .anim-border {
                 position: absolute;
-                inset: -4px;
                 border: 3px solid transparent;
                 pointer-events: none;
                 z-index: 5;
-                border-radius: inherit;
+                box-sizing: border-box;
             }
 
             .anim-border-rotate {
@@ -1624,20 +1710,20 @@ class CubReactiveOverlay {
                 100% { transform: scale(1.5); opacity: 0; }
             }
 
-            /* Avatar Outline */
+            /* Avatar Outline - positioned as sibling of avatar */
             .avatar-outline {
                 position: absolute;
                 pointer-events: none;
-                z-index: 4;
+                z-index: 1;
+                box-sizing: border-box;
             }
 
-            /* Avatar Frame */
+            /* Avatar Frame - positioned as sibling of avatar */
             .avatar-frame {
                 position: absolute;
-                inset: -10px;
                 pointer-events: none;
-                z-index: 6;
-                border-radius: inherit;
+                z-index: 2;
+                box-sizing: border-box;
             }
 
             .avatar-frame-simple {
@@ -1924,6 +2010,30 @@ class CubReactiveOverlay {
                 margin-top: 0;
             }
 
+            .name-inside-bottom,
+            .name-inside-top {
+                position: relative;
+            }
+
+            .name-inside-bottom .username,
+            .name-inside-top .username {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                margin: 0;
+                padding: 4px 8px;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: 4px;
+            }
+
+            .name-inside-bottom .username {
+                bottom: 8px;
+            }
+
+            .name-inside-top .username {
+                top: 8px;
+            }
+
             /* Name Animations */
             .name-anim-typing {
                 overflow: hidden;
@@ -2014,7 +2124,7 @@ class CubReactiveOverlay {
             }
 
             /* Import Google Fonts */
-            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Poppins:wght@400;600&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Oswald:wght@400;600&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600&family=Ubuntu:wght@400;500&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Poppins:wght@400;600&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Oswald:wght@400;600&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600&family=Ubuntu:wght@400;500&family=Orbitron:wght@400;700&family=Press+Start+2P&family=VT323&display=swap');
         `;
         document.head.appendChild(style);
     }
