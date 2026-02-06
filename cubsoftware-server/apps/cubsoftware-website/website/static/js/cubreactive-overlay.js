@@ -613,12 +613,11 @@ class CubReactiveOverlay {
                 wrapper.style.transition = `all ${transitionDuration}ms ease`;
                 wrapper.style.position = 'relative'; // For positioned children
 
-                // Avatar container
+                // Avatar element
                 const avatar = document.createElement('div');
                 avatar.className = 'avatar';
                 avatar.style.position = 'relative';
                 avatar.style.overflow = 'visible';
-                avatar.style.zIndex = '10'; // Above frame/outline elements
 
                 // Image wrapper (for clipping)
                 const imgWrapper = document.createElement('div');
@@ -644,6 +643,37 @@ class CubReactiveOverlay {
                 statusIcon.style.display = 'none';
                 avatar.appendChild(statusIcon);
 
+                // Particles container - inside avatar
+                const particlesContainer = document.createElement('div');
+                particlesContainer.className = 'particles-container';
+                avatar.appendChild(particlesContainer);
+
+                // Outline element - inside avatar
+                const outlineEl = document.createElement('div');
+                outlineEl.className = 'avatar-outline';
+                avatar.appendChild(outlineEl);
+
+                // Frame element - inside avatar
+                const frameEl = document.createElement('div');
+                frameEl.className = 'avatar-frame';
+                avatar.appendChild(frameEl);
+
+                // Animated border - inside avatar
+                const animBorder = document.createElement('div');
+                animBorder.className = 'anim-border';
+                avatar.appendChild(animBorder);
+
+                // Accessory element - inside avatar
+                const accessoryEl = document.createElement('div');
+                accessoryEl.className = 'avatar-accessory';
+                avatar.appendChild(accessoryEl);
+
+                // Background effect container - before avatar
+                const bgEffect = document.createElement('div');
+                bgEffect.className = 'bg-effect';
+                wrapper.appendChild(bgEffect);
+
+                // Add avatar to wrapper
                 wrapper.appendChild(avatar);
 
                 // Username element
@@ -655,36 +685,6 @@ class CubReactiveOverlay {
                 const statusTextEl = document.createElement('div');
                 statusTextEl.className = 'status-text';
                 wrapper.appendChild(statusTextEl);
-
-                // Particles container - inside avatar so particles get clipped
-                const particlesContainer = document.createElement('div');
-                particlesContainer.className = 'particles-container';
-                avatar.appendChild(particlesContainer);
-
-                // Background effect container - behind avatar
-                const bgEffect = document.createElement('div');
-                bgEffect.className = 'bg-effect';
-                wrapper.insertBefore(bgEffect, avatar);
-
-                // Animated border container - OUTSIDE avatar (sibling) so not clipped
-                const animBorder = document.createElement('div');
-                animBorder.className = 'anim-border';
-                wrapper.insertBefore(animBorder, avatar);
-
-                // Outline element - OUTSIDE avatar (sibling) so not clipped
-                const outlineEl = document.createElement('div');
-                outlineEl.className = 'avatar-outline';
-                wrapper.insertBefore(outlineEl, avatar);
-
-                // Frame element - OUTSIDE avatar (sibling) so not clipped
-                const frameEl = document.createElement('div');
-                frameEl.className = 'avatar-frame';
-                wrapper.insertBefore(frameEl, avatar);
-
-                // Accessory element - stays inside avatar
-                const accessoryEl = document.createElement('div');
-                accessoryEl.className = 'avatar-accessory';
-                avatar.appendChild(accessoryEl);
 
                 // Mirror/reflection element
                 const mirrorEl = document.createElement('div');
@@ -699,6 +699,7 @@ class CubReactiveOverlay {
 
             // Update existing elements
             const avatar = wrapper.querySelector('.avatar');
+            const imgWrapper = wrapper.querySelector('.img-wrapper');
             const img = wrapper.querySelector('img');
             const statusIcon = wrapper.querySelector('.status-icon');
             const username = wrapper.querySelector('.username');
@@ -719,14 +720,22 @@ class CubReactiveOverlay {
                 if (idleAnimClass) wrapper.classList.add(idleAnimClass);
             }
 
-            // Update avatar styling
+            // Update avatar styling - NO clip-path on avatar so frame/outline aren't clipped
             const shapeStyles = this.getShapeStyles(avatarShape);
             avatar.style.width = `${avatarSize}px`;
             avatar.style.height = `${avatarSize}px`;
             avatar.style.borderRadius = shapeStyles.borderRadius;
             avatar.style.transition = `all ${transitionDuration}ms ease`;
-            avatar.style.clipPath = shapeStyles.clipPath;
+            avatar.style.clipPath = 'none';
+            avatar.style.overflow = 'visible';
             avatar.style.border = borderEnabled ? `${borderWidth}px ${borderStyle} ${borderColor}` : '';
+
+            // Apply clip-path only to img-wrapper for proper image clipping
+            if (imgWrapper) {
+                imgWrapper.style.borderRadius = shapeStyles.borderRadius;
+                imgWrapper.style.clipPath = shapeStyles.clipPath || 'none';
+                imgWrapper.style.overflow = 'hidden';
+            }
 
             // Box shadow (speaking ring + glow)
             let boxShadows = [];
@@ -1380,7 +1389,7 @@ class CubReactiveOverlay {
                 inset: 0;
                 overflow: hidden;
                 pointer-events: none;
-                z-index: 10;
+                z-index: 5;
             }
 
             .particle {
@@ -1586,12 +1595,12 @@ class CubReactiveOverlay {
                 }
             }
 
-            /* Animated Border - positioned as sibling of avatar */
+            /* Animated Border - positioned inside avatar, behind img-wrapper */
             .anim-border {
                 position: absolute;
                 border: 3px solid transparent;
                 pointer-events: none;
-                z-index: 5;
+                z-index: -1;
                 box-sizing: border-box;
             }
 
@@ -1710,19 +1719,19 @@ class CubReactiveOverlay {
                 100% { transform: scale(1.5); opacity: 0; }
             }
 
-            /* Avatar Outline - positioned as sibling of avatar */
+            /* Avatar Outline - positioned inside avatar, behind img-wrapper */
             .avatar-outline {
                 position: absolute;
                 pointer-events: none;
-                z-index: 1;
+                z-index: -2;
                 box-sizing: border-box;
             }
 
-            /* Avatar Frame - positioned as sibling of avatar */
+            /* Avatar Frame - positioned inside avatar, behind img-wrapper */
             .avatar-frame {
                 position: absolute;
                 pointer-events: none;
-                z-index: 2;
+                z-index: -1;
                 box-sizing: border-box;
             }
 

@@ -913,10 +913,21 @@ function updatePreview() {
     avatar.style.width = size + 'px';
     avatar.style.height = size + 'px';
 
-    // Apply shape
+    // Apply shape - only to img-wrapper, NOT to avatar (so frame/outline aren't clipped)
     const shapeStyles = getShapeStyles(shape);
+
+    // Avatar gets border-radius only (no clip-path) so children aren't clipped
     avatar.style.borderRadius = shapeStyles.borderRadius;
-    avatar.style.clipPath = shapeStyles.clipPath || 'none';
+    avatar.style.clipPath = 'none';
+    avatar.style.overflow = 'visible';
+
+    // img-wrapper gets full shape for proper image clipping
+    const imgWrapper = document.getElementById('preview-img-wrapper');
+    if (imgWrapper) {
+        imgWrapper.style.borderRadius = shapeStyles.borderRadius;
+        imgWrapper.style.clipPath = shapeStyles.clipPath || 'none';
+        imgWrapper.style.overflow = 'hidden';
+    }
 
     // Apply border
     if (borderEnabled) {

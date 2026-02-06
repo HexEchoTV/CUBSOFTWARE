@@ -1247,12 +1247,8 @@
                         <div class="preview-stage" id="preview-stage">
                             <div class="avatar-wrapper" id="preview-wrapper" onclick="togglePreviewSpeaking()">
                                 <div class="preview-bg-effect" id="preview-bg-effect"></div>
-                                <!-- Frame, outline, animated border are now OUTSIDE avatar (siblings) -->
-                                <div class="preview-anim-border" id="preview-anim-border"></div>
-                                <div class="preview-outline" id="preview-outline"></div>
-                                <div class="preview-frame" id="preview-frame"></div>
                                 <div class="avatar" id="preview-avatar">
-                                    <div class="img-wrapper">
+                                    <div class="img-wrapper" id="preview-img-wrapper">
                                         {% if user_config and user_config.images.idle %}
                                         <img src="{{ user_config.images.idle }}" alt="Preview" id="preview-image">
                                         {% elif user_config and user_config.images.speaking %}
@@ -1261,8 +1257,10 @@
                                         <img src="{{ cubreactive_user.avatar }}" alt="Preview" id="preview-image">
                                         {% endif %}
                                     </div>
-                                    <!-- Particles stay INSIDE avatar so they get clipped -->
                                     <div class="preview-particles" id="preview-particles"></div>
+                                    <div class="preview-outline" id="preview-outline"></div>
+                                    <div class="preview-frame" id="preview-frame"></div>
+                                    <div class="preview-anim-border" id="preview-anim-border"></div>
                                     <div class="preview-accessory" id="preview-accessory"></div>
                                 </div>
                                 <div class="preview-mirror" id="preview-mirror"></div>
