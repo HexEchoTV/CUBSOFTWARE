@@ -1025,6 +1025,245 @@ function updatePreview() {
             stateLabel.className = 'preview-state';
         }
     }
+
+    // === NEW EFFECT PREVIEWS ===
+
+    // Particles
+    const particlesEnabled = getVal('setting-particles', false);
+    const particleType = getVal('setting-particle-type', 'sparkles');
+    const particleColor = getVal('setting-particle-color', '#ffdd00');
+    const particleCount = getVal('setting-particle-count', 15);
+    const particlesContainer = document.getElementById('preview-particles');
+
+    if (particlesContainer) {
+        if (particlesEnabled && isSpeaking) {
+            particlesContainer.style.display = 'block';
+            updatePreviewParticles(particlesContainer, particleType, particleColor, parseInt(particleCount));
+        } else {
+            particlesContainer.style.display = 'none';
+        }
+    }
+
+    // Animated Border
+    const animBorderEnabled = getVal('setting-animated-border', false);
+    const animBorderType = getVal('setting-animated-border-type', 'rainbow');
+    const animBorderEl = document.getElementById('preview-anim-border');
+
+    if (animBorderEl) {
+        if (animBorderEnabled && isSpeaking) {
+            animBorderEl.style.display = 'block';
+            animBorderEl.className = `preview-anim-border anim-border-${animBorderType}`;
+            animBorderEl.style.borderRadius = shapeStyles.borderRadius;
+        } else {
+            animBorderEl.style.display = 'none';
+        }
+    }
+
+    // Background Effect
+    const bgEffectEnabled = getVal('setting-bg-effect', false);
+    const bgEffectType = getVal('setting-bg-effect-type', 'glow-aura');
+    const bgEffectColor = getVal('setting-bg-effect-color', '#5865f2');
+    const bgEffectEl = document.getElementById('preview-bg-effect');
+
+    if (bgEffectEl) {
+        if (bgEffectEnabled) {
+            bgEffectEl.style.display = 'block';
+            bgEffectEl.className = `preview-bg-effect bg-effect-${bgEffectType}`;
+            bgEffectEl.style.setProperty('--bg-effect-color', bgEffectColor);
+        } else {
+            bgEffectEl.style.display = 'none';
+        }
+    }
+
+    // Outline
+    const outlineEnabled = getVal('setting-outline', false);
+    const outlineColor = getVal('setting-outline-color', '#ffffff');
+    const outlineWidth = getVal('setting-outline-width', 2);
+    const outlineOffset = getVal('setting-outline-offset', 3);
+    const outlineEl = document.getElementById('preview-outline');
+
+    if (outlineEl) {
+        if (outlineEnabled) {
+            outlineEl.style.display = 'block';
+            outlineEl.style.position = 'absolute';
+            outlineEl.style.inset = `-${outlineOffset}px`;
+            outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
+            outlineEl.style.borderRadius = shapeStyles.borderRadius;
+            outlineEl.style.pointerEvents = 'none';
+        } else {
+            outlineEl.style.display = 'none';
+        }
+    }
+
+    // Frame
+    const frame = getVal('setting-frame', 'none');
+    const frameColor = getVal('setting-frame-color', '#ffd700');
+    const frameEl = document.getElementById('preview-frame');
+
+    if (frameEl) {
+        if (frame !== 'none') {
+            frameEl.style.display = 'block';
+            frameEl.className = `preview-frame avatar-frame-${frame}`;
+            frameEl.style.setProperty('--frame-color', frameColor);
+            // Apply shape to frame
+            frameEl.style.borderRadius = shapeStyles.borderRadius;
+            if (shapeStyles.clipPath) {
+                frameEl.style.clipPath = shapeStyles.clipPath;
+            } else {
+                frameEl.style.clipPath = 'none';
+            }
+        } else {
+            frameEl.style.display = 'none';
+        }
+    }
+
+    // Accessory
+    const accessory = getVal('setting-accessory', 'none');
+    const accessoryEl = document.getElementById('preview-accessory');
+
+    if (accessoryEl) {
+        if (accessory !== 'none') {
+            accessoryEl.style.display = 'block';
+            accessoryEl.className = `preview-accessory avatar-accessory-${accessory}`;
+            accessoryEl.innerHTML = getAccessoryHtml(accessory);
+        } else {
+            accessoryEl.style.display = 'none';
+        }
+    }
+
+    // Mirror
+    const mirrorEnabled = getVal('setting-mirror', false);
+    const mirrorOpacity = getVal('setting-mirror-opacity', 30);
+    const mirrorEl = document.getElementById('preview-mirror');
+
+    if (mirrorEl) {
+        if (mirrorEnabled) {
+            mirrorEl.style.display = 'block';
+            mirrorEl.style.backgroundImage = `url(${image.src})`;
+            mirrorEl.style.opacity = mirrorOpacity / 100;
+        } else {
+            mirrorEl.style.display = 'none';
+        }
+    }
+
+    // Voice Indicator
+    const voiceIndicatorEnabled = getVal('setting-voice-indicator', false);
+    const voiceIndicatorType = getVal('setting-voice-indicator-type', 'bar');
+    const voiceIndicatorColor = getVal('setting-voice-indicator-color', '#57f287');
+    const voiceIndicatorEl = document.getElementById('preview-voice-indicator');
+
+    if (voiceIndicatorEl) {
+        if (voiceIndicatorEnabled && isSpeaking) {
+            voiceIndicatorEl.style.display = 'flex';
+            voiceIndicatorEl.style.setProperty('--voice-indicator-color', voiceIndicatorColor);
+            updatePreviewVoiceIndicator(voiceIndicatorEl, voiceIndicatorType);
+        } else {
+            voiceIndicatorEl.style.display = 'none';
+        }
+    }
+
+    // Status Text
+    const statusTextEnabled = getVal('setting-status-text-enabled', false);
+    const statusText = getVal('setting-status-text', '');
+    const statusTextColor = getVal('setting-status-text-color', '#888888');
+    const statusTextEl = document.getElementById('preview-status-text');
+
+    if (statusTextEl) {
+        if (statusTextEnabled && statusText) {
+            statusTextEl.style.display = 'block';
+            statusTextEl.textContent = statusText;
+            statusTextEl.style.color = statusTextColor;
+        } else {
+            statusTextEl.style.display = 'none';
+        }
+    }
+
+    // Name font
+    const nameFont = getVal('setting-name-font', 'default');
+    const fontMap = {
+        'default': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        'gaming': '"Orbitron", sans-serif',
+        'handwritten': '"Comic Sans MS", cursive',
+        'retro': '"Press Start 2P", monospace',
+        'monospace': '"Courier New", monospace',
+        'elegant': '"Playfair Display", serif',
+        'bold': '"Impact", sans-serif',
+        'pixel': '"VT323", monospace'
+    };
+    if (username) {
+        username.style.fontFamily = fontMap[nameFont] || fontMap['default'];
+    }
+}
+
+// Helper function to update preview particles
+function updatePreviewParticles(container, type, color, count) {
+    // Regenerate if count or type changed
+    if (container.childElementCount !== count || container.dataset.lastType !== type) {
+        container.innerHTML = '';
+        container.dataset.lastType = type;
+
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            particle.className = `particle particle-${type}`;
+            particle.style.setProperty('--particle-color', color);
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.bottom = `${Math.random() * 100}%`;
+            const duration = 1.5 + Math.random() * 1.5;
+            particle.style.animationDelay = `${-Math.random() * duration}s`;
+            particle.style.animationDuration = `${duration}s`;
+            const scale = 0.6 + Math.random() * 0.8;
+            particle.style.transform = `scale(${scale})`;
+            container.appendChild(particle);
+        }
+    }
+}
+
+// Helper function to update preview voice indicator
+function updatePreviewVoiceIndicator(container, style) {
+    const currentType = container.dataset.lastType;
+    if (currentType === style) return;
+
+    container.dataset.lastType = style;
+    container.innerHTML = '';
+
+    if (style === 'bar') {
+        for (let i = 0; i < 5; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'voice-bar';
+            bar.style.animationDelay = `${i * 0.1}s`;
+            container.appendChild(bar);
+        }
+    } else if (style === 'dots') {
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'voice-dot';
+            dot.style.animationDelay = `${i * 0.15}s`;
+            container.appendChild(dot);
+        }
+    } else if (style === 'wave') {
+        for (let i = 0; i < 3; i++) {
+            const wave = document.createElement('div');
+            wave.className = 'voice-wave';
+            wave.style.animationDelay = `${i * 0.2}s`;
+            container.appendChild(wave);
+        }
+    } else if (style === 'ring') {
+        container.innerHTML = '<div class="voice-ring"></div>';
+    }
+}
+
+// Helper function to get accessory HTML
+function getAccessoryHtml(accessory) {
+    const accessories = {
+        'crown': '<svg viewBox="0 0 24 24" fill="#ffd700" width="40" height="30"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>',
+        'halo': '<div class="accessory-halo"></div>',
+        'horns': '<svg viewBox="0 0 24 24" fill="#cc0000" width="50" height="25"><path d="M4 12L2 2L7 8L12 2L17 8L22 2L20 12H4Z"/></svg>',
+        'cat-ears': '<div class="accessory-cat-ears"><span></span><span></span></div>',
+        'headphones': '<svg viewBox="0 0 24 24" fill="#333" width="60" height="30"><path d="M12 1C7 1 3 5 3 10V17C3 18.66 4.34 20 6 20H9V12H5V10C5 6.13 8.13 3 12 3S19 6.13 19 10V12H15V20H18C19.66 20 21 18.66 21 17V10C21 5 17 1 12 1Z"/></svg>',
+        'santa-hat': '<svg viewBox="0 0 24 24" fill="#e74c3c" width="45" height="35"><path d="M12 2C10 2 8.5 3.5 8.5 5.5C8.5 6.5 9 7.4 9.7 8H5L3 18H21L19 8H14.3C15 7.4 15.5 6.5 15.5 5.5C15.5 3.5 14 2 12 2Z"/><circle cx="12" cy="5" r="2" fill="white"/></svg>',
+        'party-hat': '<svg viewBox="0 0 24 24" width="35" height="35"><path d="M12 2L4 22H20L12 2Z" fill="#9b59b6"/><circle cx="8" cy="16" r="1.5" fill="#ff6b6b"/><circle cx="12" cy="12" r="1.5" fill="#4ecdc4"/><circle cx="16" cy="16" r="1.5" fill="#ffe66d"/></svg>'
+    };
+    return accessories[accessory] || '';
 }
 
 // Toggle preview speaking state

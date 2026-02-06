@@ -861,6 +861,7 @@ class CubReactiveOverlay {
                     const speedSeconds = (11 - animBorderSpeed) * 0.5;
                     animBorderEl.style.setProperty('--anim-border-speed', `${speedSeconds}s`);
                     animBorderEl.style.borderRadius = shapeStyles.borderRadius;
+                    animBorderEl.style.clipPath = shapeStyles.clipPath || 'none';
                 } else {
                     animBorderEl.style.display = 'none';
                 }
@@ -902,6 +903,9 @@ class CubReactiveOverlay {
                     frameEl.style.display = 'block';
                     frameEl.className = `avatar-frame avatar-frame-${frame}`;
                     frameEl.style.setProperty('--frame-color', frameColor);
+                    // Apply shape to frame
+                    frameEl.style.borderRadius = shapeStyles.borderRadius;
+                    frameEl.style.clipPath = shapeStyles.clipPath || 'none';
                 } else {
                     frameEl.style.display = 'none';
                 }
@@ -1020,9 +1024,20 @@ class CubReactiveOverlay {
                 const particle = document.createElement('div');
                 particle.className = `particle particle-${type}`;
                 particle.style.setProperty('--particle-color', color);
+                // Random horizontal position
                 particle.style.left = `${Math.random() * 100}%`;
-                particle.style.animationDelay = `${Math.random() * 2}s`;
-                particle.style.animationDuration = `${1 + Math.random() * 2}s`;
+                // Random starting vertical position (spread across the avatar)
+                const startY = Math.random() * 100;
+                particle.style.bottom = `${startY}%`;
+                // Use negative delay to start particles at random points in their animation
+                // This creates the effect of particles already being in motion
+                const duration = 1.5 + Math.random() * 1.5;
+                const negativeDelay = -Math.random() * duration;
+                particle.style.animationDelay = `${negativeDelay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                // Random size variation
+                const scale = 0.6 + Math.random() * 0.8;
+                particle.style.transform = `scale(${scale})`;
                 container.appendChild(particle);
             }
         }
@@ -1303,7 +1318,7 @@ class CubReactiveOverlay {
             /* Particles */
             .particles-container {
                 position: absolute;
-                inset: 0;
+                inset: -20px;
                 overflow: visible;
                 pointer-events: none;
                 z-index: 10;
@@ -1311,35 +1326,44 @@ class CubReactiveOverlay {
 
             .particle {
                 position: absolute;
-                bottom: 0;
                 width: 6px;
                 height: 6px;
                 background: var(--particle-color, #ffffff);
                 border-radius: 50%;
-                animation: cr-particle-rise 2s ease-out infinite;
+                animation: cr-particle-float 2s ease-in-out infinite;
             }
 
-            .particle-sparkle {
+            .particle-sparkle, .particle-sparkles {
                 box-shadow: 0 0 6px var(--particle-color, #ffffff);
+                animation: cr-particle-sparkle 2s ease-in-out infinite;
             }
 
-            .particle-bubble {
+            .particle-bubble, .particle-bubbles {
                 background: transparent;
                 border: 2px solid var(--particle-color, #ffffff);
                 width: 10px;
                 height: 10px;
+                animation: cr-particle-bubble 2.5s ease-in-out infinite;
             }
 
-            .particle-star {
+            .particle-star, .particle-stars {
                 width: 0; height: 0;
                 border-left: 4px solid transparent;
                 border-right: 4px solid transparent;
                 border-bottom: 8px solid var(--particle-color, #ffffff);
                 background: transparent;
                 border-radius: 0;
+                animation: cr-particle-twinkle 1.5s ease-in-out infinite;
             }
 
-            .particle-heart::before {
+            .particle-heart, .particle-hearts {
+                width: auto;
+                height: auto;
+                background: transparent;
+                animation: cr-particle-heart 2s ease-in-out infinite;
+            }
+
+            .particle-heart::before, .particle-hearts::before {
                 content: '❤';
                 font-size: 12px;
                 color: var(--particle-color, #ff6b6b);
@@ -1360,14 +1384,113 @@ class CubReactiveOverlay {
                 animation: cr-particle-snow 3s ease-in-out infinite;
             }
 
-            @keyframes cr-particle-rise {
-                0% { transform: translateY(0) scale(1); opacity: 1; }
-                100% { transform: translateY(-80px) scale(0); opacity: 0; }
+            .particle-fire {
+                background: var(--particle-color, #ff6b00);
+                box-shadow: 0 0 8px var(--particle-color, #ff6b00);
+                animation: cr-particle-fire 1.5s ease-out infinite;
+            }
+
+            .particle-music {
+                width: auto;
+                height: auto;
+                background: transparent;
+                animation: cr-particle-music 2s ease-in-out infinite;
+            }
+
+            .particle-music::before {
+                content: '♪';
+                font-size: 14px;
+                color: var(--particle-color, #ffffff);
+            }
+
+            /* Particle animations - designed to work with random starting positions */
+            @keyframes cr-particle-float {
+                0%, 100% {
+                    transform: translateY(0) translateX(0) scale(var(--scale, 1));
+                    opacity: 0.8;
+                }
+                50% {
+                    transform: translateY(-30px) translateX(10px) scale(var(--scale, 1));
+                    opacity: 1;
+                }
+            }
+
+            @keyframes cr-particle-sparkle {
+                0%, 100% {
+                    transform: scale(0.5);
+                    opacity: 0.3;
+                }
+                50% {
+                    transform: scale(1.2);
+                    opacity: 1;
+                    box-shadow: 0 0 12px var(--particle-color, #ffffff);
+                }
+            }
+
+            @keyframes cr-particle-bubble {
+                0%, 100% {
+                    transform: translateY(0) scale(0.8);
+                    opacity: 0.6;
+                }
+                50% {
+                    transform: translateY(-25px) scale(1.1);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes cr-particle-twinkle {
+                0%, 100% {
+                    transform: rotate(0deg) scale(0.6);
+                    opacity: 0.4;
+                }
+                50% {
+                    transform: rotate(180deg) scale(1);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes cr-particle-heart {
+                0%, 100% {
+                    transform: translateY(0) scale(0.8);
+                    opacity: 0.6;
+                }
+                50% {
+                    transform: translateY(-20px) scale(1.2);
+                    opacity: 1;
+                }
             }
 
             @keyframes cr-particle-confetti {
-                0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-                100% { transform: translateY(-60px) rotate(360deg); opacity: 0; }
+                0%, 100% {
+                    transform: translateY(0) rotate(0deg);
+                    opacity: 0.8;
+                }
+                50% {
+                    transform: translateY(-20px) rotate(180deg);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes cr-particle-fire {
+                0%, 100% {
+                    transform: translateY(0) scale(1);
+                    opacity: 0.9;
+                }
+                50% {
+                    transform: translateY(-40px) scale(0.3);
+                    opacity: 0.2;
+                }
+            }
+
+            @keyframes cr-particle-music {
+                0%, 100% {
+                    transform: translateY(0) rotate(-15deg);
+                    opacity: 0.6;
+                }
+                50% {
+                    transform: translateY(-25px) rotate(15deg);
+                    opacity: 1;
+                }
             }
 
             @keyframes cr-particle-snow {
@@ -1383,30 +1506,48 @@ class CubReactiveOverlay {
                 border: 3px solid transparent;
                 pointer-events: none;
                 z-index: 5;
+                border-radius: inherit;
             }
 
             .anim-border-rotate {
                 background: linear-gradient(var(--anim-border-color, #5865f2), transparent) border-box;
                 animation: cr-border-rotate var(--anim-border-speed, 2s) linear infinite;
+                border-radius: inherit;
             }
 
             .anim-border-pulse {
                 border-color: var(--anim-border-color, #5865f2);
                 animation: cr-border-pulse var(--anim-border-speed, 2s) ease-in-out infinite;
+                border-radius: inherit;
             }
 
             .anim-border-dash {
                 border: 3px dashed var(--anim-border-color, #5865f2);
                 animation: cr-border-dash var(--anim-border-speed, 2s) linear infinite;
+                border-radius: inherit;
             }
 
             .anim-border-rainbow {
                 animation: cr-border-rainbow var(--anim-border-speed, 2s) linear infinite;
+                border-radius: inherit;
             }
 
             .anim-border-glow {
                 border-color: var(--anim-border-color, #5865f2);
                 animation: cr-border-glow var(--anim-border-speed, 2s) ease-in-out infinite;
+                border-radius: inherit;
+            }
+
+            .anim-border-gradient-spin {
+                border-radius: inherit;
+            }
+
+            .anim-border-pulse-gradient {
+                border-radius: inherit;
+            }
+
+            .anim-border-neon-flicker {
+                border-radius: inherit;
             }
 
             @keyframes cr-border-rotate {
@@ -1496,20 +1637,45 @@ class CubReactiveOverlay {
                 inset: -10px;
                 pointer-events: none;
                 z-index: 6;
+                border-radius: inherit;
             }
 
             .avatar-frame-simple {
                 border: 4px solid var(--frame-color, #5865f2);
+                border-radius: inherit;
             }
 
             .avatar-frame-double {
                 border: 2px solid var(--frame-color, #5865f2);
                 box-shadow: 0 0 0 4px transparent, 0 0 0 6px var(--frame-color, #5865f2);
+                border-radius: inherit;
             }
 
             .avatar-frame-ornate {
                 border: 4px solid var(--frame-color, #5865f2);
                 box-shadow: inset 0 0 10px var(--frame-color, #5865f2);
+                border-radius: inherit;
+            }
+
+            .avatar-frame-gaming {
+                border: 3px solid var(--frame-color, #00ff00);
+                border-radius: inherit;
+            }
+
+            .avatar-frame-pixel {
+                border: 4px solid var(--frame-color, #ffd700);
+                border-radius: inherit;
+            }
+
+            .avatar-frame-leaves {
+                border: 4px solid #2ecc71;
+                border-radius: inherit;
+            }
+
+            .avatar-frame-fire {
+                border: 4px solid #e74c3c;
+                box-shadow: 0 0 15px #ff6b6b;
+                border-radius: inherit;
             }
 
             .avatar-frame-corners::before,
@@ -1535,6 +1701,7 @@ class CubReactiveOverlay {
                 border: 3px solid var(--frame-color, #5865f2);
                 box-shadow: 0 0 10px var(--frame-color, #5865f2), inset 0 0 10px var(--frame-color, #5865f2);
                 animation: cr-frame-neon 2s ease-in-out infinite;
+                border-radius: inherit;
             }
 
             @keyframes cr-frame-neon {

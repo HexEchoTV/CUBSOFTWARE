@@ -1246,6 +1246,7 @@
                         <p class="section-description">See exactly how your avatar will look in OBS. Click to simulate speaking.</p>
                         <div class="preview-stage" id="preview-stage">
                             <div class="avatar-wrapper" id="preview-wrapper" onclick="togglePreviewSpeaking()">
+                                <div class="preview-bg-effect" id="preview-bg-effect"></div>
                                 <div class="avatar" id="preview-avatar">
                                     <div class="img-wrapper">
                                         {% if user_config and user_config.images.idle %}
@@ -1256,8 +1257,16 @@
                                         <img src="{{ cubreactive_user.avatar }}" alt="Preview" id="preview-image">
                                         {% endif %}
                                     </div>
+                                    <div class="preview-particles" id="preview-particles"></div>
+                                    <div class="preview-anim-border" id="preview-anim-border"></div>
+                                    <div class="preview-outline" id="preview-outline"></div>
+                                    <div class="preview-frame" id="preview-frame"></div>
+                                    <div class="preview-accessory" id="preview-accessory"></div>
                                 </div>
+                                <div class="preview-mirror" id="preview-mirror"></div>
                                 <div class="username" id="preview-username">{{ cubreactive_user.username }}</div>
+                                <div class="preview-status-text" id="preview-status-text"></div>
+                                <div class="preview-voice-indicator" id="preview-voice-indicator"></div>
                             </div>
                         </div>
                         <div class="preview-controls">
