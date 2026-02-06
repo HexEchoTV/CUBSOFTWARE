@@ -1,5 +1,6 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const DiscordRPC = require('discord-rpc');
 const { autoUpdater } = require('electron-updater');
 
@@ -8,6 +9,88 @@ let tray = null;
 let rpcClient = null;
 let currentActivity = null;
 let isConnected = false;
+
+// Timestamps tracking
+const appStartTime = Date.now();
+let connectionTime = null;
+let lastUpdateTime = null;
+
+// Settings file path
+const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+const presencePath = path.join(app.getPath('userData'), 'saved-presence.json');
+
+// Default settings
+const defaultSettings = {
+    runOnStartup: false,
+    startMinimized: false,
+    autoConnect: false,
+    checkUpdatesOnStartup: true,
+    minimizeToTray: true,
+    showNotifications: true,
+    savePresenceOnClose: true,
+    savedClientId: '',
+    theme: 'dark'
+};
+
+let settings = { ...defaultSettings };
+
+// Load settings
+function loadSettings() {
+    try {
+        if (fs.existsSync(settingsPath)) {
+            const data = fs.readFileSync(settingsPath, 'utf8');
+            settings = { ...defaultSettings, ...JSON.parse(data) };
+        }
+    } catch (e) {
+        console.error('Failed to load settings:', e);
+        settings = { ...defaultSettings };
+    }
+
+    // Apply startup setting
+    app.setLoginItemSettings({
+        openAtLogin: settings.runOnStartup,
+        path: app.getPath('exe')
+    });
+
+    return settings;
+}
+
+// Save settings
+function saveSettings() {
+    try {
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+
+        // Update startup setting
+        app.setLoginItemSettings({
+            openAtLogin: settings.runOnStartup,
+            path: app.getPath('exe')
+        });
+    } catch (e) {
+        console.error('Failed to save settings:', e);
+    }
+}
+
+// Load saved presence
+function loadSavedPresence() {
+    try {
+        if (fs.existsSync(presencePath)) {
+            const data = fs.readFileSync(presencePath, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (e) {
+        console.error('Failed to load saved presence:', e);
+    }
+    return null;
+}
+
+// Save presence
+function savePresence(clientId, activity) {
+    try {
+        fs.writeFileSync(presencePath, JSON.stringify({ clientId, activity }, null, 2));
+    } catch (e) {
+        console.error('Failed to save presence:', e);
+    }
+}
 
 // Auto-updater configuration
 autoUpdater.autoDownload = false;
@@ -78,11 +161,13 @@ autoUpdater.on('error', (error) => {
 
 // Create the main window
 function createWindow() {
+    loadSettings();
+
     mainWindow = new BrowserWindow({
-        width: 900,
-        height: 700,
-        minWidth: 600,
-        minHeight: 500,
+        width: 1000,
+        height: 750,
+        minWidth: 700,
+        minHeight: 550,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -91,60 +176,46 @@ function createWindow() {
         icon: path.join(__dirname, 'assets', 'icon.png'),
         title: 'CubPresence',
         autoHideMenuBar: true,
-        backgroundColor: '#0a0a1a'
+        backgroundColor: '#0a0a1a',
+        show: !settings.startMinimized
     });
 
     mainWindow.loadFile('renderer/index.html');
 
+    // Show window when ready if not starting minimized
+    mainWindow.once('ready-to-show', () => {
+        if (!settings.startMinimized) {
+            mainWindow.show();
+        }
+    });
+
     // Minimize to tray instead of closing
     mainWindow.on('close', (event) => {
         if (!app.isQuitting) {
-            event.preventDefault();
-            mainWindow.hide();
+            if (settings.minimizeToTray) {
+                event.preventDefault();
+                mainWindow.hide();
+            }
+
+            // Save presence on close if enabled
+            if (settings.savePresenceOnClose && currentActivity && settings.savedClientId) {
+                savePresence(settings.savedClientId, currentActivity);
+            }
         }
     });
 }
 
 // Create system tray
 function createTray() {
-    // Note: You'll need to add an icon file
     try {
         tray = new Tray(path.join(__dirname, 'assets', 'icon.png'));
     } catch (e) {
-        // No icon available, skip tray
         console.log('Tray icon not found, skipping tray');
         return;
     }
 
-    const contextMenu = Menu.buildFromTemplate([
-        {
-            label: 'Open CubPresence',
-            click: () => mainWindow.show()
-        },
-        { type: 'separator' },
-        {
-            label: 'Connected',
-            type: 'checkbox',
-            checked: isConnected,
-            enabled: false
-        },
-        { type: 'separator' },
-        {
-            label: 'Disconnect',
-            click: () => disconnect(),
-            enabled: isConnected
-        },
-        {
-            label: 'Quit',
-            click: () => {
-                app.isQuitting = true;
-                app.quit();
-            }
-        }
-    ]);
-
+    updateTray();
     tray.setToolTip('CubPresence');
-    tray.setContextMenu(contextMenu);
     tray.on('click', () => mainWindow.show());
 }
 
@@ -160,14 +231,29 @@ function updateTray() {
         { type: 'separator' },
         {
             label: isConnected ? 'Connected to Discord' : 'Not Connected',
-            enabled: false
+            enabled: false,
+            icon: null
         },
         { type: 'separator' },
+        {
+            label: 'Quick Connect',
+            click: () => {
+                mainWindow.show();
+                sendToRenderer('quick-connect', {});
+            },
+            enabled: !isConnected && settings.savedClientId
+        },
         {
             label: 'Disconnect',
             click: () => disconnect(),
             enabled: isConnected
         },
+        { type: 'separator' },
+        {
+            label: 'Check for Updates',
+            click: () => autoUpdater.checkForUpdates()
+        },
+        { type: 'separator' },
         {
             label: 'Quit',
             click: () => {
@@ -191,6 +277,10 @@ async function connect(clientId, activity) {
             rpcClient = null;
         }
 
+        // Save client ID for auto-connect
+        settings.savedClientId = clientId;
+        saveSettings();
+
         sendToRenderer('status', { state: 'connecting', message: 'Connecting to Discord...' });
 
         rpcClient = new DiscordRPC.Client({ transport: 'ipc' });
@@ -198,17 +288,28 @@ async function connect(clientId, activity) {
         rpcClient.on('ready', async () => {
             console.log('Discord RPC connected!');
             isConnected = true;
+            connectionTime = Date.now();
             currentActivity = activity;
 
             await setActivity(activity);
 
             sendToRenderer('status', { state: 'connected', message: 'Connected to Discord!' });
+            sendToRenderer('timestamps', { connectionTime, appStartTime });
             updateTray();
+
+            // Show notification
+            if (settings.showNotifications && Notification.isSupported()) {
+                new Notification({
+                    title: 'CubPresence',
+                    body: 'Connected to Discord!'
+                }).show();
+            }
         });
 
         rpcClient.on('disconnected', () => {
             console.log('Discord RPC disconnected');
             isConnected = false;
+            connectionTime = null;
             rpcClient = null;
             sendToRenderer('status', { state: 'disconnected', message: 'Disconnected from Discord' });
             updateTray();
@@ -219,6 +320,7 @@ async function connect(clientId, activity) {
     } catch (error) {
         console.error('Connection error:', error);
         isConnected = false;
+        connectionTime = null;
         rpcClient = null;
         sendToRenderer('status', {
             state: 'error',
@@ -238,12 +340,22 @@ async function setActivity(activity) {
         if (activity.details) rpcActivity.details = activity.details;
         if (activity.state) rpcActivity.state = activity.state;
 
-        // Timestamps
-        if (activity.timestamps_type === 'elapsed') {
+        // Timestamps based on type
+        const tsType = activity.timestamps_type;
+        if (tsType === 'elapsed' || tsType === 'since_update') {
             rpcActivity.startTimestamp = Date.now();
-        } else if (activity.timestamps_type === 'countdown') {
-            rpcActivity.endTimestamp = Date.now() + (60 * 60 * 1000); // 1 hour
-        } else if (activity.timestamps_type === 'custom') {
+        } else if (tsType === 'since_connection' && connectionTime) {
+            rpcActivity.startTimestamp = connectionTime;
+        } else if (tsType === 'since_app_start') {
+            rpcActivity.startTimestamp = appStartTime;
+        } else if (tsType === 'local_time') {
+            // Show time since midnight today
+            const now = new Date();
+            const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            rpcActivity.startTimestamp = midnight.getTime();
+        } else if (tsType === 'countdown') {
+            rpcActivity.endTimestamp = Date.now() + (60 * 60 * 1000); // 1 hour default
+        } else if (tsType === 'custom') {
             if (activity.start_timestamp) rpcActivity.startTimestamp = activity.start_timestamp * 1000;
             if (activity.end_timestamp) rpcActivity.endTimestamp = activity.end_timestamp * 1000;
         }
@@ -277,6 +389,13 @@ async function setActivity(activity) {
 
         await rpcClient.setActivity(rpcActivity);
         currentActivity = activity;
+        lastUpdateTime = Date.now();
+
+        // Save presence if enabled
+        if (settings.savePresenceOnClose) {
+            savePresence(settings.savedClientId, activity);
+        }
+
         console.log('Activity set:', rpcActivity);
 
     } catch (error) {
@@ -295,6 +414,7 @@ async function disconnect() {
         rpcClient = null;
     }
     isConnected = false;
+    connectionTime = null;
     currentActivity = null;
     sendToRenderer('status', { state: 'disconnected', message: 'Disconnected from Discord' });
     updateTray();
@@ -325,8 +445,39 @@ ipcMain.handle('update-activity', async (event, activity) => {
 ipcMain.handle('get-status', () => {
     return {
         connected: isConnected,
-        activity: currentActivity
+        activity: currentActivity,
+        connectionTime,
+        appStartTime,
+        lastUpdateTime
     };
+});
+
+// Settings IPC handlers
+ipcMain.handle('get-settings', () => {
+    return settings;
+});
+
+ipcMain.handle('save-settings', (event, newSettings) => {
+    settings = { ...settings, ...newSettings };
+    saveSettings();
+    return settings;
+});
+
+ipcMain.handle('get-saved-presence', () => {
+    return loadSavedPresence();
+});
+
+ipcMain.handle('get-timestamps', () => {
+    return {
+        appStartTime,
+        connectionTime,
+        lastUpdateTime
+    };
+});
+
+// Open external link
+ipcMain.handle('open-external', (event, url) => {
+    shell.openExternal(url);
 });
 
 // App lifecycle
@@ -334,12 +485,24 @@ app.whenReady().then(() => {
     createWindow();
     createTray();
 
-    // Check for updates after window is ready (wait a few seconds)
-    setTimeout(() => {
-        autoUpdater.checkForUpdates().catch(err => {
-            console.log('Update check failed:', err.message);
-        });
-    }, 3000);
+    // Check for updates after window is ready (if enabled)
+    if (settings.checkUpdatesOnStartup) {
+        setTimeout(() => {
+            autoUpdater.checkForUpdates().catch(err => {
+                console.log('Update check failed:', err.message);
+            });
+        }, 3000);
+    }
+
+    // Auto-connect if enabled and we have saved data
+    if (settings.autoConnect && settings.savedClientId) {
+        const savedPresence = loadSavedPresence();
+        if (savedPresence && savedPresence.activity) {
+            setTimeout(() => {
+                connect(settings.savedClientId, savedPresence.activity);
+            }, 2000);
+        }
+    }
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -366,12 +529,12 @@ ipcMain.handle('get-version', () => {
 });
 
 app.on('window-all-closed', () => {
-    // Don't quit on macOS
     if (process.platform !== 'darwin') {
-        // Keep running in tray on Windows/Linux too
+        // Keep running in tray
     }
 });
 
 app.on('before-quit', async () => {
+    app.isQuitting = true;
     await disconnect();
 });

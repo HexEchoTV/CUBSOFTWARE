@@ -1329,7 +1329,7 @@ async function uploadImage(state, file) {
         const data = await response.json();
 
         if (data.success) {
-            showToast(`${state} image uploaded (1024x1024)!`);
+            showToast(`${state} image uploaded successfully!`);
 
             const preview = document.getElementById(`preview-${state}`);
             const cacheBust = '?t=' + Date.now();
@@ -1538,6 +1538,8 @@ async function saveSettings() {
         flip_horizontal: getVal('setting-flip', false),
         hide_self: getVal('setting-hide-self', false),
         max_participants: getVal('setting-max-participants', 0),
+        member_filter_mode: getVal('setting-member-filter-mode', 'none'),
+        member_filter_list: getMemberFilterList(),
         filter_brightness: getVal('setting-filter-brightness', 100),
         filter_contrast: getVal('setting-filter-contrast', 100),
         filter_saturate: getVal('setting-filter-saturate', 100),
@@ -1865,9 +1867,307 @@ document.addEventListener('DOMContentLoaded', () => {
         customCssInput.addEventListener('input', updatePreview);
     }
 
+    // Member Filter (Whitelist/Blacklist) initialization
+    initMemberFilter();
+
     // Initial preview update
     updatePreview();
 });
+
+// ============ VOICE CHANNEL MEMBERS (WebSocket) ============
+
+let voiceWs = null;
+let voiceMembers = new Map();
+
+function initVoiceConnection() {
+    const userId = document.body.dataset.userId;
+    if (!userId) return;
+
+    const wsUrl = window.location.protocol === 'https:'
+        ? `wss://${window.location.hostname}:3848`
+        : `ws://${window.location.hostname}:3848`;
+
+    try {
+        voiceWs = new WebSocket(wsUrl);
+    } catch (e) {
+        console.log('Voice WebSocket not available');
+        return;
+    }
+
+    voiceWs.onopen = () => {
+        console.log('Voice WebSocket connected');
+        updateVoiceConnectionStatus('connected');
+        voiceWs.send(JSON.stringify({
+            type: 'SUBSCRIBE',
+            userId: userId,
+            mode: 'channel'
+        }));
+    };
+
+    voiceWs.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            handleVoiceMessage(data);
+        } catch (e) {
+            console.error('Voice message parse error:', e);
+        }
+    };
+
+    voiceWs.onclose = () => {
+        console.log('Voice WebSocket closed');
+        updateVoiceConnectionStatus('disconnected');
+        // Reconnect after 5 seconds
+        setTimeout(initVoiceConnection, 5000);
+    };
+
+    voiceWs.onerror = () => {
+        updateVoiceConnectionStatus('disconnected');
+    };
+}
+
+function handleVoiceMessage(data) {
+    switch (data.type) {
+        case 'VOICE_STATE_UPDATE':
+            if (data.data.left) {
+                voiceMembers.delete(data.userId);
+            } else {
+                voiceMembers.set(data.userId, {
+                    id: data.userId,
+                    username: data.data.username || 'Unknown',
+                    avatar: data.data.avatar || '',
+                    speaking: data.data.speaking || false,
+                    muted: data.data.muted || false,
+                    deafened: data.data.deafened || false
+                });
+            }
+            renderVoiceMembers();
+            break;
+
+        case 'CHANNEL_UPDATE':
+            voiceMembers.clear();
+            if (data.members) {
+                data.members.forEach(member => {
+                    voiceMembers.set(member.userId, {
+                        id: member.userId,
+                        username: member.username || 'Unknown',
+                        avatar: member.avatar || '',
+                        speaking: member.speaking || false,
+                        muted: member.muted || false,
+                        deafened: member.deafened || false
+                    });
+                });
+            }
+            renderVoiceMembers();
+            break;
+
+        case 'NOT_IN_VOICE':
+            voiceMembers.clear();
+            renderVoiceMembers();
+            break;
+    }
+}
+
+function updateVoiceConnectionStatus(status) {
+    const container = document.getElementById('voice-members-list');
+    if (!container) return;
+
+    // Remove existing status indicator
+    const existing = container.querySelector('.voice-connection-status');
+    if (existing) existing.remove();
+
+    if (status !== 'connected') {
+        const statusEl = document.createElement('div');
+        statusEl.className = 'voice-connection-status';
+        statusEl.innerHTML = `<span class="dot ${status === 'connecting' ? 'connecting' : ''}"></span> ${status === 'connecting' ? 'Connecting...' : 'Disconnected'}`;
+        container.appendChild(statusEl);
+    }
+}
+
+function renderVoiceMembers() {
+    const container = document.getElementById('voice-members-list');
+    if (!container) return;
+
+    const filterList = getMemberFilterList();
+
+    if (voiceMembers.size === 0) {
+        container.innerHTML = `
+            <div class="voice-member-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span>Join a voice channel to see members here</span>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '';
+    voiceMembers.forEach(member => {
+        const isInList = filterList.includes(member.id);
+        const card = document.createElement('div');
+        card.className = 'voice-member-card' + (isInList ? ' added' : '');
+        card.title = isInList ? 'Already in filter list' : 'Click to add to filter list';
+        card.innerHTML = `
+            <img src="${member.avatar || '/static/images/default-avatar.png'}" alt="">
+            <div class="voice-member-info">
+                <span class="voice-member-name">${escapeHtml(member.username)}</span>
+                <span class="voice-member-id">${member.id}</span>
+            </div>
+            <div class="voice-member-status">
+                ${member.speaking ? '<svg class="speaking" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="22"/></svg>' : ''}
+                ${member.muted ? '<svg class="muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/></svg>' : ''}
+                ${member.deafened ? '<svg class="deafened" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>' : ''}
+            </div>
+        `;
+
+        if (!isInList) {
+            card.addEventListener('click', () => {
+                addMemberId(member.id);
+                renderVoiceMembers(); // Re-render to show "added" state
+            });
+        }
+
+        container.appendChild(card);
+    });
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Initialize voice connection when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Only init if we're on the logged-in dashboard
+    if (document.getElementById('voice-members-list')) {
+        setTimeout(initVoiceConnection, 1000);
+    }
+});
+
+// ============ MEMBER FILTER FUNCTIONS ============
+
+// Get member filter list from hidden input
+function getMemberFilterList() {
+    const input = document.getElementById('setting-member-filter-list');
+    if (!input || !input.value) return [];
+    return input.value.split(',').filter(id => id.trim() !== '');
+}
+
+// Set member filter list to hidden input
+function setMemberFilterList(list) {
+    const input = document.getElementById('setting-member-filter-list');
+    if (input) {
+        input.value = list.join(',');
+    }
+}
+
+// Render member ID tags
+function renderMemberIdTags() {
+    const container = document.getElementById('member-ids-list');
+    if (!container) return;
+
+    const list = getMemberFilterList();
+    const mode = document.getElementById('setting-member-filter-mode')?.value || 'none';
+    const isBlacklist = mode === 'blacklist';
+
+    container.innerHTML = '';
+    list.forEach(id => {
+        const tag = document.createElement('span');
+        tag.className = 'member-id-tag' + (isBlacklist ? ' blacklist' : '');
+        tag.innerHTML = `${id}<button type="button" onclick="removeMemberId('${id}')" title="Remove">&times;</button>`;
+        container.appendChild(tag);
+    });
+}
+
+// Add member ID to list
+function addMemberId(id) {
+    if (!id || !/^\d+$/.test(id)) {
+        alert('Please enter a valid Discord User ID (numbers only)');
+        return;
+    }
+
+    const list = getMemberFilterList();
+    if (list.includes(id)) {
+        alert('This User ID is already in the list');
+        return;
+    }
+
+    list.push(id);
+    setMemberFilterList(list);
+    renderMemberIdTags();
+    updatePreview();
+}
+
+// Remove member ID from list
+function removeMemberId(id) {
+    let list = getMemberFilterList();
+    list = list.filter(i => i !== id);
+    setMemberFilterList(list);
+    renderMemberIdTags();
+    updatePreview();
+}
+
+// Initialize member filter UI
+function initMemberFilter() {
+    // Filter mode buttons
+    document.querySelectorAll('.style-btn[data-filter-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.style-btn[data-filter-mode]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const mode = btn.dataset.filterMode;
+            const hiddenInput = document.getElementById('setting-member-filter-mode');
+            if (hiddenInput) hiddenInput.value = mode;
+
+            const container = document.getElementById('member-list-container');
+            const label = document.getElementById('member-list-label');
+            const hint = document.getElementById('member-list-hint');
+
+            if (container) {
+                container.style.display = mode === 'none' ? 'none' : 'block';
+            }
+
+            if (label) {
+                label.textContent = mode === 'blacklist' ? 'Hidden Members (User IDs)' : 'Allowed Members (User IDs)';
+            }
+
+            if (hint) {
+                hint.textContent = mode === 'blacklist'
+                    ? 'These members will be hidden from the overlay'
+                    : 'Only these members will appear in the overlay';
+            }
+
+            // Update tag colors
+            renderMemberIdTags();
+            updatePreview();
+        });
+    });
+
+    // Add member button
+    const addBtn = document.getElementById('add-member-btn');
+    const input = document.getElementById('member-id-input');
+
+    if (addBtn && input) {
+        addBtn.addEventListener('click', () => {
+            addMemberId(input.value.trim());
+            input.value = '';
+        });
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addMemberId(input.value.trim());
+                input.value = '';
+            }
+        });
+    }
+
+    // Initial render of existing member IDs
+    renderMemberIdTags();
+}
 
 // Download standalone overlay HTML file
 async function downloadOverlay(mode = 'individual') {

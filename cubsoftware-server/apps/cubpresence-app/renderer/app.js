@@ -1,6 +1,7 @@
 // CubPresence App - Renderer Script
 
 let isConnected = false;
+let settings = {};
 
 // DOM Elements
 const statusDot = document.getElementById('statusDot');
@@ -14,6 +15,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Display version
     const version = await window.cubpresence.getVersion();
     document.getElementById('appVersion').textContent = 'v' + version;
+
+    // Load settings
+    settings = await window.cubpresence.getSettings();
+    applySettingsToUI();
+
+    // Load saved presence
+    const savedPresence = await window.cubpresence.getSavedPresence();
+    if (savedPresence) {
+        if (savedPresence.clientId) {
+            document.getElementById('clientId').value = savedPresence.clientId;
+        }
+        if (savedPresence.activity) {
+            populateFields(savedPresence.activity);
+        }
+    }
 
     // Get initial status
     const status = await window.cubpresence.getStatus();
@@ -34,10 +50,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         handleUpdateStatus(data);
     });
 
+    // Listen for quick connect from tray
+    window.cubpresence.onQuickConnect(() => {
+        if (!isConnected && settings.savedClientId) {
+            connect();
+        }
+    });
+
     // Setup event listeners
     setupEventListeners();
     updatePreview();
 });
+
+// Apply settings to UI
+function applySettingsToUI() {
+    document.getElementById('settingRunOnStartup').checked = settings.runOnStartup;
+    document.getElementById('settingStartMinimized').checked = settings.startMinimized;
+    document.getElementById('settingAutoConnect').checked = settings.autoConnect;
+    document.getElementById('settingMinimizeToTray').checked = settings.minimizeToTray;
+    document.getElementById('settingShowNotifications').checked = settings.showNotifications;
+    document.getElementById('settingSavePresence').checked = settings.savePresenceOnClose;
+    document.getElementById('settingCheckUpdates').checked = settings.checkUpdatesOnStartup;
+}
 
 // Handle update status
 function handleUpdateStatus(data) {
@@ -70,7 +104,7 @@ function handleUpdateStatus(data) {
             text.textContent = 'Update ready! Restart to apply.';
             btn.textContent = 'Restart';
             btn.style.display = '';
-            btn.onclick = () => window.cubpresence.checkForUpdates(); // Triggers restart dialog
+            btn.onclick = () => window.cubpresence.checkForUpdates();
             break;
         case 'up-to-date':
             banner.style.display = 'none';
@@ -111,11 +145,130 @@ function setupEventListeners() {
         input.addEventListener('input', updatePreview);
     });
 
-    // Open external links in default browser
+    // Open external links
     document.getElementById('devPortalLink').addEventListener('click', (e) => {
         e.preventDefault();
-        require('electron').shell.openExternal('https://discord.com/developers/applications');
+        window.cubpresence.openExternal('https://discord.com/developers/applications');
     });
+
+    // Guide links
+    document.querySelectorAll('.guide-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const url = e.target.dataset.url;
+            if (url) window.cubpresence.openExternal(url);
+        });
+    });
+
+    // Settings modal
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+        document.getElementById('settingsModal').classList.add('active');
+    });
+
+    document.getElementById('closeSettings').addEventListener('click', () => {
+        document.getElementById('settingsModal').classList.remove('active');
+    });
+
+    // Guide modal
+    document.getElementById('guideBtn').addEventListener('click', () => {
+        document.getElementById('guideModal').classList.add('active');
+    });
+
+    document.getElementById('closeGuide').addEventListener('click', () => {
+        document.getElementById('guideModal').classList.remove('active');
+    });
+
+    // Close modals on backdrop click
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    });
+
+    // Settings toggles
+    document.getElementById('settingRunOnStartup').addEventListener('change', (e) => {
+        settings.runOnStartup = e.target.checked;
+        saveSettings();
+    });
+
+    document.getElementById('settingStartMinimized').addEventListener('change', (e) => {
+        settings.startMinimized = e.target.checked;
+        saveSettings();
+    });
+
+    document.getElementById('settingAutoConnect').addEventListener('change', (e) => {
+        settings.autoConnect = e.target.checked;
+        saveSettings();
+    });
+
+    document.getElementById('settingMinimizeToTray').addEventListener('change', (e) => {
+        settings.minimizeToTray = e.target.checked;
+        saveSettings();
+    });
+
+    document.getElementById('settingShowNotifications').addEventListener('change', (e) => {
+        settings.showNotifications = e.target.checked;
+        saveSettings();
+    });
+
+    document.getElementById('settingSavePresence').addEventListener('change', (e) => {
+        settings.savePresenceOnClose = e.target.checked;
+        saveSettings();
+    });
+
+    document.getElementById('settingCheckUpdates').addEventListener('change', (e) => {
+        settings.checkUpdatesOnStartup = e.target.checked;
+        saveSettings();
+    });
+
+    // Check updates button
+    document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
+        window.cubpresence.checkForUpdates();
+    });
+
+    // Clear data button
+    document.getElementById('clearDataBtn').addEventListener('click', async () => {
+        if (confirm('Are you sure you want to clear all saved data? This will reset your settings and saved presence.')) {
+            settings = {
+                runOnStartup: false,
+                startMinimized: false,
+                autoConnect: false,
+                checkUpdatesOnStartup: true,
+                minimizeToTray: true,
+                showNotifications: true,
+                savePresenceOnClose: true,
+                savedClientId: '',
+                theme: 'dark'
+            };
+            await window.cubpresence.saveSettings(settings);
+            applySettingsToUI();
+
+            // Clear form
+            document.getElementById('clientId').value = '';
+            document.getElementById('details').value = '';
+            document.getElementById('state').value = '';
+            document.getElementById('largeImageKey').value = '';
+            document.getElementById('largeImageText').value = '';
+            document.getElementById('smallImageKey').value = '';
+            document.getElementById('smallImageText').value = '';
+            document.getElementById('btn1Label').value = '';
+            document.getElementById('btn1Url').value = '';
+            document.getElementById('btn2Label').value = '';
+            document.getElementById('btn2Url').value = '';
+            document.getElementById('partySize').value = '';
+            document.getElementById('partyMax').value = '';
+
+            updatePreview();
+            alert('Data cleared successfully!');
+        }
+    });
+}
+
+// Save settings
+async function saveSettings() {
+    await window.cubpresence.saveSettings(settings);
 }
 
 // Connect to Discord
@@ -151,12 +304,30 @@ async function updateActivity() {
 
 // Build activity object from form
 function buildActivity() {
+    const tsType = document.querySelector('input[name="timestampType"]:checked').value;
+
+    // Parse custom datetime values
+    let startTimestamp = null;
+    let endTimestamp = null;
+
+    if (tsType === 'custom') {
+        const startDateTime = document.getElementById('startDateTime').value;
+        const endDateTime = document.getElementById('endDateTime').value;
+
+        if (startDateTime) {
+            startTimestamp = Math.floor(new Date(startDateTime).getTime() / 1000);
+        }
+        if (endDateTime) {
+            endTimestamp = Math.floor(new Date(endDateTime).getTime() / 1000);
+        }
+    }
+
     return {
         details: document.getElementById('details').value,
         state: document.getElementById('state').value,
-        timestamps_type: document.querySelector('input[name="timestampType"]:checked').value,
-        start_timestamp: parseInt(document.getElementById('startTimestamp').value) || null,
-        end_timestamp: parseInt(document.getElementById('endTimestamp').value) || null,
+        timestamps_type: tsType,
+        start_timestamp: startTimestamp,
+        end_timestamp: endTimestamp,
         large_image_key: document.getElementById('largeImageKey').value,
         large_image_text: document.getElementById('largeImageText').value,
         small_image_key: document.getElementById('smallImageKey').value,
@@ -184,6 +355,36 @@ function populateFields(activity) {
     if (activity.button2_url) document.getElementById('btn2Url').value = activity.button2_url;
     if (activity.party_size) document.getElementById('partySize').value = activity.party_size;
     if (activity.party_max) document.getElementById('partyMax').value = activity.party_max;
+
+    // Set timestamp type
+    if (activity.timestamps_type) {
+        const radio = document.querySelector(`input[name="timestampType"][value="${activity.timestamps_type}"]`);
+        if (radio) {
+            radio.checked = true;
+            document.querySelectorAll('.radio-option').forEach(opt => opt.classList.remove('active'));
+            radio.closest('.radio-option').classList.add('active');
+            document.getElementById('customTimestamps').style.display =
+                activity.timestamps_type === 'custom' ? 'block' : 'none';
+        }
+    }
+
+    // Set custom timestamps if present
+    if (activity.start_timestamp) {
+        const date = new Date(activity.start_timestamp * 1000);
+        document.getElementById('startDateTime').value = formatDateTimeLocal(date);
+    }
+    if (activity.end_timestamp) {
+        const date = new Date(activity.end_timestamp * 1000);
+        document.getElementById('endDateTime').value = formatDateTimeLocal(date);
+    }
+
+    updatePreview();
+}
+
+// Format date for datetime-local input
+function formatDateTimeLocal(date) {
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 // Update status display
@@ -242,17 +443,21 @@ function updatePreview() {
 
     // Timestamp
     const previewTs = document.getElementById('previewTimestamp');
-    if (tsType === 'elapsed') {
-        previewTs.textContent = '00:01:23 elapsed';
-        previewTs.style.display = '';
-    } else if (tsType === 'countdown') {
-        previewTs.textContent = '01:00:00 left';
-        previewTs.style.display = '';
-    } else if (tsType === 'custom') {
-        previewTs.textContent = 'custom timestamp';
-        previewTs.style.display = '';
-    } else {
+    const timestampLabels = {
+        'none': '',
+        'since_update': '00:01:23 elapsed',
+        'since_connection': '00:05:30 elapsed',
+        'since_app_start': '00:15:42 elapsed',
+        'local_time': formatLocalTime() + ' elapsed',
+        'custom': 'custom time',
+        'countdown': '01:00:00 left'
+    };
+
+    if (tsType === 'none') {
         previewTs.style.display = 'none';
+    } else {
+        previewTs.textContent = timestampLabels[tsType] || '';
+        previewTs.style.display = '';
     }
 
     // Large image
@@ -286,6 +491,15 @@ function updatePreview() {
     if (btn2Label) btnsHtml += '<div class="preview-btn">' + escapeHtml(btn2Label) + '</div>';
     previewButtons.innerHTML = btnsHtml;
     previewButtons.style.display = btnsHtml ? '' : 'none';
+}
+
+// Format local time for preview
+function formatLocalTime() {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const mins = now.getMinutes().toString().padStart(2, '0');
+    const secs = now.getSeconds().toString().padStart(2, '0');
+    return `${hours}:${mins}:${secs}`;
 }
 
 // Escape HTML

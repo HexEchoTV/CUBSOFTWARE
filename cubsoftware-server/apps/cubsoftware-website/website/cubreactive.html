@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/static/css/shared.css">
     <link rel="stylesheet" href="/static/css/cubreactive.css">
 </head>
-<body>
+<body{% if cubreactive_user %} data-user-id="{{ cubreactive_user.id }}"{% endif %}>
     <div class="main-container">
         {% include 'header.html' %}
 
@@ -694,6 +694,70 @@
                                 <input type="range" id="setting-max-participants" min="0" max="10" value="{{ user_config.settings.max_participants if user_config and user_config.settings.max_participants else 0 }}">
                                 <span class="slider-value" id="max-participants-value">{{ user_config.settings.max_participants if user_config and user_config.settings.max_participants else 0 }}</span>
                             </div>
+
+                            <!-- Member Filter (Whitelist/Blacklist) -->
+                            <div class="member-filter-setting" style="margin-top: 1.5rem;">
+                                <label>Member Filter</label>
+                                <p class="setting-description">Control which members appear in the overlay by their Discord User ID</p>
+                                <div class="filter-mode-buttons" style="margin-top: 0.75rem;">
+                                    <button type="button" class="style-btn {% if not user_config or not user_config.settings.member_filter_mode or user_config.settings.member_filter_mode == 'none' %}active{% endif %}" data-filter-mode="none">Show All</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.member_filter_mode == 'whitelist' %}active{% endif %}" data-filter-mode="whitelist">Whitelist Only</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}active{% endif %}" data-filter-mode="blacklist">Blacklist</button>
+                                </div>
+                                <input type="hidden" id="setting-member-filter-mode" value="{{ user_config.settings.member_filter_mode if user_config and user_config.settings.member_filter_mode else 'none' }}">
+
+                                <!-- Current Voice Channel Members -->
+                                <div class="voice-members-section" id="voice-members-section" style="margin-top: 1rem;">
+                                    <label>Current Voice Channel Members</label>
+                                    <p class="setting-description">Click a member to add their ID to the filter list</p>
+                                    <div class="voice-members-list" id="voice-members-list">
+                                        <div class="voice-member-placeholder">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                                <circle cx="9" cy="7" r="4"/>
+                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                                            </svg>
+                                            <span>Join a voice channel to see members here</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="member-list-container" id="member-list-container" style="{% if not user_config or not user_config.settings.member_filter_mode or user_config.settings.member_filter_mode == 'none' %}display:none{% endif %}">
+                                    <label id="member-list-label" style="margin-top: 1rem;">
+                                        {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}
+                                        Hidden Members (User IDs)
+                                        {% else %}
+                                        Allowed Members (User IDs)
+                                        {% endif %}
+                                    </label>
+                                    <p class="setting-description" id="member-list-hint">
+                                        {% if user_config and user_config.settings.member_filter_mode == 'blacklist' %}
+                                        These members will be hidden from the overlay
+                                        {% else %}
+                                        Only these members will appear in the overlay
+                                        {% endif %}
+                                    </p>
+                                    <div class="member-ids-input-container">
+                                        <div class="member-ids-list" id="member-ids-list">
+                                            <!-- Member ID tags will be added here -->
+                                        </div>
+                                        <div class="member-id-add">
+                                            <input type="text" id="member-id-input" placeholder="Enter Discord User ID" pattern="[0-9]*">
+                                            <button type="button" class="btn-add-member" id="add-member-btn">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
+                                                Add
+                                            </button>
+                                        </div>
+                                        <p class="setting-description" style="margin-top: 0.5rem; font-size: 0.75rem;">
+                                            To find a User ID: Enable Developer Mode in Discord Settings > Advanced, then right-click a user and select "Copy User ID"
+                                        </p>
+                                    </div>
+                                    <input type="hidden" id="setting-member-filter-list" value="{{ user_config.settings.member_filter_list | join(',') if user_config and user_config.settings.member_filter_list else '' }}">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Particle Effects -->
@@ -1217,7 +1281,7 @@
                                     Copy
                                 </button>
                             </div>
-                            <p class="source-hint">Recommended browser source size: 1024x1024</p>
+                            <p class="source-hint">Recommended browser source size: 1920x1080</p>
                         </div>
 
                         <div class="source-card">
@@ -1236,7 +1300,7 @@
                                     Copy
                                 </button>
                             </div>
-                            <p class="source-hint">Recommended browser source size: 1024x1024</p>
+                            <p class="source-hint">Recommended browser source size: 1920x1080</p>
                         </div>
                     </div>
 

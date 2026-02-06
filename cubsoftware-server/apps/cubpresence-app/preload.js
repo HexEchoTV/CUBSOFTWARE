@@ -1,32 +1,28 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose protected methods to the renderer process
 contextBridge.exposeInMainWorld('cubpresence', {
-    // Connect to Discord
+    // Connection
     connect: (clientId, activity) => ipcRenderer.invoke('connect', { clientId, activity }),
-
-    // Disconnect from Discord
     disconnect: () => ipcRenderer.invoke('disconnect'),
-
-    // Update current activity
     updateActivity: (activity) => ipcRenderer.invoke('update-activity', activity),
-
-    // Get current status
     getStatus: () => ipcRenderer.invoke('get-status'),
 
-    // Listen for status updates
-    onStatus: (callback) => {
-        ipcRenderer.on('status', (event, data) => callback(data));
-    },
+    // Settings
+    getSettings: () => ipcRenderer.invoke('get-settings'),
+    saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+    getSavedPresence: () => ipcRenderer.invoke('get-saved-presence'),
+    getTimestamps: () => ipcRenderer.invoke('get-timestamps'),
 
-    // Get app version
+    // Updates
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     getVersion: () => ipcRenderer.invoke('get-version'),
 
-    // Check for updates manually
-    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    // External links
+    openExternal: (url) => ipcRenderer.invoke('open-external', url),
 
-    // Listen for update status
-    onUpdateStatus: (callback) => {
-        ipcRenderer.on('update-status', (event, data) => callback(data));
-    }
+    // Event listeners
+    onStatus: (callback) => ipcRenderer.on('status', (event, data) => callback(data)),
+    onUpdateStatus: (callback) => ipcRenderer.on('update-status', (event, data) => callback(data)),
+    onTimestamps: (callback) => ipcRenderer.on('timestamps', (event, data) => callback(data)),
+    onQuickConnect: (callback) => ipcRenderer.on('quick-connect', (event, data) => callback(data))
 });

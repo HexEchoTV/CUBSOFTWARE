@@ -1859,3 +1859,250 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Member Filter (Whitelist/Blacklist) */
+.member-filter-setting label {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.filter-mode-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.member-list-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.member-ids-input-container {
+    margin-top: 0.75rem;
+}
+
+.member-ids-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    min-height: 32px;
+}
+
+.member-id-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--accent-blue);
+    color: white;
+    padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-family: monospace;
+}
+
+.member-id-tag.blacklist {
+    background: #ed4245;
+}
+
+.member-id-tag button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.member-id-tag button:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.member-id-add {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.member-id-add input {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.member-id-add input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.member-id-add input::placeholder {
+    color: var(--text-muted);
+}
+
+.btn-add-member {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1rem;
+    background: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-add-member:hover {
+    background: #0080cc;
+}
+
+.member-ids-list:empty::before {
+    content: 'No members added yet';
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+/* Voice Channel Members Section */
+.voice-members-section {
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.voice-members-section label {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.voice-members-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    min-height: 40px;
+}
+
+.voice-member-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+}
+
+.voice-member-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.voice-member-card:hover {
+    border-color: var(--accent-blue);
+    background: rgba(0, 157, 255, 0.1);
+}
+
+.voice-member-card.added {
+    border-color: #57f287;
+    background: rgba(87, 242, 135, 0.1);
+}
+
+.voice-member-card img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+}
+
+.voice-member-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.voice-member-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.voice-member-id {
+    font-size: 0.7rem;
+    font-family: monospace;
+    color: var(--text-muted);
+}
+
+.voice-member-status {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.voice-member-status svg {
+    width: 14px;
+    height: 14px;
+}
+
+.voice-member-status .speaking {
+    color: #57f287;
+}
+
+.voice-member-status .muted {
+    color: #ed4245;
+}
+
+.voice-member-status .deafened {
+    color: #ed4245;
+}
+
+.voice-connection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.voice-connection-status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.voice-connection-status .dot.connected {
+    background: #57f287;
+}
+
+.voice-connection-status .dot.connecting {
+    background: #faa61a;
+    animation: pulse 1s ease-in-out infinite;
+}

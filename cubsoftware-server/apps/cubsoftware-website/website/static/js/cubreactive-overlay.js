@@ -449,6 +449,17 @@ class CubReactiveOverlay {
             participantsToRender = participantsToRender.filter(p => p.id !== TARGET_USER_ID);
         }
 
+        // Apply member filter (whitelist/blacklist)
+        const filterMode = mainSettings.member_filter_mode || 'none';
+        const filterList = mainSettings.member_filter_list || [];
+        if (filterMode === 'whitelist' && filterList.length > 0) {
+            // Only show members in the whitelist
+            participantsToRender = participantsToRender.filter(p => filterList.includes(p.id));
+        } else if (filterMode === 'blacklist' && filterList.length > 0) {
+            // Hide members in the blacklist
+            participantsToRender = participantsToRender.filter(p => !filterList.includes(p.id));
+        }
+
         // Apply max participants
         if (mainSettings.max_participants > 0) {
             participantsToRender = participantsToRender.slice(0, mainSettings.max_participants);

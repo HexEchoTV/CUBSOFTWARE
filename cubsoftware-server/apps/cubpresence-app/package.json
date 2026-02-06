@@ -24,6 +24,7 @@
   "build": {
     "appId": "com.cubsoftware.cubpresence",
     "productName": "CubPresence",
+    "icon": "assets/icon.png",
     "directories": {
       "output": "dist"
     },
@@ -34,7 +35,8 @@
       "assets/**/*"
     ],
     "win": {
-      "target": ["nsis"]
+      "target": ["nsis"],
+      "icon": "assets/icon.png"
     },
     "mac": {
       "target": ["dmg"]
