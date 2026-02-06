@@ -464,7 +464,7 @@ class CubReactiveOverlay {
 
         // Update container
         container.className = `overlay-container position-${position}`;
-        container.style.gap = `${mainSettings.spacing || 20}px`;
+        // Gap will be set after scale factor is calculated
 
         // Apply overlay background
         const overlayBg = mainSettings.overlay_background || 'transparent';
@@ -474,28 +474,74 @@ class CubReactiveOverlay {
         const transitionDuration = mainSettings.transition_duration || 200;
         container.style.setProperty('--transition-duration', `${transitionDuration}ms`);
 
+        // Calculate auto-resize scale factor based on number of participants
+        const baseAvatarSize = mainSettings.avatar_size || 180;
+        const spacing = mainSettings.spacing || 20;
+        const participantCount = participantsToRender.length;
+        const groupLayout = mainSettings.group_layout || 'horizontal';
+
+        // Calculate available space (with some padding)
+        const viewportWidth = window.innerWidth - 40; // 20px padding on each side
+        const viewportHeight = window.innerHeight - 40;
+
+        // Calculate scale factor to fit all participants
+        let scaleFactor = 1;
+        if (participantCount > 1) {
+            if (groupLayout === 'horizontal' || position === 'top' || position === 'bottom') {
+                // Horizontal layout - check width
+                const totalWidth = (baseAvatarSize * participantCount) + (spacing * (participantCount - 1));
+                if (totalWidth > viewportWidth) {
+                    scaleFactor = viewportWidth / totalWidth;
+                }
+            } else if (groupLayout === 'vertical' || position === 'left' || position === 'right') {
+                // Vertical layout - check height
+                const nameHeight = mainSettings.show_name !== false ? 30 : 0; // Approximate name height
+                const totalHeight = ((baseAvatarSize + nameHeight) * participantCount) + (spacing * (participantCount - 1));
+                if (totalHeight > viewportHeight) {
+                    scaleFactor = viewportHeight / totalHeight;
+                }
+            } else if (groupLayout === 'grid') {
+                // Grid layout - calculate optimal columns
+                const cols = Math.ceil(Math.sqrt(participantCount));
+                const rows = Math.ceil(participantCount / cols);
+                const totalWidth = (baseAvatarSize * cols) + (spacing * (cols - 1));
+                const nameHeight = mainSettings.show_name !== false ? 30 : 0;
+                const totalHeight = ((baseAvatarSize + nameHeight) * rows) + (spacing * (rows - 1));
+                const widthScale = totalWidth > viewportWidth ? viewportWidth / totalWidth : 1;
+                const heightScale = totalHeight > viewportHeight ? viewportHeight / totalHeight : 1;
+                scaleFactor = Math.min(widthScale, heightScale);
+            }
+        }
+
+        // Clamp scale factor to reasonable bounds (don't scale below 40% or above 100%)
+        scaleFactor = Math.max(0.4, Math.min(1, scaleFactor));
+
+        // Apply scaled spacing to container
+        const scaledSpacing = Math.round(spacing * scaleFactor);
+        container.style.gap = `${scaledSpacing}px`;
+
         participantsToRender.forEach(participant => {
             const config = this.userConfigs.get(participant.id);
             const settings = config?.settings || this.getDefaultSettings();
             const imageUrl = this.getStateImage(participant);
 
-            // Get all settings with defaults
-            const avatarSize = settings.avatar_size || 180;
+            // Get all settings with defaults, apply scale factor to sizes
+            const avatarSize = Math.round((settings.avatar_size || 180) * scaleFactor);
             const avatarShape = settings.avatar_shape || 'rounded';
             const borderEnabled = settings.border_enabled || false;
             const borderColor = settings.border_color || '#5865f2';
-            const borderWidth = settings.border_width || 3;
+            const borderWidth = Math.max(1, Math.round((settings.border_width || 3) * scaleFactor));
             const borderStyle = settings.border_style || 'solid';
             const glowEnabled = settings.glow_enabled || false;
             const glowColor = settings.glow_color || '#5865f2';
             const speakingRingEnabled = settings.speaking_ring_enabled !== false;
             const speakingRingColor = settings.speaking_ring_color || '#57f287';
-            const speakingRingWidth = settings.speaking_ring_width || 4;
+            const speakingRingWidth = Math.max(2, Math.round((settings.speaking_ring_width || 4) * scaleFactor));
             const shadowEnabled = settings.shadow_enabled || false;
             const shadowColor = settings.shadow_color || '#000000';
-            const shadowBlur = settings.shadow_blur || 10;
+            const shadowBlur = Math.round((settings.shadow_blur || 10) * scaleFactor);
             const nameColor = settings.name_color || '#ffffff';
-            const nameSize = settings.name_size || 14;
+            const nameSize = Math.round((settings.name_size || 14) * scaleFactor);
             const nameBgEnabled = settings.name_background_enabled || false;
             const nameBgColor = settings.name_background_color || 'rgba(0,0,0,0.5)';
             const nameShadowEnabled = settings.name_shadow_enabled || false;
@@ -519,6 +565,41 @@ class CubReactiveOverlay {
             const filterHue = settings.filter_hue || 0;
             const entryAnimation = settings.entry_animation || 'fade';
             const entryDuration = settings.entry_duration || 500;
+
+            // New feature settings
+            const particlesEnabled = settings.particles_enabled || false;
+            const particleType = settings.particle_type || 'sparkle';
+            const particleColor = settings.particle_color || '#ffffff';
+            const particleCount = settings.particle_count || 10;
+            const animBorderEnabled = settings.animated_border_enabled || false;
+            const animBorderStyle = settings.animated_border_type || 'rainbow';
+            const animBorderSpeed = settings.animated_border_speed || 5;
+            const bgEffectEnabled = settings.bg_effect_enabled || false;
+            const bgEffectType = settings.bg_effect_type || 'none';
+            const bgEffectColor = settings.bg_effect_color || '#5865f2';
+            const bgEffectSize = settings.bg_effect_size || 50;
+            const outlineEnabled = settings.outline_enabled || false;
+            const outlineColor = settings.outline_color || '#ffffff';
+            const outlineWidth = settings.outline_width || 2;
+            const outlineOffset = settings.outline_offset || 3;
+            const accessory = settings.accessory || 'none';
+            const frame = settings.frame || 'none';
+            const frameColor = settings.frame_color || '#ffd700';
+            const mirrorEnabled = settings.mirror_enabled || false;
+            const mirrorOpacity = settings.mirror_opacity || 30;
+            const tiltEnabled = settings.tilt_enabled || false;
+            const tiltAmount = settings.tilt_amount || 5;
+            const voiceIndicatorEnabled = settings.voice_indicator_enabled || false;
+            const voiceIndicatorStyle = settings.voice_indicator_type || 'bar';
+            const voiceIndicatorColor = settings.voice_indicator_color || '#57f287';
+            const fontFamily = settings.name_font || 'default';
+            const namePosition = settings.name_position || 'bottom';
+            const nameAnimation = settings.name_animation || 'none';
+            const statusTextEnabled = settings.status_text_enabled || false;
+            const statusTextValue = settings.status_text || '';
+            const statusTextColor = settings.status_text_color || '#888888';
+            const highlight = settings.speaking_highlight || 'none';
+            const customCss = settings.custom_css || '';
 
             // Check if element already exists for this participant
             let wrapper = container.querySelector(`[data-user-id="${participant.id}"]`);
@@ -567,6 +648,51 @@ class CubReactiveOverlay {
                 const username = document.createElement('div');
                 username.className = 'username';
                 wrapper.appendChild(username);
+
+                // Status text element
+                const statusTextEl = document.createElement('div');
+                statusTextEl.className = 'status-text';
+                wrapper.appendChild(statusTextEl);
+
+                // Particles container
+                const particlesContainer = document.createElement('div');
+                particlesContainer.className = 'particles-container';
+                avatar.appendChild(particlesContainer);
+
+                // Animated border container
+                const animBorder = document.createElement('div');
+                animBorder.className = 'anim-border';
+                avatar.appendChild(animBorder);
+
+                // Background effect container
+                const bgEffect = document.createElement('div');
+                bgEffect.className = 'bg-effect';
+                wrapper.insertBefore(bgEffect, avatar);
+
+                // Outline element
+                const outlineEl = document.createElement('div');
+                outlineEl.className = 'avatar-outline';
+                avatar.appendChild(outlineEl);
+
+                // Frame element
+                const frameEl = document.createElement('div');
+                frameEl.className = 'avatar-frame';
+                avatar.appendChild(frameEl);
+
+                // Accessory element
+                const accessoryEl = document.createElement('div');
+                accessoryEl.className = 'avatar-accessory';
+                avatar.appendChild(accessoryEl);
+
+                // Mirror/reflection element
+                const mirrorEl = document.createElement('div');
+                mirrorEl.className = 'avatar-mirror';
+                wrapper.appendChild(mirrorEl);
+
+                // Voice indicator element
+                const voiceIndicatorEl = document.createElement('div');
+                voiceIndicatorEl.className = 'voice-indicator';
+                wrapper.appendChild(voiceIndicatorEl);
             }
 
             // Update existing elements
@@ -673,8 +799,184 @@ class CubReactiveOverlay {
                     textShadows.push(`0 0 10px ${nameGlowColor}`, `0 0 20px ${nameGlowColor}`);
                 }
                 username.style.textShadow = textShadows.length > 0 ? textShadows.join(', ') : '0 2px 4px rgba(0,0,0,0.5)';
+
+                // Apply font family
+                const fontMap = {
+                    'default': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    'roboto': '"Roboto", sans-serif',
+                    'poppins': '"Poppins", sans-serif',
+                    'montserrat': '"Montserrat", sans-serif',
+                    'opensans': '"Open Sans", sans-serif',
+                    'lato': '"Lato", sans-serif',
+                    'oswald': '"Oswald", sans-serif',
+                    'playfair': '"Playfair Display", serif',
+                    'raleway': '"Raleway", sans-serif',
+                    'ubuntu': '"Ubuntu", sans-serif',
+                    'comicsans': '"Comic Sans MS", cursive',
+                    'impact': '"Impact", sans-serif'
+                };
+                username.style.fontFamily = fontMap[fontFamily] || fontMap['default'];
+
+                // Apply name position
+                wrapper.classList.remove('name-top', 'name-left', 'name-right', 'name-hidden');
+                if (namePosition === 'top') {
+                    wrapper.classList.add('name-top');
+                } else if (namePosition === 'left') {
+                    wrapper.classList.add('name-left');
+                } else if (namePosition === 'right') {
+                    wrapper.classList.add('name-right');
+                }
+
+                // Apply name animation
+                username.classList.remove('name-anim-typing', 'name-anim-bounce', 'name-anim-wave', 'name-anim-glow', 'name-anim-slide');
+                if (nameAnimation !== 'none') {
+                    username.classList.add(`name-anim-${nameAnimation}`);
+                }
             } else {
                 username.style.display = 'none';
+            }
+
+            // === NEW EFFECTS ===
+
+            // Particles effect
+            const particlesContainer = wrapper.querySelector('.particles-container');
+            if (particlesContainer) {
+                if (particlesEnabled && participant.speaking) {
+                    particlesContainer.style.display = 'block';
+                    particlesContainer.dataset.type = particleType;
+                    particlesContainer.style.setProperty('--particle-color', particleColor);
+                    this.updateParticles(particlesContainer, particleType, particleColor, particleCount);
+                } else {
+                    particlesContainer.style.display = 'none';
+                }
+            }
+
+            // Animated border
+            const animBorderEl = wrapper.querySelector('.anim-border');
+            if (animBorderEl) {
+                if (animBorderEnabled && participant.speaking) {
+                    animBorderEl.style.display = 'block';
+                    animBorderEl.className = `anim-border anim-border-${animBorderStyle}`;
+                    // Speed is 1-10, convert to seconds (10 = fastest = 0.5s, 1 = slowest = 5s)
+                    const speedSeconds = (11 - animBorderSpeed) * 0.5;
+                    animBorderEl.style.setProperty('--anim-border-speed', `${speedSeconds}s`);
+                    animBorderEl.style.borderRadius = shapeStyles.borderRadius;
+                } else {
+                    animBorderEl.style.display = 'none';
+                }
+            }
+
+            // Background effect
+            const bgEffectEl = wrapper.querySelector('.bg-effect');
+            if (bgEffectEl) {
+                if (bgEffectEnabled && bgEffectType !== 'none') {
+                    bgEffectEl.style.display = 'block';
+                    bgEffectEl.className = `bg-effect bg-effect-${bgEffectType}`;
+                    bgEffectEl.style.setProperty('--bg-effect-color', bgEffectColor);
+                    bgEffectEl.style.setProperty('--bg-effect-size', `${bgEffectSize}px`);
+                } else {
+                    bgEffectEl.style.display = 'none';
+                }
+            }
+
+            // Outline effect
+            const outlineEl = wrapper.querySelector('.avatar-outline');
+            if (outlineEl) {
+                if (outlineEnabled) {
+                    outlineEl.style.display = 'block';
+                    outlineEl.style.position = 'absolute';
+                    outlineEl.style.inset = `-${outlineOffset}px`;
+                    outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
+                    outlineEl.style.borderRadius = shapeStyles.borderRadius;
+                    outlineEl.style.clipPath = shapeStyles.clipPath;
+                    outlineEl.style.pointerEvents = 'none';
+                } else {
+                    outlineEl.style.display = 'none';
+                }
+            }
+
+            // Frame effect
+            const frameEl = wrapper.querySelector('.avatar-frame');
+            if (frameEl) {
+                if (frame !== 'none') {
+                    frameEl.style.display = 'block';
+                    frameEl.className = `avatar-frame avatar-frame-${frame}`;
+                    frameEl.style.setProperty('--frame-color', frameColor);
+                } else {
+                    frameEl.style.display = 'none';
+                }
+            }
+
+            // Accessory effect
+            const accessoryEl = wrapper.querySelector('.avatar-accessory');
+            if (accessoryEl) {
+                if (accessory !== 'none') {
+                    accessoryEl.style.display = 'block';
+                    accessoryEl.className = `avatar-accessory avatar-accessory-${accessory}`;
+                    accessoryEl.innerHTML = this.getAccessoryHtml(accessory);
+                } else {
+                    accessoryEl.style.display = 'none';
+                }
+            }
+
+            // Mirror/reflection effect
+            const mirrorEl = wrapper.querySelector('.avatar-mirror');
+            if (mirrorEl) {
+                if (mirrorEnabled) {
+                    mirrorEl.style.display = 'block';
+                    mirrorEl.style.backgroundImage = `url(${imageUrl})`;
+                    mirrorEl.style.width = `${avatarSize}px`;
+                    mirrorEl.style.height = `${avatarSize * 0.5}px`;
+                    mirrorEl.style.opacity = mirrorOpacity / 100;
+                    mirrorEl.style.borderRadius = shapeStyles.borderRadius;
+                    mirrorEl.style.clipPath = shapeStyles.clipPath;
+                } else {
+                    mirrorEl.style.display = 'none';
+                }
+            }
+
+            // Tilt effect
+            if (tiltEnabled) {
+                wrapper.classList.add('tilt-enabled');
+                wrapper.style.setProperty('--tilt-amount', `${tiltAmount}deg`);
+            } else {
+                wrapper.classList.remove('tilt-enabled');
+            }
+
+            // Voice indicator
+            const voiceIndicatorEl = wrapper.querySelector('.voice-indicator');
+            if (voiceIndicatorEl) {
+                if (voiceIndicatorEnabled && participant.speaking) {
+                    voiceIndicatorEl.style.display = 'flex';
+                    voiceIndicatorEl.className = `voice-indicator voice-indicator-${voiceIndicatorStyle}`;
+                    voiceIndicatorEl.style.setProperty('--voice-indicator-color', voiceIndicatorColor);
+                    this.updateVoiceIndicator(voiceIndicatorEl, voiceIndicatorStyle);
+                } else {
+                    voiceIndicatorEl.style.display = 'none';
+                }
+            }
+
+            // Status text
+            const statusTextEl = wrapper.querySelector('.status-text');
+            if (statusTextEl) {
+                if (statusTextEnabled && statusTextValue) {
+                    statusTextEl.style.display = 'block';
+                    statusTextEl.textContent = statusTextValue;
+                    statusTextEl.style.color = statusTextColor;
+                } else {
+                    statusTextEl.style.display = 'none';
+                }
+            }
+
+            // Speaking highlight
+            wrapper.classList.remove('highlight-glow', 'highlight-pulse', 'highlight-ring', 'highlight-shadow');
+            if (highlight !== 'none' && participant.speaking) {
+                wrapper.classList.add(`highlight-${highlight}`);
+            }
+
+            // Apply custom CSS
+            if (customCss) {
+                this.applyCustomCss(customCss, participant.id);
             }
 
             if (isNew) {
@@ -706,6 +1008,96 @@ class CubReactiveOverlay {
             <path d="M12 2C8.13 2 5 5.13 5 9V15C5 16.1 5.9 17 7 17H9V11H7V9C7 6.24 9.24 4 12 4C14.76 4 17 6.24 17 9V11H15V17H17C18.1 17 19 16.1 19 15V9C19 5.13 15.87 2 12 2Z"/>
             <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2"/>
         </svg>`;
+    }
+
+    updateParticles(container, type, color, count) {
+        // Only regenerate if needed
+        if (container.childElementCount !== count || container.dataset.lastType !== type) {
+            container.innerHTML = '';
+            container.dataset.lastType = type;
+
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = `particle particle-${type}`;
+                particle.style.setProperty('--particle-color', color);
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${Math.random() * 2}s`;
+                particle.style.animationDuration = `${1 + Math.random() * 2}s`;
+                container.appendChild(particle);
+            }
+        }
+    }
+
+    updateVoiceIndicator(container, style) {
+        if (style === 'bar') {
+            if (container.childElementCount !== 5) {
+                container.innerHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'voice-bar';
+                    bar.style.animationDelay = `${i * 0.1}s`;
+                    container.appendChild(bar);
+                }
+            }
+        } else if (style === 'wave') {
+            if (container.childElementCount !== 3) {
+                container.innerHTML = '';
+                for (let i = 0; i < 3; i++) {
+                    const wave = document.createElement('div');
+                    wave.className = 'voice-wave';
+                    wave.style.animationDelay = `${i * 0.2}s`;
+                    container.appendChild(wave);
+                }
+            }
+        } else if (style === 'dot') {
+            if (container.childElementCount !== 3) {
+                container.innerHTML = '';
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'voice-dot';
+                    dot.style.animationDelay = `${i * 0.15}s`;
+                    container.appendChild(dot);
+                }
+            }
+        } else if (style === 'ring') {
+            if (container.childElementCount !== 1) {
+                container.innerHTML = '<div class="voice-ring"></div>';
+            }
+        }
+    }
+
+    getAccessoryHtml(accessory) {
+        const accessories = {
+            'crown': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5M19 19C19 19.6 18.6 20 18 20H6C5.4 20 5 19.6 5 19V18H19V19Z"/></svg>',
+            'halo': '<div class="accessory-halo"></div>',
+            'horns': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4L8 12L4 20L8 16L12 20L16 16L20 20L16 12L20 4L16 8L12 4L8 8L4 4Z"/></svg>',
+            'cat-ears': '<div class="accessory-cat-ears"><span></span><span></span></div>',
+            'bunny-ears': '<div class="accessory-bunny-ears"><span></span><span></span></div>',
+            'santa-hat': '<svg viewBox="0 0 24 24" fill="#e74c3c"><path d="M12 2C10 2 8.5 3.5 8.5 5.5C8.5 6.5 9 7.4 9.7 8H5L3 18H21L19 8H14.3C15 7.4 15.5 6.5 15.5 5.5C15.5 3.5 14 2 12 2Z"/><circle cx="12" cy="5" r="2" fill="white"/></svg>',
+            'party-hat': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 22H20L12 2Z"/><circle cx="8" cy="18" r="1.5" fill="#ff6b6b"/><circle cx="12" cy="14" r="1.5" fill="#4ecdc4"/><circle cx="16" cy="18" r="1.5" fill="#ffe66d"/></svg>',
+            'headphones': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1C7 1 3 5 3 10V17C3 18.66 4.34 20 6 20H9V12H5V10C5 6.13 8.13 3 12 3S19 6.13 19 10V12H15V20H18C19.66 20 21 18.66 21 17V10C21 5 17 1 12 1Z"/></svg>',
+            'sunglasses': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 10C3 8.9 3.9 8 5 8H19C20.1 8 21 8.9 21 10V12C21 14.2 19.2 16 17 16H15C12.8 16 11 14.2 11 12H13C13 13.1 13.9 14 15 14H17C18.1 14 19 13.1 19 12V10H5V12C5 13.1 5.9 14 7 14H9C10.1 14 11 13.1 11 12H13C13 14.2 11.2 16 9 16H7C4.8 16 3 14.2 3 12V10Z"/></svg>',
+            'bowtie': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14L4 18V10L12 14M12 14L20 10V18L12 14M12 16C13.1 16 14 15.1 14 14S13.1 12 12 12 10 12.9 10 14 10.9 16 12 16Z"/></svg>'
+        };
+        return accessories[accessory] || '';
+    }
+
+    applyCustomCss(css, participantId) {
+        const styleId = `cubreactive-custom-${participantId}`;
+        let styleEl = document.getElementById(styleId);
+
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = styleId;
+            document.head.appendChild(styleEl);
+        }
+
+        // Scope the CSS to this participant
+        const scopedCss = css.replace(/([^{}]+)\{/g, (match, selector) => {
+            return `[data-user-id="${participantId}"] ${selector.trim()} {`;
+        });
+
+        styleEl.textContent = scopedCss;
     }
 
     ensureAnimationStyles() {
@@ -905,6 +1297,557 @@ class CubReactiveOverlay {
                 from { opacity: 0; transform: perspective(400px) rotateY(90deg); }
                 to { opacity: 1; transform: perspective(400px) rotateY(0); }
             }
+
+            /* ========== NEW FEATURE STYLES ========== */
+
+            /* Particles */
+            .particles-container {
+                position: absolute;
+                inset: 0;
+                overflow: visible;
+                pointer-events: none;
+                z-index: 10;
+            }
+
+            .particle {
+                position: absolute;
+                bottom: 0;
+                width: 6px;
+                height: 6px;
+                background: var(--particle-color, #ffffff);
+                border-radius: 50%;
+                animation: cr-particle-rise 2s ease-out infinite;
+            }
+
+            .particle-sparkle {
+                box-shadow: 0 0 6px var(--particle-color, #ffffff);
+            }
+
+            .particle-bubble {
+                background: transparent;
+                border: 2px solid var(--particle-color, #ffffff);
+                width: 10px;
+                height: 10px;
+            }
+
+            .particle-star {
+                width: 0; height: 0;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-bottom: 8px solid var(--particle-color, #ffffff);
+                background: transparent;
+                border-radius: 0;
+            }
+
+            .particle-heart::before {
+                content: '❤';
+                font-size: 12px;
+                color: var(--particle-color, #ff6b6b);
+            }
+
+            .particle-confetti {
+                width: 8px;
+                height: 4px;
+                border-radius: 2px;
+                animation: cr-particle-confetti 2s ease-out infinite;
+            }
+
+            .particle-snow {
+                width: 8px;
+                height: 8px;
+                background: var(--particle-color, #ffffff);
+                border-radius: 50%;
+                animation: cr-particle-snow 3s ease-in-out infinite;
+            }
+
+            @keyframes cr-particle-rise {
+                0% { transform: translateY(0) scale(1); opacity: 1; }
+                100% { transform: translateY(-80px) scale(0); opacity: 0; }
+            }
+
+            @keyframes cr-particle-confetti {
+                0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                100% { transform: translateY(-60px) rotate(360deg); opacity: 0; }
+            }
+
+            @keyframes cr-particle-snow {
+                0% { transform: translateY(0) translateX(0); opacity: 1; }
+                50% { transform: translateY(-40px) translateX(10px); }
+                100% { transform: translateY(-80px) translateX(-10px); opacity: 0; }
+            }
+
+            /* Animated Border */
+            .anim-border {
+                position: absolute;
+                inset: -4px;
+                border: 3px solid transparent;
+                pointer-events: none;
+                z-index: 5;
+            }
+
+            .anim-border-rotate {
+                background: linear-gradient(var(--anim-border-color, #5865f2), transparent) border-box;
+                animation: cr-border-rotate var(--anim-border-speed, 2s) linear infinite;
+            }
+
+            .anim-border-pulse {
+                border-color: var(--anim-border-color, #5865f2);
+                animation: cr-border-pulse var(--anim-border-speed, 2s) ease-in-out infinite;
+            }
+
+            .anim-border-dash {
+                border: 3px dashed var(--anim-border-color, #5865f2);
+                animation: cr-border-dash var(--anim-border-speed, 2s) linear infinite;
+            }
+
+            .anim-border-rainbow {
+                animation: cr-border-rainbow var(--anim-border-speed, 2s) linear infinite;
+            }
+
+            .anim-border-glow {
+                border-color: var(--anim-border-color, #5865f2);
+                animation: cr-border-glow var(--anim-border-speed, 2s) ease-in-out infinite;
+            }
+
+            @keyframes cr-border-rotate {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            @keyframes cr-border-pulse {
+                0%, 100% { opacity: 0.5; transform: scale(1); }
+                50% { opacity: 1; transform: scale(1.05); }
+            }
+
+            @keyframes cr-border-dash {
+                0% { stroke-dashoffset: 0; }
+                100% { stroke-dashoffset: 100; }
+            }
+
+            @keyframes cr-border-rainbow {
+                0% { border-color: #ff6b6b; }
+                16% { border-color: #feca57; }
+                33% { border-color: #48dbfb; }
+                50% { border-color: #1dd1a1; }
+                66% { border-color: #5f27cd; }
+                83% { border-color: #ff9ff3; }
+                100% { border-color: #ff6b6b; }
+            }
+
+            @keyframes cr-border-glow {
+                0%, 100% { box-shadow: 0 0 5px var(--anim-border-color, #5865f2); }
+                50% { box-shadow: 0 0 20px var(--anim-border-color, #5865f2), 0 0 40px var(--anim-border-color, #5865f2); }
+            }
+
+            /* Background Effects */
+            .bg-effect {
+                position: absolute;
+                inset: calc(var(--bg-effect-size, 20px) * -1);
+                pointer-events: none;
+                z-index: -1;
+            }
+
+            .bg-effect-glow {
+                background: radial-gradient(circle, var(--bg-effect-color, #5865f2) 0%, transparent 70%);
+                opacity: 0.5;
+            }
+
+            .bg-effect-pulse {
+                background: radial-gradient(circle, var(--bg-effect-color, #5865f2) 0%, transparent 70%);
+                animation: cr-bg-pulse 2s ease-in-out infinite;
+            }
+
+            .bg-effect-spotlight {
+                background: conic-gradient(from 0deg, transparent, var(--bg-effect-color, #5865f2), transparent);
+                animation: cr-bg-spotlight 3s linear infinite;
+            }
+
+            .bg-effect-ripple {
+                border: 2px solid var(--bg-effect-color, #5865f2);
+                border-radius: 50%;
+                animation: cr-bg-ripple 2s ease-out infinite;
+            }
+
+            @keyframes cr-bg-pulse {
+                0%, 100% { opacity: 0.3; transform: scale(1); }
+                50% { opacity: 0.6; transform: scale(1.1); }
+            }
+
+            @keyframes cr-bg-spotlight {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            @keyframes cr-bg-ripple {
+                0% { transform: scale(0.8); opacity: 1; }
+                100% { transform: scale(1.5); opacity: 0; }
+            }
+
+            /* Avatar Outline */
+            .avatar-outline {
+                position: absolute;
+                pointer-events: none;
+                z-index: 4;
+            }
+
+            /* Avatar Frame */
+            .avatar-frame {
+                position: absolute;
+                inset: -10px;
+                pointer-events: none;
+                z-index: 6;
+            }
+
+            .avatar-frame-simple {
+                border: 4px solid var(--frame-color, #5865f2);
+            }
+
+            .avatar-frame-double {
+                border: 2px solid var(--frame-color, #5865f2);
+                box-shadow: 0 0 0 4px transparent, 0 0 0 6px var(--frame-color, #5865f2);
+            }
+
+            .avatar-frame-ornate {
+                border: 4px solid var(--frame-color, #5865f2);
+                box-shadow: inset 0 0 10px var(--frame-color, #5865f2);
+            }
+
+            .avatar-frame-corners::before,
+            .avatar-frame-corners::after {
+                content: '';
+                position: absolute;
+                width: 20px;
+                height: 20px;
+                border: 3px solid var(--frame-color, #5865f2);
+            }
+
+            .avatar-frame-corners::before {
+                top: 0; left: 0;
+                border-right: none; border-bottom: none;
+            }
+
+            .avatar-frame-corners::after {
+                bottom: 0; right: 0;
+                border-left: none; border-top: none;
+            }
+
+            .avatar-frame-neon {
+                border: 3px solid var(--frame-color, #5865f2);
+                box-shadow: 0 0 10px var(--frame-color, #5865f2), inset 0 0 10px var(--frame-color, #5865f2);
+                animation: cr-frame-neon 2s ease-in-out infinite;
+            }
+
+            @keyframes cr-frame-neon {
+                0%, 100% { box-shadow: 0 0 10px var(--frame-color, #5865f2), inset 0 0 10px var(--frame-color, #5865f2); }
+                50% { box-shadow: 0 0 20px var(--frame-color, #5865f2), 0 0 40px var(--frame-color, #5865f2), inset 0 0 20px var(--frame-color, #5865f2); }
+            }
+
+            /* Accessories */
+            .avatar-accessory {
+                position: absolute;
+                pointer-events: none;
+                z-index: 20;
+            }
+
+            .avatar-accessory-crown {
+                top: -25px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 40px;
+                height: 30px;
+                color: #ffd700;
+            }
+
+            .avatar-accessory-crown svg {
+                width: 100%;
+                height: 100%;
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            }
+
+            .avatar-accessory-halo {
+                top: -15px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .accessory-halo {
+                width: 60px;
+                height: 15px;
+                border: 3px solid #ffd700;
+                border-radius: 50%;
+                box-shadow: 0 0 10px #ffd700;
+            }
+
+            .avatar-accessory-cat-ears {
+                top: -20px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .accessory-cat-ears {
+                display: flex;
+                gap: 30px;
+            }
+
+            .accessory-cat-ears span {
+                width: 0;
+                height: 0;
+                border-left: 12px solid transparent;
+                border-right: 12px solid transparent;
+                border-bottom: 20px solid #ff9ff3;
+            }
+
+            .avatar-accessory-bunny-ears {
+                top: -35px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .accessory-bunny-ears {
+                display: flex;
+                gap: 20px;
+            }
+
+            .accessory-bunny-ears span {
+                width: 15px;
+                height: 40px;
+                background: #ffcccc;
+                border-radius: 50% 50% 40% 40%;
+            }
+
+            .avatar-accessory-santa-hat,
+            .avatar-accessory-party-hat {
+                top: -30px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 40px;
+                height: 40px;
+            }
+
+            .avatar-accessory-headphones {
+                top: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 70px;
+                height: 30px;
+                color: #333;
+            }
+
+            .avatar-accessory-sunglasses {
+                top: 25%;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 60px;
+                height: 25px;
+                color: #333;
+            }
+
+            .avatar-accessory-bowtie {
+                bottom: -15px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 30px;
+                height: 20px;
+                color: #e74c3c;
+            }
+
+            /* Mirror/Reflection */
+            .avatar-mirror {
+                position: relative;
+                margin-top: 5px;
+                background-size: cover;
+                background-position: center;
+                transform: scaleY(-1);
+                mask-image: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent);
+                -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent);
+            }
+
+            /* Tilt Effect */
+            .tilt-enabled {
+                transform: perspective(1000px) rotateX(var(--tilt-amount, 5deg));
+            }
+
+            /* Voice Indicator */
+            .voice-indicator {
+                display: flex;
+                align-items: flex-end;
+                justify-content: center;
+                gap: 3px;
+                margin-top: 8px;
+                height: 20px;
+            }
+
+            .voice-bar {
+                width: 4px;
+                height: 100%;
+                background: var(--voice-indicator-color, #57f287);
+                border-radius: 2px;
+                animation: cr-voice-bar 0.5s ease-in-out infinite alternate;
+            }
+
+            .voice-wave {
+                width: 20px;
+                height: 20px;
+                border: 2px solid var(--voice-indicator-color, #57f287);
+                border-radius: 50%;
+                animation: cr-voice-wave 1s ease-out infinite;
+            }
+
+            .voice-dot {
+                width: 8px;
+                height: 8px;
+                background: var(--voice-indicator-color, #57f287);
+                border-radius: 50%;
+                animation: cr-voice-dot 0.6s ease-in-out infinite;
+            }
+
+            .voice-ring {
+                width: 30px;
+                height: 30px;
+                border: 3px solid var(--voice-indicator-color, #57f287);
+                border-radius: 50%;
+                animation: cr-voice-ring 1s ease-out infinite;
+            }
+
+            @keyframes cr-voice-bar {
+                0% { height: 20%; }
+                100% { height: 100%; }
+            }
+
+            @keyframes cr-voice-wave {
+                0% { transform: scale(0.5); opacity: 1; }
+                100% { transform: scale(1.5); opacity: 0; }
+            }
+
+            @keyframes cr-voice-dot {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.5); }
+            }
+
+            @keyframes cr-voice-ring {
+                0% { transform: scale(0.8); opacity: 1; }
+                100% { transform: scale(1.3); opacity: 0; }
+            }
+
+            /* Name Position Variants */
+            .name-top {
+                flex-direction: column-reverse;
+            }
+
+            .name-top .username {
+                margin-bottom: 8px;
+                margin-top: 0;
+            }
+
+            .name-left {
+                flex-direction: row-reverse;
+            }
+
+            .name-left .username {
+                margin-right: 12px;
+                margin-top: 0;
+            }
+
+            .name-right {
+                flex-direction: row;
+            }
+
+            .name-right .username {
+                margin-left: 12px;
+                margin-top: 0;
+            }
+
+            /* Name Animations */
+            .name-anim-typing {
+                overflow: hidden;
+                white-space: nowrap;
+                animation: cr-name-typing 3s steps(30) infinite;
+            }
+
+            .name-anim-bounce {
+                animation: cr-name-bounce 1s ease infinite;
+            }
+
+            .name-anim-wave {
+                animation: cr-name-wave 2s ease-in-out infinite;
+            }
+
+            .name-anim-glow {
+                animation: cr-name-glow 2s ease-in-out infinite;
+            }
+
+            .name-anim-slide {
+                animation: cr-name-slide 3s ease-in-out infinite;
+            }
+
+            @keyframes cr-name-typing {
+                0%, 100% { width: 0; }
+                50% { width: 100%; }
+            }
+
+            @keyframes cr-name-bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-5px); }
+            }
+
+            @keyframes cr-name-wave {
+                0%, 100% { transform: rotate(-2deg); }
+                50% { transform: rotate(2deg); }
+            }
+
+            @keyframes cr-name-glow {
+                0%, 100% { text-shadow: 0 0 5px currentColor; }
+                50% { text-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+            }
+
+            @keyframes cr-name-slide {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+
+            /* Status Text */
+            .status-text {
+                font-size: 11px;
+                opacity: 0.8;
+                margin-top: 4px;
+                text-align: center;
+            }
+
+            /* Speaking Highlights */
+            .highlight-glow {
+                filter: drop-shadow(0 0 15px var(--speaking-ring-color, #57f287));
+            }
+
+            .highlight-pulse .avatar {
+                animation: cr-highlight-pulse 1s ease-in-out infinite;
+            }
+
+            .highlight-ring::after {
+                content: '';
+                position: absolute;
+                inset: -8px;
+                border: 3px solid var(--speaking-ring-color, #57f287);
+                border-radius: inherit;
+                animation: cr-highlight-ring 1s ease-out infinite;
+            }
+
+            .highlight-shadow {
+                filter: drop-shadow(0 8px 15px rgba(0,0,0,0.5));
+            }
+
+            @keyframes cr-highlight-pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+
+            @keyframes cr-highlight-ring {
+                0% { transform: scale(1); opacity: 1; }
+                100% { transform: scale(1.2); opacity: 0; }
+            }
+
+            /* Import Google Fonts */
+            @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Poppins:wght@400;600&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Oswald:wght@400;600&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600&family=Ubuntu:wght@400;500&display=swap');
         `;
         document.head.appendChild(style);
     }
@@ -940,4 +1883,13 @@ class CubReactiveOverlay {
 document.addEventListener('DOMContentLoaded', () => {
     const overlay = new CubReactiveOverlay();
     overlay.init();
+
+    // Re-render on window resize to recalculate auto-scaling
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            overlay.render();
+        }, 100);
+    });
 });

@@ -696,6 +696,352 @@
                             </div>
                         </div>
 
+                        <!-- Particle Effects -->
+                        <div class="settings-group">
+                            <h3>Particle Effects</h3>
+                            <p class="setting-description">Add animated particles around your avatar when speaking</p>
+                            <label class="setting-toggle">
+                                <input type="checkbox" id="setting-particles" {% if user_config and user_config.settings.particles_enabled %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                                <span class="setting-label">Enable particles when speaking</span>
+                            </label>
+                            <div class="particles-options" id="particles-options" style="{% if not user_config or not user_config.settings.particles_enabled %}display:none{% endif %}">
+                                <div class="style-buttons" style="margin-top: 0.75rem;">
+                                    <button type="button" class="style-btn {% if not user_config or not user_config.settings.particle_type or user_config.settings.particle_type == 'sparkles' %}active{% endif %}" data-particle="sparkles">Sparkles</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.particle_type == 'fire' %}active{% endif %}" data-particle="fire">Fire</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.particle_type == 'bubbles' %}active{% endif %}" data-particle="bubbles">Bubbles</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.particle_type == 'hearts' %}active{% endif %}" data-particle="hearts">Hearts</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.particle_type == 'stars' %}active{% endif %}" data-particle="stars">Stars</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.particle_type == 'snow' %}active{% endif %}" data-particle="snow">Snow</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.particle_type == 'confetti' %}active{% endif %}" data-particle="confetti">Confetti</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.particle_type == 'music' %}active{% endif %}" data-particle="music">Music Notes</button>
+                                </div>
+                                <input type="hidden" id="setting-particle-type" value="{{ user_config.settings.particle_type if user_config and user_config.settings.particle_type else 'sparkles' }}">
+                                <div class="color-setting" style="margin-top: 0.75rem;">
+                                    <label>Particle Color</label>
+                                    <input type="color" id="setting-particle-color" value="{{ user_config.settings.particle_color if user_config and user_config.settings.particle_color else '#ffdd00' }}">
+                                </div>
+                                <div class="slider-setting">
+                                    <label>Particle Count</label>
+                                    <input type="range" id="setting-particle-count" min="5" max="30" value="{{ user_config.settings.particle_count if user_config and user_config.settings.particle_count else 15 }}">
+                                    <span class="slider-value" id="particle-count-value">{{ user_config.settings.particle_count if user_config and user_config.settings.particle_count else 15 }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Animated Border -->
+                        <div class="settings-group">
+                            <h3>Animated Border</h3>
+                            <p class="setting-description">Add animated gradient or rainbow border effects</p>
+                            <label class="setting-toggle">
+                                <input type="checkbox" id="setting-animated-border" {% if user_config and user_config.settings.animated_border_enabled %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                                <span class="setting-label">Enable animated border</span>
+                            </label>
+                            <div class="animated-border-options" id="animated-border-options" style="{% if not user_config or not user_config.settings.animated_border_enabled %}display:none{% endif %}">
+                                <div class="style-buttons" style="margin-top: 0.75rem;">
+                                    <button type="button" class="style-btn {% if not user_config or not user_config.settings.animated_border_type or user_config.settings.animated_border_type == 'rainbow' %}active{% endif %}" data-anim-border="rainbow">Rainbow</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.animated_border_type == 'gradient-spin' %}active{% endif %}" data-anim-border="gradient-spin">Gradient Spin</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.animated_border_type == 'pulse-gradient' %}active{% endif %}" data-anim-border="pulse-gradient">Pulse Gradient</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.animated_border_type == 'neon-flicker' %}active{% endif %}" data-anim-border="neon-flicker">Neon Flicker</button>
+                                </div>
+                                <input type="hidden" id="setting-animated-border-type" value="{{ user_config.settings.animated_border_type if user_config and user_config.settings.animated_border_type else 'rainbow' }}">
+                                <div class="slider-setting" style="margin-top: 0.75rem;">
+                                    <label>Animation Speed</label>
+                                    <input type="range" id="setting-animated-border-speed" min="1" max="10" value="{{ user_config.settings.animated_border_speed if user_config and user_config.settings.animated_border_speed else 5 }}">
+                                    <span class="slider-value" id="animated-border-speed-value">{{ user_config.settings.animated_border_speed if user_config and user_config.settings.animated_border_speed else 5 }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Background Effects -->
+                        <div class="settings-group">
+                            <h3>Background Effects</h3>
+                            <p class="setting-description">Add a background effect behind your avatar</p>
+                            <label class="setting-toggle">
+                                <input type="checkbox" id="setting-bg-effect" {% if user_config and user_config.settings.bg_effect_enabled %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                                <span class="setting-label">Enable background effect</span>
+                            </label>
+                            <div class="bg-effect-options" id="bg-effect-options" style="{% if not user_config or not user_config.settings.bg_effect_enabled %}display:none{% endif %}">
+                                <div class="style-buttons" style="margin-top: 0.75rem;">
+                                    <button type="button" class="style-btn {% if not user_config or not user_config.settings.bg_effect_type or user_config.settings.bg_effect_type == 'glow-aura' %}active{% endif %}" data-bg-effect="glow-aura">Glow Aura</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.bg_effect_type == 'circle-pulse' %}active{% endif %}" data-bg-effect="circle-pulse">Circle Pulse</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.bg_effect_type == 'radial-gradient' %}active{% endif %}" data-bg-effect="radial-gradient">Radial Gradient</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.bg_effect_type == 'spotlight' %}active{% endif %}" data-bg-effect="spotlight">Spotlight</button>
+                                </div>
+                                <input type="hidden" id="setting-bg-effect-type" value="{{ user_config.settings.bg_effect_type if user_config and user_config.settings.bg_effect_type else 'glow-aura' }}">
+                                <div class="color-setting" style="margin-top: 0.75rem;">
+                                    <label>Effect Color</label>
+                                    <input type="color" id="setting-bg-effect-color" value="{{ user_config.settings.bg_effect_color if user_config and user_config.settings.bg_effect_color else '#5865f2' }}">
+                                </div>
+                                <div class="slider-setting">
+                                    <label>Effect Size</label>
+                                    <input type="range" id="setting-bg-effect-size" min="10" max="100" value="{{ user_config.settings.bg_effect_size if user_config and user_config.settings.bg_effect_size else 50 }}">
+                                    <span class="slider-value" id="bg-effect-size-value">{{ user_config.settings.bg_effect_size if user_config and user_config.settings.bg_effect_size else 50 }}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Avatar Outline -->
+                        <div class="settings-group">
+                            <h3>Avatar Outline</h3>
+                            <p class="setting-description">Add an outline effect around your avatar (separate from border)</p>
+                            <label class="setting-toggle">
+                                <input type="checkbox" id="setting-outline" {% if user_config and user_config.settings.outline_enabled %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                                <span class="setting-label">Enable outline</span>
+                            </label>
+                            <div class="outline-options" id="outline-options" style="{% if not user_config or not user_config.settings.outline_enabled %}display:none{% endif %}">
+                                <div class="color-setting" style="margin-top: 0.75rem;">
+                                    <label>Outline Color</label>
+                                    <input type="color" id="setting-outline-color" value="{{ user_config.settings.outline_color if user_config and user_config.settings.outline_color else '#ffffff' }}">
+                                </div>
+                                <div class="slider-setting">
+                                    <label>Outline Width</label>
+                                    <input type="range" id="setting-outline-width" min="1" max="8" value="{{ user_config.settings.outline_width if user_config and user_config.settings.outline_width else 2 }}">
+                                    <span class="slider-value" id="outline-width-value">{{ user_config.settings.outline_width if user_config and user_config.settings.outline_width else 2 }}px</span>
+                                </div>
+                                <div class="slider-setting">
+                                    <label>Outline Offset</label>
+                                    <input type="range" id="setting-outline-offset" min="0" max="10" value="{{ user_config.settings.outline_offset if user_config and user_config.settings.outline_offset else 3 }}">
+                                    <span class="slider-value" id="outline-offset-value">{{ user_config.settings.outline_offset if user_config and user_config.settings.outline_offset else 3 }}px</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Avatar Accessories -->
+                        <div class="settings-group">
+                            <h3>Avatar Accessories</h3>
+                            <p class="setting-description">Add decorative overlays to your avatar</p>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.accessory or user_config.settings.accessory == 'none' %}active{% endif %}" data-accessory="none">None</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.accessory == 'crown' %}active{% endif %}" data-accessory="crown">Crown</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.accessory == 'halo' %}active{% endif %}" data-accessory="halo">Halo</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.accessory == 'horns' %}active{% endif %}" data-accessory="horns">Horns</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.accessory == 'cat-ears' %}active{% endif %}" data-accessory="cat-ears">Cat Ears</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.accessory == 'headphones' %}active{% endif %}" data-accessory="headphones">Headphones</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.accessory == 'santa-hat' %}active{% endif %}" data-accessory="santa-hat">Santa Hat</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.accessory == 'party-hat' %}active{% endif %}" data-accessory="party-hat">Party Hat</button>
+                            </div>
+                            <input type="hidden" id="setting-accessory" value="{{ user_config.settings.accessory if user_config and user_config.settings.accessory else 'none' }}">
+                        </div>
+
+                        <!-- Avatar Frame -->
+                        <div class="settings-group">
+                            <h3>Avatar Frame</h3>
+                            <p class="setting-description">Add a decorative frame around your avatar</p>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.frame or user_config.settings.frame == 'none' %}active{% endif %}" data-frame="none">None</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.frame == 'simple' %}active{% endif %}" data-frame="simple">Simple</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.frame == 'ornate' %}active{% endif %}" data-frame="ornate">Ornate</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.frame == 'gaming' %}active{% endif %}" data-frame="gaming">Gaming</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.frame == 'neon' %}active{% endif %}" data-frame="neon">Neon</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.frame == 'pixel' %}active{% endif %}" data-frame="pixel">Pixel</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.frame == 'leaves' %}active{% endif %}" data-frame="leaves">Leaves</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.frame == 'fire' %}active{% endif %}" data-frame="fire">Fire</button>
+                            </div>
+                            <input type="hidden" id="setting-frame" value="{{ user_config.settings.frame if user_config and user_config.settings.frame else 'none' }}">
+                            <div class="color-setting" style="margin-top: 0.75rem;">
+                                <label>Frame Color</label>
+                                <input type="color" id="setting-frame-color" value="{{ user_config.settings.frame_color if user_config and user_config.settings.frame_color else '#ffd700' }}">
+                            </div>
+                        </div>
+
+                        <!-- Mirror Effect -->
+                        <div class="settings-group">
+                            <h3>Mirror/Reflection</h3>
+                            <label class="setting-toggle">
+                                <input type="checkbox" id="setting-mirror" {% if user_config and user_config.settings.mirror_enabled %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                                <span class="setting-label">Enable reflection below avatar</span>
+                            </label>
+                            <div class="mirror-options" id="mirror-options" style="{% if not user_config or not user_config.settings.mirror_enabled %}display:none{% endif %}">
+                                <div class="slider-setting" style="margin-top: 0.75rem;">
+                                    <label>Reflection Opacity</label>
+                                    <input type="range" id="setting-mirror-opacity" min="10" max="50" value="{{ user_config.settings.mirror_opacity if user_config and user_config.settings.mirror_opacity else 30 }}">
+                                    <span class="slider-value" id="mirror-opacity-value">{{ user_config.settings.mirror_opacity if user_config and user_config.settings.mirror_opacity else 30 }}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tilt Effect -->
+                        <div class="settings-group">
+                            <h3>Avatar Tilt</h3>
+                            <p class="setting-description">Add tilt/rotation when speaking</p>
+                            <label class="setting-toggle">
+                                <input type="checkbox" id="setting-tilt" {% if user_config and user_config.settings.tilt_enabled %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                                <span class="setting-label">Enable tilt when speaking</span>
+                            </label>
+                            <div class="tilt-options" id="tilt-options" style="{% if not user_config or not user_config.settings.tilt_enabled %}display:none{% endif %}">
+                                <div class="slider-setting" style="margin-top: 0.75rem;">
+                                    <label>Tilt Amount</label>
+                                    <input type="range" id="setting-tilt-amount" min="1" max="15" value="{{ user_config.settings.tilt_amount if user_config and user_config.settings.tilt_amount else 5 }}">
+                                    <span class="slider-value" id="tilt-amount-value">{{ user_config.settings.tilt_amount if user_config and user_config.settings.tilt_amount else 5 }}°</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Voice Volume Indicator -->
+                        <div class="settings-group">
+                            <h3>Voice Level Indicator</h3>
+                            <p class="setting-description">Show a visual indicator of voice activity</p>
+                            <label class="setting-toggle">
+                                <input type="checkbox" id="setting-voice-indicator" {% if user_config and user_config.settings.voice_indicator_enabled %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                                <span class="setting-label">Enable voice level indicator</span>
+                            </label>
+                            <div class="voice-indicator-options" id="voice-indicator-options" style="{% if not user_config or not user_config.settings.voice_indicator_enabled %}display:none{% endif %}">
+                                <div class="style-buttons" style="margin-top: 0.75rem;">
+                                    <button type="button" class="style-btn {% if not user_config or not user_config.settings.voice_indicator_type or user_config.settings.voice_indicator_type == 'bar' %}active{% endif %}" data-voice-indicator="bar">Bar</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.voice_indicator_type == 'ring' %}active{% endif %}" data-voice-indicator="ring">Ring</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.voice_indicator_type == 'dots' %}active{% endif %}" data-voice-indicator="dots">Dots</button>
+                                    <button type="button" class="style-btn {% if user_config and user_config.settings.voice_indicator_type == 'wave' %}active{% endif %}" data-voice-indicator="wave">Wave</button>
+                                </div>
+                                <input type="hidden" id="setting-voice-indicator-type" value="{{ user_config.settings.voice_indicator_type if user_config and user_config.settings.voice_indicator_type else 'bar' }}">
+                                <div class="color-setting" style="margin-top: 0.75rem;">
+                                    <label>Indicator Color</label>
+                                    <input type="color" id="setting-voice-indicator-color" value="{{ user_config.settings.voice_indicator_color if user_config and user_config.settings.voice_indicator_color else '#57f287' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom Fonts -->
+                        <div class="settings-group">
+                            <h3>Username Font</h3>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.name_font or user_config.settings.name_font == 'default' %}active{% endif %}" data-font="default">Default</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_font == 'gaming' %}active{% endif %}" data-font="gaming">Gaming</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_font == 'handwritten' %}active{% endif %}" data-font="handwritten">Handwritten</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_font == 'retro' %}active{% endif %}" data-font="retro">Retro</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_font == 'monospace' %}active{% endif %}" data-font="monospace">Monospace</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_font == 'elegant' %}active{% endif %}" data-font="elegant">Elegant</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_font == 'bold' %}active{% endif %}" data-font="bold">Bold</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_font == 'pixel' %}active{% endif %}" data-font="pixel">Pixel</button>
+                            </div>
+                            <input type="hidden" id="setting-name-font" value="{{ user_config.settings.name_font if user_config and user_config.settings.name_font else 'default' }}">
+                        </div>
+
+                        <!-- Name Position -->
+                        <div class="settings-group">
+                            <h3>Username Position</h3>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.name_position or user_config.settings.name_position == 'bottom' %}active{% endif %}" data-name-pos="bottom">Bottom</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_position == 'top' %}active{% endif %}" data-name-pos="top">Top</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_position == 'left' %}active{% endif %}" data-name-pos="left">Left</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_position == 'right' %}active{% endif %}" data-name-pos="right">Right</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_position == 'inside-bottom' %}active{% endif %}" data-name-pos="inside-bottom">Inside Bottom</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_position == 'inside-top' %}active{% endif %}" data-name-pos="inside-top">Inside Top</button>
+                            </div>
+                            <input type="hidden" id="setting-name-position" value="{{ user_config.settings.name_position if user_config and user_config.settings.name_position else 'bottom' }}">
+                        </div>
+
+                        <!-- Animated Text -->
+                        <div class="settings-group">
+                            <h3>Animated Text Effect</h3>
+                            <p class="setting-description">Add animation to your username when speaking</p>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.name_animation or user_config.settings.name_animation == 'none' %}active{% endif %}" data-name-anim="none">None</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_animation == 'wave' %}active{% endif %}" data-name-anim="wave">Wave</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_animation == 'bounce' %}active{% endif %}" data-name-anim="bounce">Bounce</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_animation == 'glow-pulse' %}active{% endif %}" data-name-anim="glow-pulse">Glow Pulse</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_animation == 'typing' %}active{% endif %}" data-name-anim="typing">Typing</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.name_animation == 'rainbow' %}active{% endif %}" data-name-anim="rainbow">Rainbow</button>
+                            </div>
+                            <input type="hidden" id="setting-name-animation" value="{{ user_config.settings.name_animation if user_config and user_config.settings.name_animation else 'none' }}">
+                        </div>
+
+                        <!-- Custom Status Text -->
+                        <div class="settings-group">
+                            <h3>Custom Status Text</h3>
+                            <p class="setting-description">Show custom text below your username</p>
+                            <label class="setting-toggle">
+                                <input type="checkbox" id="setting-status-text-enabled" {% if user_config and user_config.settings.status_text_enabled %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                                <span class="setting-label">Enable status text</span>
+                            </label>
+                            <div class="status-text-options" id="status-text-options" style="{% if not user_config or not user_config.settings.status_text_enabled %}display:none{% endif %}">
+                                <div class="color-setting" style="margin-top: 0.75rem;">
+                                    <label>Status Text</label>
+                                    <input type="text" id="setting-status-text" maxlength="30" placeholder="e.g. Live Now!" value="{{ user_config.settings.status_text if user_config and user_config.settings.status_text else '' }}" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; color: var(--text-primary);">
+                                </div>
+                                <div class="color-setting">
+                                    <label>Text Color</label>
+                                    <input type="color" id="setting-status-text-color" value="{{ user_config.settings.status_text_color if user_config and user_config.settings.status_text_color else '#888888' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Group Layout -->
+                        <div class="settings-group">
+                            <h3>Group Layout</h3>
+                            <p class="setting-description">How avatars are arranged in group mode</p>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.group_layout or user_config.settings.group_layout == 'horizontal' %}active{% endif %}" data-layout="horizontal">Horizontal</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.group_layout == 'vertical' %}active{% endif %}" data-layout="vertical">Vertical</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.group_layout == 'grid' %}active{% endif %}" data-layout="grid">Grid</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.group_layout == 'circle' %}active{% endif %}" data-layout="circle">Circle</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.group_layout == 'stacked' %}active{% endif %}" data-layout="stacked">Stacked</button>
+                            </div>
+                            <input type="hidden" id="setting-group-layout" value="{{ user_config.settings.group_layout if user_config and user_config.settings.group_layout else 'horizontal' }}">
+                        </div>
+
+                        <!-- Speaking Highlight -->
+                        <div class="settings-group">
+                            <h3>Speaking Highlight (Group Mode)</h3>
+                            <p class="setting-description">How to highlight the currently speaking user</p>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.speaking_highlight or user_config.settings.speaking_highlight == 'none' %}active{% endif %}" data-highlight="none">None</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.speaking_highlight == 'enlarge' %}active{% endif %}" data-highlight="enlarge">Enlarge</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.speaking_highlight == 'bring-front' %}active{% endif %}" data-highlight="bring-front">Bring to Front</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.speaking_highlight == 'spotlight' %}active{% endif %}" data-highlight="spotlight">Spotlight</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.speaking_highlight == 'pop-out' %}active{% endif %}" data-highlight="pop-out">Pop Out</button>
+                            </div>
+                            <input type="hidden" id="setting-speaking-highlight" value="{{ user_config.settings.speaking_highlight if user_config and user_config.settings.speaking_highlight else 'none' }}">
+                        </div>
+
+                        <!-- Sort Order -->
+                        <div class="settings-group">
+                            <h3>Sort Order (Group Mode)</h3>
+                            <div class="style-buttons">
+                                <button type="button" class="style-btn {% if not user_config or not user_config.settings.sort_order or user_config.settings.sort_order == 'join-order' %}active{% endif %}" data-sort="join-order">Join Order</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.sort_order == 'alphabetical' %}active{% endif %}" data-sort="alphabetical">Alphabetical</button>
+                                <button type="button" class="style-btn {% if user_config and user_config.settings.sort_order == 'speaking-first' %}active{% endif %}" data-sort="speaking-first">Speaking First</button>
+                            </div>
+                            <input type="hidden" id="setting-sort-order" value="{{ user_config.settings.sort_order if user_config and user_config.settings.sort_order else 'join-order' }}">
+                        </div>
+
+                        <!-- Import/Export -->
+                        <div class="settings-group">
+                            <h3>Import/Export Settings</h3>
+                            <p class="setting-description">Share your settings or import from others</p>
+                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                                <button type="button" class="btn-save-settings" onclick="exportSettings()" style="margin-top: 0;">Export Settings</button>
+                                <button type="button" class="btn-save-settings" onclick="document.getElementById('import-file').click()" style="margin-top: 0; background: var(--bg-secondary); border: 1px solid var(--border-color);">Import Settings</button>
+                                <input type="file" id="import-file" accept=".json" hidden onchange="importSettings(this)">
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <label style="font-size: 0.9rem; color: var(--text-muted);">Share Code</label>
+                                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <input type="text" id="share-code" readonly placeholder="Click Generate to create code" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; color: var(--text-primary); font-family: monospace;">
+                                    <button type="button" class="btn-copy" onclick="generateShareCode()">Generate</button>
+                                    <button type="button" class="btn-copy" onclick="copyShareCode()">Copy</button>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <input type="text" id="import-code" placeholder="Paste share code here" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem; color: var(--text-primary); font-family: monospace;">
+                                    <button type="button" class="btn-copy" onclick="applyShareCode()">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Custom CSS -->
+                        <div class="settings-group">
+                            <h3>Custom CSS (Advanced)</h3>
+                            <p class="setting-description">Add your own CSS for advanced customization</p>
+                            <textarea id="setting-custom-css" placeholder="/* Your custom CSS here */" style="width: 100%; height: 120px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; color: var(--text-primary); font-family: monospace; font-size: 0.85rem; resize: vertical;">{{ user_config.settings.custom_css if user_config and user_config.settings.custom_css else '' }}</textarea>
+                        </div>
+
                         <!-- Preset Themes -->
                         <div class="settings-group">
                             <h3>Quick Themes</h3>

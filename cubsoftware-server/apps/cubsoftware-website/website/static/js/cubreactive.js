@@ -1216,6 +1216,7 @@ async function saveSettings() {
     const overlayBgTransparent = getVal('setting-overlay-bg-transparent', true);
 
     const settings = {
+        // Basic settings
         bounce_on_speak: getVal('setting-bounce', true),
         dim_when_idle: getVal('setting-dim', false),
         show_name: getVal('setting-name', true),
@@ -1262,6 +1263,66 @@ async function saveSettings() {
         filter_contrast: getVal('setting-filter-contrast', 100),
         filter_saturate: getVal('setting-filter-saturate', 100),
         filter_hue: getVal('setting-filter-hue', 0),
+
+        // Particle effects
+        particles_enabled: getVal('setting-particles', false),
+        particle_type: getVal('setting-particle-type', 'sparkles'),
+        particle_color: getVal('setting-particle-color', '#ffdd00'),
+        particle_count: getVal('setting-particle-count', 15),
+
+        // Animated border
+        animated_border_enabled: getVal('setting-animated-border', false),
+        animated_border_type: getVal('setting-animated-border-type', 'rainbow'),
+        animated_border_speed: getVal('setting-animated-border-speed', 5),
+
+        // Background effects
+        bg_effect_enabled: getVal('setting-bg-effect', false),
+        bg_effect_type: getVal('setting-bg-effect-type', 'glow-aura'),
+        bg_effect_color: getVal('setting-bg-effect-color', '#5865f2'),
+        bg_effect_size: getVal('setting-bg-effect-size', 50),
+
+        // Outline
+        outline_enabled: getVal('setting-outline', false),
+        outline_color: getVal('setting-outline-color', '#ffffff'),
+        outline_width: getVal('setting-outline-width', 2),
+        outline_offset: getVal('setting-outline-offset', 3),
+
+        // Accessories
+        accessory: getVal('setting-accessory', 'none'),
+        frame: getVal('setting-frame', 'none'),
+        frame_color: getVal('setting-frame-color', '#ffd700'),
+
+        // Mirror/reflection
+        mirror_enabled: getVal('setting-mirror', false),
+        mirror_opacity: getVal('setting-mirror-opacity', 30),
+
+        // Tilt
+        tilt_enabled: getVal('setting-tilt', false),
+        tilt_amount: getVal('setting-tilt-amount', 5),
+
+        // Voice indicator
+        voice_indicator_enabled: getVal('setting-voice-indicator', false),
+        voice_indicator_type: getVal('setting-voice-indicator-type', 'bar'),
+        voice_indicator_color: getVal('setting-voice-indicator-color', '#57f287'),
+
+        // Username styling
+        name_font: getVal('setting-name-font', 'default'),
+        name_position: getVal('setting-name-position', 'bottom'),
+        name_animation: getVal('setting-name-animation', 'none'),
+
+        // Status text
+        status_text_enabled: getVal('setting-status-text-enabled', false),
+        status_text: getVal('setting-status-text', ''),
+        status_text_color: getVal('setting-status-text-color', '#888888'),
+
+        // Group mode
+        group_layout: getVal('setting-group-layout', 'horizontal'),
+        speaking_highlight: getVal('setting-speaking-highlight', 'none'),
+        sort_order: getVal('setting-sort-order', 'join-order'),
+
+        // Custom CSS
+        custom_css: getVal('setting-custom-css', ''),
+
         theme: 'custom'
     };
 
@@ -1459,6 +1520,72 @@ document.addEventListener('DOMContentLoaded', () => {
     initColorWithPreview('setting-name-shadow-color');
     initColorWithPreview('setting-name-glow-color');
 
+    // === NEW FEATURE INITIALIZATIONS ===
+
+    // New button groups
+    initButtonGroupWithPreview('.style-btn[data-particle]', 'setting-particle-type', 'particle');
+    initButtonGroupWithPreview('.style-btn[data-anim-border]', 'setting-animated-border-type', 'animBorder');
+    initButtonGroupWithPreview('.style-btn[data-bg-effect]', 'setting-bg-effect-type', 'bgEffect');
+    initButtonGroupWithPreview('.style-btn[data-accessory]', 'setting-accessory', 'accessory');
+    initButtonGroupWithPreview('.style-btn[data-frame]', 'setting-frame', 'frame');
+    initButtonGroupWithPreview('.style-btn[data-voice-indicator]', 'setting-voice-indicator-type', 'voiceIndicator');
+    initButtonGroupWithPreview('.style-btn[data-font]', 'setting-name-font', 'font');
+    initButtonGroupWithPreview('.style-btn[data-name-pos]', 'setting-name-position', 'namePos');
+    initButtonGroupWithPreview('.style-btn[data-name-anim]', 'setting-name-animation', 'nameAnim');
+    initButtonGroupWithPreview('.style-btn[data-layout]', 'setting-group-layout', 'layout');
+    initButtonGroupWithPreview('.style-btn[data-highlight]', 'setting-speaking-highlight', 'highlight');
+    initButtonGroupWithPreview('.style-btn[data-sort]', 'setting-sort-order', 'sort');
+
+    // New toggle options (show/hide sub-options)
+    initToggleOptions('setting-particles', 'particles-options');
+    initToggleOptions('setting-animated-border', 'animated-border-options');
+    initToggleOptions('setting-bg-effect', 'bg-effect-options');
+    initToggleOptions('setting-outline', 'outline-options');
+    initToggleOptions('setting-mirror', 'mirror-options');
+    initToggleOptions('setting-tilt', 'tilt-options');
+    initToggleOptions('setting-voice-indicator', 'voice-indicator-options');
+    initToggleOptions('setting-status-text-enabled', 'status-text-options');
+
+    // New toggles with preview update
+    initToggleWithPreview('setting-particles');
+    initToggleWithPreview('setting-animated-border');
+    initToggleWithPreview('setting-bg-effect');
+    initToggleWithPreview('setting-outline');
+    initToggleWithPreview('setting-mirror');
+    initToggleWithPreview('setting-tilt');
+    initToggleWithPreview('setting-voice-indicator');
+    initToggleWithPreview('setting-status-text-enabled');
+
+    // New sliders with preview update
+    initSliderWithPreview('setting-particle-count', 'particle-count-value', '');
+    initSliderWithPreview('setting-animated-border-speed', 'animated-border-speed-value', '');
+    initSliderWithPreview('setting-bg-effect-size', 'bg-effect-size-value', 'px');
+    initSliderWithPreview('setting-outline-width', 'outline-width-value', 'px');
+    initSliderWithPreview('setting-outline-offset', 'outline-offset-value', 'px');
+    initSliderWithPreview('setting-mirror-opacity', 'mirror-opacity-value', '%');
+    initSliderWithPreview('setting-tilt-amount', 'tilt-amount-value', '°');
+
+    // New color pickers with preview update
+    initColorWithPreview('setting-particle-color');
+    // Note: animated border uses rainbow or gradient, no single color option
+    initColorWithPreview('setting-bg-effect-color');
+    initColorWithPreview('setting-outline-color');
+    initColorWithPreview('setting-frame-color');
+    initColorWithPreview('setting-voice-indicator-color');
+    initColorWithPreview('setting-status-text-color');
+
+    // Status text input
+    const statusTextInput = document.getElementById('setting-status-text');
+    if (statusTextInput) {
+        statusTextInput.addEventListener('input', updatePreview);
+    }
+
+    // Custom CSS textarea
+    const customCssInput = document.getElementById('setting-custom-css');
+    if (customCssInput) {
+        customCssInput.addEventListener('input', updatePreview);
+    }
+
     // Initial preview update
     updatePreview();
 });
@@ -1542,5 +1669,248 @@ async function downloadOverlay(mode = 'individual') {
     } catch (error) {
         console.error('Download error:', error);
         showToast('Failed to generate overlay: ' + error.message, 'error');
+    }
+}
+
+// Export settings to JSON file
+function exportSettings() {
+    const config = USER_CONFIG || {};
+    const exportData = {
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        settings: config.settings || {},
+        // Don't export images (they're user-specific)
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cubreactive-settings-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Settings exported successfully!', 'success');
+}
+
+// Import settings from JSON file
+function importSettings() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+
+            if (!data.settings) {
+                showToast('Invalid settings file', 'error');
+                return;
+            }
+
+            // Apply imported settings to the form
+            applySettingsToForm(data.settings);
+            showToast('Settings imported! Click Save to apply.', 'success');
+            updatePreview();
+        } catch (error) {
+            console.error('Import error:', error);
+            showToast('Failed to import settings: ' + error.message, 'error');
+        }
+    };
+
+    input.click();
+}
+
+// Apply settings object to form elements
+function applySettingsToForm(settings) {
+    // Helper to set slider value
+    const setSlider = (id, value, valueId, suffix = 'px') => {
+        const slider = document.getElementById(id);
+        const display = document.getElementById(valueId);
+        if (slider && value !== undefined) {
+            slider.value = value;
+            if (display) display.textContent = value + suffix;
+        }
+    };
+
+    // Helper to set checkbox
+    const setCheckbox = (id, value) => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) checkbox.checked = !!value;
+    };
+
+    // Helper to set color
+    const setColor = (id, value) => {
+        const input = document.getElementById(id);
+        if (input && value) input.value = value;
+    };
+
+    // Helper to set button group
+    const setButtonGroup = (selector, value, dataAttr) => {
+        const buttons = document.querySelectorAll(selector);
+        buttons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset[dataAttr] === value) {
+                btn.classList.add('active');
+            }
+        });
+    };
+
+    // Apply sliders
+    setSlider('setting-size', settings.size, 'size-value');
+    setSlider('setting-border-width', settings.borderWidth, 'border-width-value');
+    setSlider('setting-name-size', settings.nameSize, 'name-size-value');
+    setSlider('setting-spacing', settings.spacing, 'spacing-value');
+    setSlider('setting-speaking-ring-width', settings.speakingRingWidth, 'speaking-ring-width-value');
+    setSlider('setting-shadow-blur', settings.shadowBlur, 'shadow-blur-value');
+    setSlider('setting-transition-duration', settings.transitionDuration, 'transition-duration-value', 'ms');
+    setSlider('setting-idle-opacity', settings.idleOpacity, 'idle-opacity-value', '%');
+    setSlider('setting-animation-speed', settings.animationSpeed, 'animation-speed-value', '%');
+    setSlider('setting-entry-duration', settings.entryDuration, 'entry-duration-value', 'ms');
+    setSlider('setting-filter-brightness', settings.filterBrightness, 'filter-brightness-value', '%');
+    setSlider('setting-filter-contrast', settings.filterContrast, 'filter-contrast-value', '%');
+    setSlider('setting-filter-saturate', settings.filterSaturate, 'filter-saturate-value', '%');
+    setSlider('setting-filter-hue', settings.filterHue, 'filter-hue-value', '°');
+    setSlider('setting-particle-count', settings.particle_count, 'particle-count-value', '');
+    setSlider('setting-animated-border-speed', settings.animated_border_speed, 'animated-border-speed-value', '');
+    setSlider('setting-bg-effect-size', settings.bg_effect_size, 'bg-effect-size-value', '%');
+    setSlider('setting-outline-width', settings.outline_width, 'outline-width-value', 'px');
+    setSlider('setting-outline-offset', settings.outline_offset, 'outline-offset-value', 'px');
+    setSlider('setting-mirror-opacity', settings.mirror_opacity, 'mirror-opacity-value', '%');
+    setSlider('setting-tilt-amount', settings.tilt_amount, 'tilt-amount-value', '°');
+
+    // Apply checkboxes
+    setCheckbox('setting-bounce', settings.bounce);
+    setCheckbox('setting-dim', settings.dimWhenIdle);
+    setCheckbox('setting-name', settings.showName);
+    setCheckbox('setting-grayscale-muted', settings.grayscaleMuted);
+    setCheckbox('setting-grayscale-deafened', settings.grayscaleDeafened);
+    setCheckbox('setting-border', settings.border);
+    setCheckbox('setting-glow', settings.glow);
+    setCheckbox('setting-shadow', settings.shadow);
+    setCheckbox('setting-speaking-ring', settings.speakingRing);
+    setCheckbox('setting-name-bg', settings.nameBg);
+    setCheckbox('setting-flip', settings.flip);
+    setCheckbox('setting-hide-self', settings.hideSelf);
+    setCheckbox('setting-name-shadow', settings.nameShadow);
+    setCheckbox('setting-name-glow', settings.nameGlow);
+    setCheckbox('setting-particles', settings.particles_enabled);
+    setCheckbox('setting-animated-border', settings.animated_border_enabled);
+    setCheckbox('setting-bg-effect', settings.bg_effect_enabled);
+    setCheckbox('setting-outline', settings.outline_enabled);
+    setCheckbox('setting-mirror', settings.mirror_enabled);
+    setCheckbox('setting-tilt', settings.tilt_enabled);
+    setCheckbox('setting-voice-indicator', settings.voice_indicator_enabled);
+    setCheckbox('setting-status-text-enabled', settings.status_text_enabled);
+
+    // Apply colors
+    setColor('setting-border-color', settings.borderColor);
+    setColor('setting-glow-color', settings.glowColor);
+    setColor('setting-name-color', settings.nameColor);
+    setColor('setting-speaking-ring-color', settings.speakingRingColor);
+    setColor('setting-shadow-color', settings.shadowColor);
+    setColor('setting-name-bg-color', settings.nameBgColor);
+    setColor('setting-name-shadow-color', settings.nameShadowColor);
+    setColor('setting-name-glow-color', settings.nameGlowColor);
+    setColor('setting-particle-color', settings.particle_color);
+    // Note: animated border has no color input (uses rainbow/gradient)
+    setColor('setting-bg-effect-color', settings.bg_effect_color);
+    setColor('setting-outline-color', settings.outline_color);
+    setColor('setting-frame-color', settings.frame_color);
+    setColor('setting-voice-indicator-color', settings.voice_indicator_color);
+    setColor('setting-status-text-color', settings.status_text_color);
+
+    // Apply button groups
+    setButtonGroup('.position-btn', settings.position, 'position');
+    setButtonGroup('.style-btn[data-style]', settings.animation, 'style');
+    setButtonGroup('.style-btn[data-idle-style]', settings.idleAnimation, 'idleStyle');
+    setButtonGroup('.style-btn[data-transition]', settings.transition, 'transition');
+    setButtonGroup('.style-btn[data-entry]', settings.entryAnimation, 'entry');
+    setButtonGroup('.style-btn[data-border-style]', settings.borderStyle, 'borderStyle');
+    setButtonGroup('.shape-btn', settings.shape, 'shape');
+    setButtonGroup('.style-btn[data-particle]', settings.particle_type, 'particle');
+    setButtonGroup('.style-btn[data-anim-border]', settings.animated_border_type, 'animBorder');
+    setButtonGroup('.style-btn[data-bg-effect]', settings.bg_effect_type, 'bgEffect');
+    setButtonGroup('.style-btn[data-accessory]', settings.accessory, 'accessory');
+    setButtonGroup('.style-btn[data-frame]', settings.frame, 'frame');
+    setButtonGroup('.style-btn[data-voice-indicator]', settings.voice_indicator_type, 'voiceIndicator');
+    setButtonGroup('.style-btn[data-font]', settings.name_font, 'font');
+    setButtonGroup('.style-btn[data-name-pos]', settings.name_position, 'namePos');
+    setButtonGroup('.style-btn[data-name-anim]', settings.name_animation, 'nameAnim');
+    setButtonGroup('.style-btn[data-layout]', settings.group_layout, 'layout');
+    setButtonGroup('.style-btn[data-highlight]', settings.speaking_highlight, 'highlight');
+    setButtonGroup('.style-btn[data-sort]', settings.sort_order, 'sort');
+
+    // Apply text inputs
+    const statusTextInput = document.getElementById('setting-status-text');
+    if (statusTextInput && settings.status_text) {
+        statusTextInput.value = settings.status_text;
+    }
+
+    const customCssInput = document.getElementById('setting-custom-css');
+    if (customCssInput && settings.custom_css) {
+        customCssInput.value = settings.custom_css;
+    }
+
+    // Update toggle options visibility
+    ['border', 'glow', 'shadow', 'speaking-ring', 'name-bg', 'name-shadow', 'name-glow',
+     'particles', 'animated-border', 'bg-effect', 'outline', 'mirror', 'tilt', 'voice-indicator', 'status-text-enabled'].forEach(opt => {
+        const toggle = document.getElementById(`setting-${opt}`);
+        const options = document.getElementById(`${opt}-options`);
+        if (toggle && options) {
+            options.style.display = toggle.checked ? 'block' : 'none';
+        }
+    });
+}
+
+// Generate a share code (base64 encoded settings)
+function generateShareCode() {
+    const config = USER_CONFIG || {};
+    const settings = config.settings || {};
+
+    // Create a compact version of settings
+    const compactSettings = JSON.stringify(settings);
+    const shareCode = btoa(compactSettings);
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(shareCode).then(() => {
+        showToast('Share code copied to clipboard!', 'success');
+    }).catch(() => {
+        // Fallback: show in prompt
+        prompt('Copy this share code:', shareCode);
+    });
+}
+
+// Copy the share code to clipboard
+function copyShareCode() {
+    generateShareCode();
+}
+
+// Apply a share code
+function applyShareCode() {
+    const shareCodeInput = document.getElementById('share-code-input');
+    const shareCode = shareCodeInput ? shareCodeInput.value.trim() : prompt('Paste share code:');
+
+    if (!shareCode) {
+        showToast('No share code provided', 'error');
+        return;
+    }
+
+    try {
+        const decoded = atob(shareCode);
+        const settings = JSON.parse(decoded);
+
+        applySettingsToForm(settings);
+        showToast('Settings applied from share code! Click Save to keep.', 'success');
+        updatePreview();
+    } catch (error) {
+        console.error('Share code error:', error);
+        showToast('Invalid share code', 'error');
     }
 }
