@@ -1,0 +1,50 @@
+name: Build CubPresence App
+
+on:
+  # Manual trigger from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Create a release?'
+        required: true
+        default: 'true'
+        type: boolean
+
+  # Auto trigger when cubpresence-app files change on main
+  push:
+    paths:
+      - 'apps/cubpresence-app/**'
+    branches:
+      - main
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: apps/cubpresence-app
+        run: npm install
+
+      - name: Build and publish to GitHub Releases
+        working-directory: apps/cubpresence-app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish
+
+      - name: Upload artifacts (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: CubPresence-Windows
+          path: |
+            apps/cubpresence-app/dist/*.exe
+            apps/cubpresence-app/dist/latest.yml
+          retention-days: 30
