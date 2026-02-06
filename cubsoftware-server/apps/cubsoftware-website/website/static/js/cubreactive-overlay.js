@@ -750,11 +750,6 @@ class CubReactiveOverlay {
             // Drop shadow
             avatar.style.filter = shadowEnabled ? `drop-shadow(0 4px ${shadowBlur}px ${shadowColor})` : '';
 
-            // Image wrapper shape
-            const imgWrapper = wrapper.querySelector('.img-wrapper');
-            imgWrapper.style.borderRadius = shapeStyles.borderRadius;
-            imgWrapper.style.clipPath = shapeStyles.clipPath;
-
             // Update image src only if changed (prevents reload flicker)
             if (img.src !== new URL(imageUrl, window.location.origin).href) {
                 img.src = imageUrl;
@@ -878,27 +873,16 @@ class CubReactiveOverlay {
                 }
             }
 
-            // Animated border - now positioned relative to wrapper, outside avatar
+            // Animated border
             const animBorderEl = wrapper.querySelector('.anim-border');
             if (animBorderEl) {
                 if (animBorderEnabled && participant.speaking) {
                     animBorderEl.style.display = 'block';
                     animBorderEl.className = `anim-border anim-border-${animBorderStyle}`;
-                    // Speed is 1-10, convert to seconds (10 = fastest = 0.5s, 1 = slowest = 5s)
                     const speedSeconds = (11 - animBorderSpeed) * 0.5;
                     animBorderEl.style.setProperty('--anim-border-speed', `${speedSeconds}s`);
-                    // Position to match avatar size
-                    animBorderEl.style.width = `${avatarSize + 8}px`;
-                    animBorderEl.style.height = `${avatarSize + 8}px`;
-                    animBorderEl.style.left = '-4px';
-                    animBorderEl.style.top = '-4px';
+                    animBorderEl.style.inset = '-4px';
                     animBorderEl.style.borderRadius = shapeStyles.borderRadius;
-                    // For clip-path shapes, use clip-path on a pseudo-element or background approach
-                    if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
-                        animBorderEl.style.clipPath = shapeStyles.clipPath;
-                    } else {
-                        animBorderEl.style.clipPath = 'none';
-                    }
                 } else {
                     animBorderEl.style.display = 'none';
                 }
@@ -917,63 +901,28 @@ class CubReactiveOverlay {
                 }
             }
 
-            // Outline effect - now positioned relative to wrapper, outside avatar
+            // Outline effect
             const outlineEl = wrapper.querySelector('.avatar-outline');
             if (outlineEl) {
                 if (outlineEnabled) {
                     outlineEl.style.display = 'block';
-                    outlineEl.style.position = 'absolute';
-                    // Position based on avatar size and offset
-                    const outlineTotalOffset = outlineOffset + outlineWidth;
-                    outlineEl.style.width = `${avatarSize + (outlineTotalOffset * 2)}px`;
-                    outlineEl.style.height = `${avatarSize + (outlineTotalOffset * 2)}px`;
-                    outlineEl.style.left = `-${outlineTotalOffset}px`;
-                    outlineEl.style.top = `-${outlineTotalOffset}px`;
-                    outlineEl.style.pointerEvents = 'none';
-                    outlineEl.style.boxSizing = 'border-box';
-
-                    // For clip-path shapes, create a filled shape with clip-path
-                    if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
-                        outlineEl.style.background = outlineColor;
-                        outlineEl.style.clipPath = shapeStyles.clipPath;
-                        outlineEl.style.border = 'none';
-                        outlineEl.style.borderRadius = shapeStyles.borderRadius;
-                    } else {
-                        // For border-radius shapes, use border
-                        outlineEl.style.background = 'transparent';
-                        outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
-                        outlineEl.style.borderRadius = shapeStyles.borderRadius;
-                        outlineEl.style.clipPath = 'none';
-                    }
+                    outlineEl.style.inset = `-${outlineOffset}px`;
+                    outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
+                    outlineEl.style.borderRadius = shapeStyles.borderRadius;
                 } else {
                     outlineEl.style.display = 'none';
                 }
             }
 
-            // Frame effect - now positioned relative to wrapper, outside avatar
+            // Frame effect
             const frameEl = wrapper.querySelector('.avatar-frame');
             if (frameEl) {
                 if (frame !== 'none') {
                     frameEl.style.display = 'block';
                     frameEl.className = `avatar-frame avatar-frame-${frame}`;
                     frameEl.style.setProperty('--frame-color', frameColor);
-                    // Position based on avatar size with frame offset
-                    const frameOffset = 10; // How much larger than avatar
-                    frameEl.style.width = `${avatarSize + (frameOffset * 2)}px`;
-                    frameEl.style.height = `${avatarSize + (frameOffset * 2)}px`;
-                    frameEl.style.left = `-${frameOffset}px`;
-                    frameEl.style.top = `-${frameOffset}px`;
-                    frameEl.style.boxSizing = 'border-box';
-
-                    // For clip-path shapes, create a filled shape effect
-                    if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
-                        frameEl.style.clipPath = shapeStyles.clipPath;
-                        frameEl.style.borderRadius = shapeStyles.borderRadius;
-                    } else {
-                        // For border-radius shapes
-                        frameEl.style.clipPath = 'none';
-                        frameEl.style.borderRadius = shapeStyles.borderRadius;
-                    }
+                    frameEl.style.inset = '-8px';
+                    frameEl.style.borderRadius = shapeStyles.borderRadius;
                 } else {
                     frameEl.style.display = 'none';
                 }
@@ -1595,12 +1544,12 @@ class CubReactiveOverlay {
                 }
             }
 
-            /* Animated Border - positioned inside avatar, behind img-wrapper */
+            /* Animated Border */
             .anim-border {
                 position: absolute;
                 border: 3px solid transparent;
                 pointer-events: none;
-                z-index: -1;
+                z-index: 3;
                 box-sizing: border-box;
             }
 
@@ -1719,19 +1668,19 @@ class CubReactiveOverlay {
                 100% { transform: scale(1.5); opacity: 0; }
             }
 
-            /* Avatar Outline - positioned inside avatar, behind img-wrapper */
+            /* Avatar Outline */
             .avatar-outline {
                 position: absolute;
                 pointer-events: none;
-                z-index: -2;
+                z-index: 1;
                 box-sizing: border-box;
             }
 
-            /* Avatar Frame - positioned inside avatar, behind img-wrapper */
+            /* Avatar Frame */
             .avatar-frame {
                 position: absolute;
                 pointer-events: none;
-                z-index: -1;
+                z-index: 2;
                 box-sizing: border-box;
             }
 

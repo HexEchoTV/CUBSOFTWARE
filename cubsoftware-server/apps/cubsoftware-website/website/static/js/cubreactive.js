@@ -1093,7 +1093,7 @@ function updatePreview() {
         }
     }
 
-    // Animated Border - now positioned as sibling of avatar
+    // Animated Border
     const animBorderEnabled = getVal('setting-animated-border', false);
     const animBorderType = getVal('setting-animated-border-type', 'rainbow');
     const animBorderEl = document.getElementById('preview-anim-border');
@@ -1102,18 +1102,8 @@ function updatePreview() {
         if (animBorderEnabled && isSpeaking) {
             animBorderEl.style.display = 'block';
             animBorderEl.className = `preview-anim-border anim-border-${animBorderType}`;
-            // Position and size as sibling of avatar
-            animBorderEl.style.position = 'absolute';
-            animBorderEl.style.width = `${size + 8}px`;
-            animBorderEl.style.height = `${size + 8}px`;
-            animBorderEl.style.left = '-4px';
-            animBorderEl.style.top = '-4px';
+            animBorderEl.style.inset = '-4px';
             animBorderEl.style.borderRadius = shapeStyles.borderRadius;
-            if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
-                animBorderEl.style.clipPath = shapeStyles.clipPath;
-            } else {
-                animBorderEl.style.clipPath = 'none';
-            }
         } else {
             animBorderEl.style.display = 'none';
         }
@@ -1135,7 +1125,7 @@ function updatePreview() {
         }
     }
 
-    // Outline - now positioned as sibling of avatar
+    // Outline
     const outlineEnabled = getVal('setting-outline', false);
     const outlineColor = getVal('setting-outline-color', '#ffffff');
     const outlineWidth = getVal('setting-outline-width', 2);
@@ -1145,35 +1135,15 @@ function updatePreview() {
     if (outlineEl) {
         if (outlineEnabled) {
             outlineEl.style.display = 'block';
-            outlineEl.style.position = 'absolute';
-            outlineEl.style.pointerEvents = 'none';
-            outlineEl.style.boxSizing = 'border-box';
-            // Position and size based on avatar size and offset
-            const outlineTotalOffset = outlineOffset + outlineWidth;
-            outlineEl.style.width = `${size + (outlineTotalOffset * 2)}px`;
-            outlineEl.style.height = `${size + (outlineTotalOffset * 2)}px`;
-            outlineEl.style.left = `-${outlineTotalOffset}px`;
-            outlineEl.style.top = `-${outlineTotalOffset}px`;
-
-            // For clip-path shapes, create a filled shape
-            if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
-                outlineEl.style.background = outlineColor;
-                outlineEl.style.clipPath = shapeStyles.clipPath;
-                outlineEl.style.border = 'none';
-                outlineEl.style.borderRadius = shapeStyles.borderRadius;
-            } else {
-                // For border-radius shapes, use border
-                outlineEl.style.background = 'transparent';
-                outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
-                outlineEl.style.borderRadius = shapeStyles.borderRadius;
-                outlineEl.style.clipPath = 'none';
-            }
+            outlineEl.style.inset = `-${outlineOffset}px`;
+            outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
+            outlineEl.style.borderRadius = shapeStyles.borderRadius;
         } else {
             outlineEl.style.display = 'none';
         }
     }
 
-    // Frame - now positioned as sibling of avatar
+    // Frame
     const frame = getVal('setting-frame', 'none');
     const frameColor = getVal('setting-frame-color', '#ffd700');
     const frameEl = document.getElementById('preview-frame');
@@ -1183,21 +1153,8 @@ function updatePreview() {
             frameEl.style.display = 'block';
             frameEl.className = `preview-frame avatar-frame-${frame}`;
             frameEl.style.setProperty('--frame-color', frameColor);
-            frameEl.style.position = 'absolute';
-            frameEl.style.boxSizing = 'border-box';
-            // Position based on avatar size with frame offset
-            const frameOffset = 10;
-            frameEl.style.width = `${size + (frameOffset * 2)}px`;
-            frameEl.style.height = `${size + (frameOffset * 2)}px`;
-            frameEl.style.left = `-${frameOffset}px`;
-            frameEl.style.top = `-${frameOffset}px`;
-            // Apply shape to frame
+            frameEl.style.inset = '-8px';
             frameEl.style.borderRadius = shapeStyles.borderRadius;
-            if (shapeStyles.clipPath && shapeStyles.clipPath !== 'none') {
-                frameEl.style.clipPath = shapeStyles.clipPath;
-            } else {
-                frameEl.style.clipPath = 'none';
-            }
         } else {
             frameEl.style.display = 'none';
         }
