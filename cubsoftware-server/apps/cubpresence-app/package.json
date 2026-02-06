@@ -49,7 +49,7 @@
     "publish": {
       "provider": "github",
       "owner": "HexEchoTV",
-      "repo": "cubsoftware-server"
+      "repo": "CUBSOFTWARE"
     }
   }
 }
