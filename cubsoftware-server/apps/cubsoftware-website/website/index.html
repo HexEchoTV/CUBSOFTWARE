@@ -106,16 +106,16 @@
             });
         });
 
-        // Beta banner dismiss
+        // Beta banner dismiss (uses sessionStorage so it reappears on new sessions)
         const betaBanner = document.getElementById('betaBanner');
         const betaCloseBtn = document.getElementById('betaBannerClose');
         if (betaBanner && betaCloseBtn) {
-            if (localStorage.getItem('betaBannerDismissed') === 'true') {
+            if (sessionStorage.getItem('betaBannerDismissed') === 'true') {
                 betaBanner.style.display = 'none';
             }
             betaCloseBtn.addEventListener('click', function() {
                 betaBanner.style.display = 'none';
-                localStorage.setItem('betaBannerDismissed', 'true');
+                sessionStorage.setItem('betaBannerDismissed', 'true');
             });
         }
     });
