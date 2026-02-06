@@ -1816,6 +1816,17 @@ def cubpresence_extension():
     """CubPresence - Extension download page"""
     return render_template('cubpresence-extension.html')
 
+@app.route('/apps/cubpresence/download')
+def cubpresence_download():
+    """CubPresence - App download page"""
+    return render_template('cubpresence-download.html')
+
+@app.route('/apps/cubpresence/updates/<path:filename>')
+def cubpresence_updates(filename):
+    """Serve CubPresence auto-update files"""
+    updates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'website', 'static', 'downloads', 'cubpresence-updates')
+    return send_from_directory(updates_dir, filename)
+
 # CubPresence API Routes
 @app.route('/api/cubpresence/config', methods=['POST'])
 def cubpresence_create_config():

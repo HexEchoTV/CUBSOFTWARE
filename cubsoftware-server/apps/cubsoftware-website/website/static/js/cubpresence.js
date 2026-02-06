@@ -142,137 +142,35 @@ async function deleteConfig() {
     }
 }
 
-// ==================== EXTENSION COMMUNICATION ====================
+// ==================== APP DOWNLOAD PROMPT ====================
 
-let extensionInstalled = false;
-let extensionState = null;
-
-// Check if extension is installed
-function checkExtension() {
-    return new Promise((resolve) => {
-        // Check for the marker element the content script injects
-        setTimeout(() => {
-            const marker = document.getElementById('cubpresence-extension-installed');
-            extensionInstalled = !!marker;
-            resolve(extensionInstalled);
-        }, 500);
-    });
-}
-
-// Initialize extension detection
-async function initExtension() {
+// Initialize - show app download prompt
+function initExtension() {
     const statusDot = document.getElementById('extStatusDot');
     const statusText = document.getElementById('extStatusText');
     const installPrompt = document.getElementById('extensionInstall');
-    const connectBtn = document.getElementById('connectBtn');
-    const disconnectBtn = document.getElementById('disconnectBtn');
 
-    await checkExtension();
-
-    if (extensionInstalled) {
-        statusDot.classList.add('installed');
-        statusText.textContent = 'Extension installed';
-        installPrompt.style.display = 'none';
-
-        // Listen for state updates from extension
-        window.addEventListener('message', (event) => {
-            if (event.source !== window) return;
-            if (event.data?.type === 'CUBPRESENCE_STATE_UPDATE') {
-                extensionState = event.data;
-                updateExtensionUI();
-            }
-            if (event.data?.type === 'CUBPRESENCE_RESPONSE') {
-                console.log('[CubPresence] Extension response:', event.data);
-            }
-        });
-    } else {
-        statusDot.classList.add('not-installed');
-        statusText.textContent = 'Extension not installed';
-        installPrompt.style.display = 'block';
-    }
+    // Web version can't connect directly - app required
+    statusDot.classList.add('not-installed');
+    statusText.textContent = 'Desktop app required for Discord connection';
+    installPrompt.style.display = 'block';
 }
 
-// Update UI based on extension state
-function updateExtensionUI() {
-    const statusDot = document.getElementById('extStatusDot');
-    const statusText = document.getElementById('extStatusText');
-    const connectBtn = document.getElementById('connectBtn');
-    const disconnectBtn = document.getElementById('disconnectBtn');
-
-    if (!extensionState) return;
-
-    statusDot.className = 'extension-status-dot installed';
-
-    if (extensionState.connectionState === 'connected') {
-        statusDot.classList.add('connected');
-        statusText.textContent = 'Connected to Discord';
-        connectBtn.style.display = 'none';
-        disconnectBtn.style.display = '';
-    } else if (extensionState.connectionState === 'connecting' || extensionState.connectionState === 'authorizing') {
-        statusDot.classList.add('connecting');
-        statusText.textContent = extensionState.connectionState === 'authorizing' ? 'Authorizing...' : 'Connecting...';
-        connectBtn.style.display = 'none';
-        disconnectBtn.style.display = 'none';
-    } else {
-        statusText.textContent = extensionState.error || 'Extension installed - Ready to connect';
-        connectBtn.style.display = '';
-        disconnectBtn.style.display = 'none';
-    }
-}
-
-// Connect via extension
+// Show download prompt when trying to connect
 function connectViaExtension() {
-    if (!extensionInstalled) {
-        showStatus('Please install the CubPresence extension first.', 'error');
-        document.getElementById('extensionInstall').style.display = 'block';
-        return;
-    }
+    showStatus('Please download the CubPresence desktop app to connect to Discord.', 'error');
+    document.getElementById('extensionInstall').style.display = 'block';
 
-    // Build config from current form values
-    const config = buildConfigFromForm();
-
-    // Send to extension
-    window.postMessage({
-        type: 'CUBPRESENCE_CONNECT',
-        config: config
-    }, '*');
-
-    document.getElementById('extStatusText').textContent = 'Connecting...';
-    document.getElementById('extStatusDot').className = 'extension-status-dot installed connecting';
+    // Scroll to the install prompt
+    document.getElementById('extensionInstall').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// Disconnect via extension
+// Not used in web version
 function disconnectViaExtension() {
-    window.postMessage({
-        type: 'CUBPRESENCE_DISCONNECT'
-    }, '*');
+    showStatus('Use the desktop app to manage your Discord connection.', 'info');
 }
 
-// Build config object from form
-function buildConfigFromForm() {
-    return {
-        client_id: document.getElementById('clientIdField').value.trim(),
-        presence: {
-            details: document.getElementById('detailsField').value,
-            state: document.getElementById('stateField').value,
-            timestamps_type: document.querySelector('input[name="timestampType"]:checked').value,
-            start_timestamp: parseInt(document.getElementById('startTimestamp').value) || null,
-            end_timestamp: parseInt(document.getElementById('endTimestamp').value) || null,
-            large_image_key: document.getElementById('largeImageKey').value,
-            large_image_text: document.getElementById('largeImageText').value,
-            small_image_key: document.getElementById('smallImageKey').value,
-            small_image_text: document.getElementById('smallImageText').value,
-            button1_label: document.getElementById('btn1Label').value,
-            button1_url: document.getElementById('btn1Url').value,
-            button2_label: document.getElementById('btn2Label').value,
-            button2_url: document.getElementById('btn2Url').value,
-            party_size: parseInt(document.getElementById('partySize').value) || 0,
-            party_max: parseInt(document.getElementById('partyMax').value) || 0
-        }
-    };
-}
-
-// Legacy connect function (redirect to old connect page if needed)
+// Legacy connect function
 function connectPresence() {
     connectViaExtension();
 }

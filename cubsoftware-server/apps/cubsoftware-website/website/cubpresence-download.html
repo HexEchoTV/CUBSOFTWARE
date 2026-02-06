@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#5865f2">
+    <title>Download CubPresence | CUB SOFTWARE</title>
+    <meta name="description" content="Download CubPresence - Set your Discord Rich Presence with a simple desktop app.">
+
+    <link rel="icon" type="image/png" href="/static/images/company-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/shared.css">
+    <link rel="stylesheet" href="/static/css/cubpresence.css">
+    <style>
+        .download-page {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .download-hero {
+            margin-bottom: 3rem;
+        }
+
+        .download-hero h1 {
+            font-size: 2.5rem;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 1rem;
+        }
+
+        .download-hero p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .download-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .download-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #5865f2, #eb459e);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .download-icon svg {
+            width: 40px;
+            height: 40px;
+            color: white;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 32px;
+            background: #5865f2;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .download-btn:hover {
+            background: #4752c4;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(88, 101, 242, 0.3);
+        }
+
+        .download-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .download-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .download-info span {
+            margin: 0 8px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .feature {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1.25rem;
+            border-radius: 10px;
+        }
+
+        .feature h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .feature h3 svg {
+            width: 18px;
+            height: 18px;
+            color: #57f287;
+        }
+
+        .feature p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .platforms {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .platform {
+            text-align: center;
+            opacity: 0.5;
+        }
+
+        .platform.active {
+            opacity: 1;
+        }
+
+        .platform svg {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 6px;
+        }
+
+        .platform span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: 2rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        {% include 'header.html' %}
+
+        <main class="cubpresence-main">
+            <div class="download-page">
+                <a href="/apps/cubpresence" class="back-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to CubPresence
+                </a>
+
+                <div class="download-hero">
+                    <h1><span class="gradient-text">CubPresence</span></h1>
+                    <p>Set your Discord Rich Presence with a simple, lightweight desktop app. Auto-updates included!</p>
+                </div>
+
+                <div class="download-card">
+                    <div class="download-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02z"/></svg>
+                    </div>
+
+                    <a href="/static/downloads/cubpresence-updates/CubPresence Setup.exe" class="download-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                        Download for Windows
+                    </a>
+
+                    <div class="download-info">
+                        <span>v1.0.0</span>
+                        <span>•</span>
+                        <span>~80 MB</span>
+                        <span>•</span>
+                        <span>Windows 10/11</span>
+                    </div>
+
+                    <div class="features">
+                        <div class="feature">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                Easy Setup
+                            </h3>
+                            <p>Install once, use anytime. No browser needed.</p>
+                        </div>
+                        <div class="feature">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                Auto Updates
+                            </h3>
+                            <p>Always get the latest features automatically.</p>
+                        </div>
+                        <div class="feature">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                System Tray
+                            </h3>
+                            <p>Runs quietly in background, minimizes to tray.</p>
+                        </div>
+                    </div>
+
+                    <div class="platforms">
+                        <div class="platform active">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+                            <span>Windows</span>
+                        </div>
+                        <div class="platform">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/></svg>
+                            <span>macOS (soon)</span>
+                        </div>
+                        <div class="platform">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.001-.465.003-.653.014-1.307.07-1.954.18-.654.113-1.29.3-1.9.548-.608.246-1.177.555-1.7.917-.524.363-.998.783-1.415 1.252-.417.468-.774.984-1.065 1.535-.292.552-.517 1.136-.669 1.743-.152.607-.233 1.232-.239 1.861-.007.631.06 1.257.199 1.867.14.611.352 1.199.631 1.754.279.556.623 1.071 1.025 1.539.402.468.859.885 1.362 1.241a8.57 8.57 0 0 0 1.627.86c.579.242 1.185.413 1.804.51.62.098 1.251.122 1.876.073.624-.049 1.24-.173 1.833-.367.593-.193 1.156-.456 1.676-.778.521-.323.996-.707 1.413-1.14.417-.434.773-.916 1.057-1.433.285-.518.498-1.067.636-1.637.137-.571.199-1.16.183-1.749-.016-.59-.11-1.174-.278-1.737-.168-.564-.409-1.1-.716-1.599-.307-.5-.678-.957-1.105-1.363-.427-.406-.905-.757-1.423-1.047-.518-.29-1.07-.515-1.647-.668-.576-.153-1.173-.233-1.773-.24zm-.014 1.495h.065c.472.007.941.064 1.4.17.458.108.901.266 1.32.471.418.205.809.457 1.163.752.354.294.669.629.937.996.268.368.49.766.66 1.186.17.42.288.862.351 1.314.063.453.07.913.022 1.365-.048.453-.152.896-.308 1.319-.157.424-.365.824-.62 1.193-.255.368-.555.702-.894.993-.339.291-.715.537-1.118.733-.403.195-.83.339-1.271.427-.44.088-.893.12-1.343.095-.45-.025-.893-.107-1.32-.245-.426-.137-.83-.329-1.204-.569-.373-.24-.713-.527-1.012-.855-.298-.328-.553-.693-.757-1.086-.204-.393-.358-.812-.458-1.245-.1-.433-.146-.878-.135-1.323.01-.444.078-.885.2-1.311.122-.426.298-.833.524-1.212.225-.38.498-.728.812-1.038.314-.31.667-.579 1.05-.8.383-.222.793-.393 1.22-.51.427-.118.869-.18 1.312-.187z"/></svg>
+                            <span>Linux (soon)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        {% include 'footer.html' %}
+    </div>
+</body>
+</html>
