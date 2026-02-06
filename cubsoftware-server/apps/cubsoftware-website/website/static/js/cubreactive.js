@@ -1726,8 +1726,39 @@ function initColorWithPreview(colorId) {
     }
 }
 
+// Initialize tab navigation
+function initTabNavigation() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    if (tabBtns.length === 0) return;
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+
+            // Remove active from all buttons and contents
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+
+            // Add active to clicked button and corresponding content
+            btn.classList.add('active');
+            const tabContent = document.getElementById(`tab-${tabId}`);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
+            // Update preview when switching tabs
+            updatePreview();
+        });
+    });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize tab navigation
+    initTabNavigation();
+
     // Set up file upload listeners
     ['speaking', 'idle', 'muted', 'deafened'].forEach(state => {
         const input = document.getElementById(`upload-${state}`);

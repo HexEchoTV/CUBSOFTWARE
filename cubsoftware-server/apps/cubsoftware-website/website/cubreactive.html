@@ -99,6 +99,36 @@
                         </div>
                     </div>
 
+                    <!-- Tab Navigation -->
+                    <div class="tab-navigation">
+                        <button type="button" class="tab-btn active" data-tab="images">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <span>Images</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="appearance">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0 0 20 10 10 0 0 0 0-20z"/></svg>
+                            <span>Appearance</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="animation">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                            <span>Animation</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="group">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            <span>Group & Filter</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="themes">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                            <span>Themes</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="overlay">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                            <span>Get Overlay</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab: Images -->
+                    <div class="tab-content active" id="tab-images">
                     <!-- Image Upload Section -->
                     <div class="upload-section">
                         <h2>Your Avatar Images</h2>
@@ -246,10 +276,12 @@
                             </div>
                         </div>
                     </div>
+                    </div><!-- End tab-images -->
 
-                    <!-- Settings Section -->
+                    <!-- Tab: Appearance -->
+                    <div class="tab-content" id="tab-appearance">
                     <div class="settings-section">
-                        <h2>Overlay Settings</h2>
+                        <h2>Appearance Settings</h2>
 
                         <!-- Basic Settings -->
                         <div class="settings-group">
@@ -673,10 +705,17 @@
                                 <span class="slider-value" id="idle-opacity-value">{{ user_config.settings.idle_opacity if user_config and user_config.settings.idle_opacity else 100 }}%</span>
                             </div>
                         </div>
+                    </div>
+                    </div><!-- End tab-appearance (includes animations) -->
 
-                        <!-- Additional Options -->
+                    <!-- Tab: Group & Filter -->
+                    <div class="tab-content" id="tab-group">
+                    <div class="settings-section">
+                        <h2>Group Mode & Member Filter</h2>
+
+                        <!-- Group Options -->
                         <div class="settings-group">
-                            <h3>Additional Options</h3>
+                            <h3>Group Display Options</h3>
                             <div class="settings-grid">
                                 <label class="setting-toggle">
                                     <input type="checkbox" id="setting-flip" {% if user_config and user_config.settings.flip_horizontal %}checked{% endif %}>
@@ -759,6 +798,13 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    </div><!-- End tab-group -->
+
+                    <!-- Tab: Animation (Effects) -->
+                    <div class="tab-content" id="tab-animation">
+                    <div class="settings-section">
+                        <h2>Effects & Animations</h2>
 
                         <!-- Particle Effects -->
                         <div class="settings-group">
@@ -1075,6 +1121,13 @@
                             </div>
                             <input type="hidden" id="setting-sort-order" value="{{ user_config.settings.sort_order if user_config and user_config.settings.sort_order else 'join-order' }}">
                         </div>
+                    </div>
+                    </div><!-- End tab-animation -->
+
+                    <!-- Tab: Themes -->
+                    <div class="tab-content" id="tab-themes">
+                    <div class="settings-section">
+                        <h2>Themes & Settings</h2>
 
                         <!-- Import/Export -->
                         <div class="settings-group">
@@ -1236,7 +1289,10 @@
 
                         <button class="btn-save-settings" onclick="saveSettings()">Save Settings</button>
                     </div>
+                    </div><!-- End tab-themes -->
 
+                    <!-- Tab: Get Overlay -->
+                    <div class="tab-content" id="tab-overlay">
                     <!-- Bot Setup -->
                     <div class="rpc-section">
                         <h2>Setup</h2>
@@ -1303,8 +1359,14 @@
                             <p class="source-hint">Recommended browser source size: 1920x1080</p>
                         </div>
                     </div>
+                    </div><!-- End tab-overlay -->
 
-                    <!-- Preview Section -->
+                    <!-- Save Button (Always Visible) -->
+                    <div class="save-section">
+                        <button class="btn-save-settings" onclick="saveSettings()">Save All Settings</button>
+                    </div>
+
+                    <!-- Preview Section (Always Visible) -->
                     <div class="preview-section">
                         <h2>Live Preview</h2>
                         <p class="section-description">See exactly how your avatar will look in OBS. Click to simulate speaking.</p>
