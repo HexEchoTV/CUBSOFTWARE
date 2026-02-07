@@ -1,6 +1,7 @@
 {
   "allowed_users": [
-    "378501056008683530"
+    "378501056008683530",
+    "738723658352296017"
   ],
   "note": "Add Discord user IDs to the allowed_users array to grant dashboard access"
 }

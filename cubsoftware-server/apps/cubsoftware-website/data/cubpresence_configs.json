@@ -1,0 +1,117 @@
+{
+  "28ehAxCAzOA": {
+    "client_id": "1334755357624369162",
+    "created": 1770287847.9151132,
+    "last_connected": null,
+    "presence": {
+      "details": "\ud83e\udde0 Developing CUBSOFTWARE",
+      "state": "\ud83d\udcb5 All software is free forever",
+      "timestamps_type": "none",
+      "start_timestamp": null,
+      "end_timestamp": null,
+      "large_image_key": "https://github.com/ThortonEllmers/QuestCord-v2/blob/main/production/web/public/images/image-monokuma.png?raw=true",
+      "large_image_text": "",
+      "small_image_key": "https://github.com/ThortonEllmers/QuestCord-v2/blob/main/production/web/public/images/image-heart.png?raw=true",
+      "small_image_text": "",
+      "button1_label": "CUBSOFTWARE",
+      "button1_url": "https://cubsoftware.site",
+      "button2_label": "QUESTCORD",
+      "button2_url": "https://questcord.fun",
+      "party_id": "",
+      "party_size": 0,
+      "party_max": 0
+    }
+  },
+  "E4jeGwj2cpQ": {
+    "client_id": "1334755357624369162",
+    "created": 1770296590.3523858,
+    "last_connected": null,
+    "presence": {
+      "details": "",
+      "state": "",
+      "timestamps_type": "none",
+      "start_timestamp": null,
+      "end_timestamp": null,
+      "large_image_key": "",
+      "large_image_text": "",
+      "small_image_key": "",
+      "small_image_text": "",
+      "button1_label": "",
+      "button1_url": "",
+      "button2_label": "",
+      "button2_url": "",
+      "party_id": "",
+      "party_size": 0,
+      "party_max": 0
+    }
+  },
+  "l4y67F5mx0w": {
+    "client_id": "1334755357624369162",
+    "created": 1770302615.814471,
+    "last_connected": null,
+    "presence": {
+      "details": "",
+      "state": "",
+      "timestamps_type": "none",
+      "start_timestamp": null,
+      "end_timestamp": null,
+      "large_image_key": "",
+      "large_image_text": "",
+      "small_image_key": "",
+      "small_image_text": "",
+      "button1_label": "",
+      "button1_url": "",
+      "button2_label": "",
+      "button2_url": "",
+      "party_id": "",
+      "party_size": 0,
+      "party_max": 0
+    }
+  },
+  "ZpwRk7QFWIE": {
+    "client_id": "1334755357624369162",
+    "created": 1770361323.991392,
+    "last_connected": null,
+    "presence": {
+      "details": "",
+      "state": "",
+      "timestamps_type": "none",
+      "start_timestamp": null,
+      "end_timestamp": null,
+      "large_image_key": "",
+      "large_image_text": "",
+      "small_image_key": "",
+      "small_image_text": "",
+      "button1_label": "",
+      "button1_url": "",
+      "button2_label": "",
+      "button2_url": "",
+      "party_id": "",
+      "party_size": 0,
+      "party_max": 0
+    }
+  },
+  "XMZzo-_IilM": {
+    "client_id": "1334755357624369162",
+    "created": 1770362069.9333012,
+    "last_connected": null,
+    "presence": {
+      "details": "Developing CUBSOFTWARE",
+      "state": "test",
+      "timestamps_type": "none",
+      "start_timestamp": null,
+      "end_timestamp": null,
+      "large_image_key": "",
+      "large_image_text": "",
+      "small_image_key": "",
+      "small_image_text": "",
+      "button1_label": "",
+      "button1_url": "",
+      "button2_label": "",
+      "button2_url": "",
+      "party_id": "",
+      "party_size": 0,
+      "party_max": 0
+    }
+  }
+}
