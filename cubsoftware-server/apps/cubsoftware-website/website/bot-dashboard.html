@@ -270,6 +270,255 @@
             text-overflow: ellipsis;
         }
 
+        .guild-card.active {
+            border-color: #5865f2;
+            background: rgba(88, 101, 242, 0.1);
+        }
+
+        /* Guild Details Panel */
+        .guild-details-panel {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .guild-details-panel.active {
+            display: block;
+        }
+
+        .guild-details-panel h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .guild-details-panel h4 svg {
+            width: 18px;
+            height: 18px;
+            color: #5865f2;
+        }
+
+        .guild-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .guild-tab {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .guild-tab:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .guild-tab.active {
+            background: #5865f2;
+            color: white;
+        }
+
+        .guild-tab-content {
+            display: none;
+        }
+
+        .guild-tab-content.active {
+            display: block;
+        }
+
+        .channel-list {
+            display: grid;
+            gap: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .channel-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .channel-item:hover {
+            border-color: #5865f2;
+        }
+
+        .channel-item svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+        }
+
+        .channel-item .channel-name {
+            flex: 1;
+        }
+
+        .channel-item .copy-id {
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-primary);
+            border: none;
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+
+        .channel-item:hover .copy-id {
+            opacity: 1;
+        }
+
+        .channel-item .copy-id:hover {
+            background: #5865f2;
+            color: white;
+        }
+
+        .member-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .member-item img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .member-item .member-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .member-item .member-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-item .member-id {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .member-item .dm-btn {
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-primary);
+            border: none;
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+
+        .member-item:hover .dm-btn {
+            opacity: 1;
+        }
+
+        .member-item .dm-btn:hover {
+            background: #5865f2;
+            color: white;
+        }
+
+        /* DM List Section */
+        .dm-list-section {
+            margin-top: 1.5rem;
+        }
+
+        .dm-list {
+            display: grid;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .dm-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dm-item:hover {
+            border-color: #5865f2;
+            background: rgba(88, 101, 242, 0.05);
+        }
+
+        .dm-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .dm-item .dm-info {
+            flex: 1;
+        }
+
+        .dm-item .dm-username {
+            font-weight: 500;
+        }
+
+        .dm-item .dm-user-id {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .dm-item .open-dm {
+            padding: 0.5rem 1rem;
+            background: #5865f2;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dm-item .open-dm:hover {
+            background: #4752c4;
+        }
+
         /* Send Message Form */
         .message-form {
             margin-top: 1rem;
@@ -544,7 +793,46 @@
                         <p><strong>Servers:</strong> <span id="bot-guild-count">0</span></p>
 
                         <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Server List</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Click on a server to view its members and channels</p>
                         <div class="guild-list" id="guild-list"></div>
+
+                        <!-- Guild Details Panel -->
+                        <div class="guild-details-panel" id="guild-details-panel">
+                            <h4 id="guild-details-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                                <span>Server Details</span>
+                            </h4>
+                            <div class="guild-tabs">
+                                <button class="guild-tab active" onclick="switchGuildTab('channels')">Channels</button>
+                                <button class="guild-tab" onclick="switchGuildTab('members')">Members</button>
+                            </div>
+                            <div class="guild-tab-content active" id="tab-channels">
+                                <div class="channel-list" id="channel-list">
+                                    <p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading channels...</p>
+                                </div>
+                            </div>
+                            <div class="guild-tab-content" id="tab-members">
+                                <div class="member-list" id="member-list">
+                                    <p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading members...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DM List Section -->
+                        <div class="dm-list-section">
+                            <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; vertical-align: middle; margin-right: 0.5rem;">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                Direct Messages
+                            </h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Click on a conversation to view messages</p>
+                            <div class="dm-list" id="dm-list">
+                                <p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading DMs...</p>
+                            </div>
+                        </div>
 
                         <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Send Channel Message</h3>
                         <div class="message-form">
@@ -677,11 +965,17 @@
                     // Populate guild list
                     const guildList = document.getElementById('guild-list');
                     guildList.innerHTML = data.guild_list.map(g => `
-                        <div class="guild-card" onclick="selectGuild('${g.id}')">
+                        <div class="guild-card" data-guild-id="${g.id}" onclick="selectGuild('${g.id}', '${escapeHtml(g.name).replace(/'/g, "\\'")}')">
                             <img src="${g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : '/static/images/default-avatar.png'}" alt="">
                             <span class="guild-name">${escapeHtml(g.name)}</span>
                         </div>
                     `).join('');
+
+                    // Hide guild details panel
+                    document.getElementById('guild-details-panel').classList.remove('active');
+
+                    // Load DMs
+                    loadDMs();
 
                     loadingEl.style.display = 'none';
                     contentEl.style.display = 'block';
@@ -695,9 +989,161 @@
             }
         }
 
-        async function selectGuild(guildId) {
-            // Could expand to show guild details
-            showToast(`Selected guild: ${guildId}`);
+        let selectedGuildId = null;
+
+        async function selectGuild(guildId, guildName) {
+            selectedGuildId = guildId;
+
+            // Update UI - highlight selected guild
+            document.querySelectorAll('.guild-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[data-guild-id="${guildId}"]`)?.classList.add('active');
+
+            // Show guild details panel
+            const panel = document.getElementById('guild-details-panel');
+            panel.classList.add('active');
+
+            // Update title
+            document.querySelector('#guild-details-title span').textContent = guildName || 'Server Details';
+
+            // Reset to channels tab
+            switchGuildTab('channels');
+
+            // Load channels and members
+            loadGuildChannels(guildId);
+            loadGuildMembers(guildId);
+        }
+
+        function switchGuildTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.guild-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.guild-tab[onclick*="${tab}"]`)?.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.guild-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`tab-${tab}`)?.classList.add('active');
+        }
+
+        async function loadGuildChannels(guildId) {
+            const container = document.getElementById('channel-list');
+            container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading channels...</p>';
+
+            try {
+                const res = await fetch(`/api/bot-dashboard/bots/${selectedBotId}/guilds/${guildId}/channels`);
+                const data = await res.json();
+
+                if (data.error) {
+                    container.innerHTML = `<p style="color: #ed4245; text-align: center; padding: 1rem;">${escapeHtml(data.error)}</p>`;
+                    return;
+                }
+
+                if (data.channels.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No text channels found</p>';
+                    return;
+                }
+
+                container.innerHTML = data.channels.map(c => `
+                    <div class="channel-item" onclick="fillChannelId('${c.id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 9h16M4 15h16M10 3l-2 18M16 3l-2 18"/>
+                        </svg>
+                        <span class="channel-name">${escapeHtml(c.name)}</span>
+                        <button class="copy-id" onclick="event.stopPropagation(); copyToClipboard('${c.id}')">Copy ID</button>
+                    </div>
+                `).join('');
+
+            } catch (e) {
+                container.innerHTML = '<p style="color: #ed4245; text-align: center; padding: 1rem;">Failed to load channels</p>';
+            }
+        }
+
+        async function loadGuildMembers(guildId) {
+            const container = document.getElementById('member-list');
+            container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading members...</p>';
+
+            try {
+                const res = await fetch(`/api/bot-dashboard/bots/${selectedBotId}/guilds/${guildId}/members`);
+                const data = await res.json();
+
+                if (data.error) {
+                    container.innerHTML = `<p style="color: #ed4245; text-align: center; padding: 1rem;">${escapeHtml(data.error)}</p>`;
+                    return;
+                }
+
+                if (data.members.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No members found</p>';
+                    return;
+                }
+
+                container.innerHTML = data.members.map(m => `
+                    <div class="member-item">
+                        <img src="${m.avatar}" alt="">
+                        <div class="member-info">
+                            <div class="member-name">${escapeHtml(m.nick || m.global_name || m.username)}</div>
+                            <div class="member-id">${m.id}</div>
+                        </div>
+                        <button class="dm-btn" onclick="fillDmUserId('${m.id}')">DM</button>
+                    </div>
+                `).join('');
+
+            } catch (e) {
+                container.innerHTML = '<p style="color: #ed4245; text-align: center; padding: 1rem;">Failed to load members</p>';
+            }
+        }
+
+        async function loadDMs() {
+            const container = document.getElementById('dm-list');
+            container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">Loading DMs...</p>';
+
+            try {
+                const res = await fetch(`/api/bot-dashboard/bots/${selectedBotId}/dms`);
+                const data = await res.json();
+
+                if (data.error) {
+                    container.innerHTML = `<p style="color: #ed4245; text-align: center; padding: 1rem;">${escapeHtml(data.error)}</p>`;
+                    return;
+                }
+
+                if (data.dms.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;">No DM conversations yet</p>';
+                    return;
+                }
+
+                container.innerHTML = data.dms.map(dm => `
+                    <div class="dm-item" onclick="openDM('${dm.channel_id}')">
+                        <img src="${dm.avatar}" alt="">
+                        <div class="dm-info">
+                            <div class="dm-username">${escapeHtml(dm.global_name || dm.username)}</div>
+                            <div class="dm-user-id">${dm.user_id}</div>
+                        </div>
+                        <button class="open-dm" onclick="event.stopPropagation(); openDM('${dm.channel_id}')">Open</button>
+                    </div>
+                `).join('');
+
+            } catch (e) {
+                container.innerHTML = '<p style="color: #ed4245; text-align: center; padding: 1rem;">Failed to load DMs</p>';
+            }
+        }
+
+        function openDM(channelId) {
+            window.open(`/bot-dashboard/dms/${selectedBotId}/${channelId}`, '_blank');
+        }
+
+        function fillChannelId(channelId) {
+            document.getElementById('message-channel-id').value = channelId;
+            showToast('Channel ID filled', 'success');
+        }
+
+        function fillDmUserId(userId) {
+            document.getElementById('dm-user-id').value = userId;
+            showToast('User ID filled', 'success');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard', 'success');
+            }).catch(() => {
+                showToast('Failed to copy', 'error');
+            });
         }
 
         async function sendMessage() {
@@ -760,6 +1206,8 @@
                 if (data.success) {
                     showToast('DM sent!', 'success');
                     document.getElementById('dm-content').value = '';
+                    // Reload DMs to show the new conversation
+                    loadDMs();
                 } else {
                     showToast(data.error?.message || data.error || 'Failed to send DM', 'error');
                 }

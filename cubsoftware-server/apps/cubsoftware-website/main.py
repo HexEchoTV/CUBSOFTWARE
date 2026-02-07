@@ -4019,6 +4019,235 @@ def bot_dashboard_send_dm(bot_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/members', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_guild_members(bot_id, guild_id):
+    """Get members of a guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        # Get guild members (limit 1000)
+        response = requests.get(
+            f'https://discord.com/api/guilds/{guild_id}/members?limit=1000',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get members'}), response.status_code
+
+        members = response.json()
+
+        # Format member data
+        formatted_members = []
+        for m in members:
+            user = m.get('user', {})
+            avatar = None
+            if user.get('avatar'):
+                avatar = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png"
+            else:
+                # Default avatar
+                discriminator = int(user.get('discriminator', '0') or '0')
+                avatar = f"https://cdn.discordapp.com/embed/avatars/{discriminator % 5}.png"
+
+            formatted_members.append({
+                'id': user.get('id'),
+                'username': user.get('username'),
+                'global_name': user.get('global_name'),
+                'avatar': avatar,
+                'nick': m.get('nick'),
+                'joined_at': m.get('joined_at'),
+                'roles': m.get('roles', [])
+            })
+
+        return jsonify({'members': formatted_members})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/channels', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_guild_channels(bot_id, guild_id):
+    """Get text channels of a guild that the bot can send messages to"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.get(
+            f'https://discord.com/api/guilds/{guild_id}/channels',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get channels'}), response.status_code
+
+        channels = response.json()
+
+        # Filter to text channels (type 0) and announcement channels (type 5)
+        text_channels = [
+            {
+                'id': c['id'],
+                'name': c['name'],
+                'type': c['type'],
+                'parent_id': c.get('parent_id'),
+                'position': c.get('position', 0)
+            }
+            for c in channels
+            if c['type'] in [0, 5]  # 0 = text, 5 = announcement
+        ]
+
+        # Sort by position
+        text_channels.sort(key=lambda x: x['position'])
+
+        return jsonify({'channels': text_channels})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/dms', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_get_dms(bot_id):
+    """Get all DM channels for a bot"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        # Get bot's DM channels
+        response = requests.get(
+            'https://discord.com/api/users/@me/channels',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get DM channels'}), response.status_code
+
+        channels = response.json()
+
+        # Format DM channels
+        dm_channels = []
+        for c in channels:
+            if c['type'] == 1:  # DM channel
+                recipients = c.get('recipients', [])
+                if recipients:
+                    user = recipients[0]
+                    avatar = None
+                    if user.get('avatar'):
+                        avatar = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png"
+                    else:
+                        discriminator = int(user.get('discriminator', '0') or '0')
+                        avatar = f"https://cdn.discordapp.com/embed/avatars/{discriminator % 5}.png"
+
+                    dm_channels.append({
+                        'channel_id': c['id'],
+                        'user_id': user.get('id'),
+                        'username': user.get('username'),
+                        'global_name': user.get('global_name'),
+                        'avatar': avatar
+                    })
+
+        return jsonify({'dms': dm_channels})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/dms/<channel_id>/messages', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_get_dm_messages(bot_id, channel_id):
+    """Get messages from a DM channel"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        # Get messages from the DM channel
+        limit = request.args.get('limit', 50, type=int)
+        before = request.args.get('before')
+
+        url = f'https://discord.com/api/channels/{channel_id}/messages?limit={limit}'
+        if before:
+            url += f'&before={before}'
+
+        response = requests.get(
+            url,
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get messages'}), response.status_code
+
+        messages = response.json()
+
+        # Format messages
+        formatted_messages = []
+        for m in messages:
+            author = m.get('author', {})
+            avatar = None
+            if author.get('avatar'):
+                avatar = f"https://cdn.discordapp.com/avatars/{author['id']}/{author['avatar']}.png"
+            else:
+                discriminator = int(author.get('discriminator', '0') or '0')
+                avatar = f"https://cdn.discordapp.com/embed/avatars/{discriminator % 5}.png"
+
+            formatted_messages.append({
+                'id': m['id'],
+                'content': m.get('content', ''),
+                'timestamp': m.get('timestamp'),
+                'author': {
+                    'id': author.get('id'),
+                    'username': author.get('username'),
+                    'global_name': author.get('global_name'),
+                    'avatar': avatar,
+                    'bot': author.get('bot', False)
+                },
+                'attachments': m.get('attachments', []),
+                'embeds': m.get('embeds', [])
+            })
+
+        # Reverse to show oldest first
+        formatted_messages.reverse()
+
+        return jsonify({'messages': formatted_messages})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/bot-dashboard/dms/<bot_id>/<channel_id>')
+@bot_dashboard_auth_required
+def bot_dashboard_dm_conversation(bot_id, channel_id):
+    """View DM conversation with a user"""
+    user = session.get('bot_dashboard_user')
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return render_template('404.html'), 404
+
+    bot = data['bots'][bot_id]
+
+    return render_template('bot-dashboard-dm.html',
+                          user=user,
+                          bot_id=bot_id,
+                          bot_name=bot.get('name', 'Unknown Bot'),
+                          channel_id=channel_id)
+
 @app.route('/api/bot-dashboard/whitelist', methods=['GET'])
 @bot_dashboard_auth_required
 def bot_dashboard_get_whitelist():
