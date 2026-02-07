@@ -3963,6 +3963,62 @@ def bot_dashboard_send_message(bot_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/bot-dashboard/bots/<bot_id>/send-dm', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_send_dm(bot_id):
+    """Send a DM to a user as the bot"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json()
+    user_id = req_data.get('user_id')
+    content = req_data.get('content')
+
+    if not user_id or not content:
+        return jsonify({'error': 'user_id and content are required'}), 400
+
+    try:
+        # First, create a DM channel with the user
+        dm_response = requests.post(
+            'https://discord.com/api/users/@me/channels',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json'
+            },
+            json={'recipient_id': user_id}
+        )
+
+        if dm_response.status_code not in [200, 201]:
+            error_data = dm_response.json()
+            return jsonify({'error': f"Failed to create DM channel: {error_data.get('message', 'Unknown error')}"}), dm_response.status_code
+
+        dm_channel = dm_response.json()
+        channel_id = dm_channel['id']
+
+        # Now send the message to the DM channel
+        msg_response = requests.post(
+            f'https://discord.com/api/channels/{channel_id}/messages',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json'
+            },
+            json={'content': content}
+        )
+
+        if msg_response.status_code == 200:
+            return jsonify({'success': True, 'message': msg_response.json()})
+        else:
+            error_data = msg_response.json()
+            return jsonify({'error': f"Failed to send message: {error_data.get('message', 'Unknown error')}"}), msg_response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/bot-dashboard/whitelist', methods=['GET'])
 @bot_dashboard_auth_required
 def bot_dashboard_get_whitelist():

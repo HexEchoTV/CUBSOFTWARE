@@ -546,13 +546,22 @@
                         <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Server List</h3>
                         <div class="guild-list" id="guild-list"></div>
 
-                        <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Send Message</h3>
+                        <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Send Channel Message</h3>
                         <div class="message-form">
                             <label>Channel ID</label>
                             <input type="text" id="message-channel-id" placeholder="Enter channel ID">
                             <label>Message</label>
                             <textarea id="message-content" placeholder="Enter your message..."></textarea>
                             <button onclick="sendMessage()">Send Message</button>
+                        </div>
+
+                        <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Send Direct Message</h3>
+                        <div class="message-form">
+                            <label>User ID</label>
+                            <input type="text" id="dm-user-id" placeholder="Enter Discord user ID">
+                            <label>Message</label>
+                            <textarea id="dm-content" placeholder="Enter your DM..."></textarea>
+                            <button onclick="sendDM()">Send DM</button>
                         </div>
                     </div>
                 </div>
@@ -722,6 +731,40 @@
                 }
             } catch (e) {
                 showToast('Failed to send message', 'error');
+            }
+        }
+
+        async function sendDM() {
+            if (!selectedBotId) {
+                showToast('Select a bot first', 'error');
+                return;
+            }
+
+            const userId = document.getElementById('dm-user-id').value.trim();
+            const content = document.getElementById('dm-content').value.trim();
+
+            if (!userId || !content) {
+                showToast('User ID and message are required', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/bot-dashboard/bots/${selectedBotId}/send-dm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, content })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast('DM sent!', 'success');
+                    document.getElementById('dm-content').value = '';
+                } else {
+                    showToast(data.error?.message || data.error || 'Failed to send DM', 'error');
+                }
+            } catch (e) {
+                showToast('Failed to send DM', 'error');
             }
         }
 
