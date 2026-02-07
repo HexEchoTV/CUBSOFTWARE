@@ -1760,56 +1760,73 @@ function initSettingsSearch() {
     const clearBtn = document.getElementById('search-clear');
     if (!searchInput) return;
 
-    const allSettingsGroups = document.querySelectorAll('.settings-group');
-    const allTabContents = document.querySelectorAll('.tab-content');
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const dashboardSection = document.querySelector('.dashboard-section');
+    let previousActiveTab = 'images';
 
     searchInput.addEventListener('input', () => {
         const query = searchInput.value.toLowerCase().trim();
+        const allSettingsGroups = document.querySelectorAll('.settings-group');
+        const allTabContents = document.querySelectorAll('.tab-content');
+        const dashboardSection = document.querySelector('.dashboard-section');
+
         clearBtn.style.display = query ? 'block' : 'none';
 
         if (!query) {
             // Reset to normal view
             dashboardSection?.classList.remove('search-active');
-            allTabContents.forEach(tab => tab.classList.remove('active'));
+
+            // Hide all tabs first
+            allTabContents.forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = '';
+            });
+
+            // Reset all settings groups
             allSettingsGroups.forEach(group => {
                 group.classList.remove('search-match', 'search-hidden');
+                group.style.display = '';
             });
-            // Activate the first tab or previously active tab
+
+            // Activate the previously active tab
             const activeBtn = document.querySelector('.tab-btn.active');
             if (activeBtn) {
                 const tabId = activeBtn.dataset.tab;
-                document.getElementById(`tab-${tabId}`)?.classList.add('active');
+                const tabContent = document.getElementById(`tab-${tabId}`);
+                if (tabContent) tabContent.classList.add('active');
+            } else {
+                // Default to first tab
+                document.getElementById('tab-images')?.classList.add('active');
             }
             return;
         }
 
-        // Search mode - show all tabs and filter settings
+        // Remember current active tab
+        const currentActiveBtn = document.querySelector('.tab-btn.active');
+        if (currentActiveBtn) {
+            previousActiveTab = currentActiveBtn.dataset.tab;
+        }
+
+        // Search mode - show all tabs
         dashboardSection?.classList.add('search-active');
-        allTabContents.forEach(tab => tab.classList.add('active'));
+        allTabContents.forEach(tab => {
+            tab.classList.add('active');
+            tab.style.display = 'block';
+        });
 
+        // Filter settings groups
+        let matchCount = 0;
         allSettingsGroups.forEach(group => {
-            const text = group.textContent.toLowerCase();
-            const h3 = group.querySelector('h3');
-            const labels = group.querySelectorAll('label, .setting-label, .setting-description, button');
+            const groupText = group.textContent.toLowerCase();
 
-            let matches = false;
-            if (h3 && h3.textContent.toLowerCase().includes(query)) {
-                matches = true;
-            }
-            labels.forEach(label => {
-                if (label.textContent.toLowerCase().includes(query)) {
-                    matches = true;
-                }
-            });
-
-            if (matches) {
+            // Check if query matches any text in the group
+            if (groupText.includes(query)) {
                 group.classList.add('search-match');
                 group.classList.remove('search-hidden');
+                group.style.display = '';
+                matchCount++;
             } else {
                 group.classList.remove('search-match');
                 group.classList.add('search-hidden');
+                group.style.display = 'none';
             }
         });
     });
@@ -1818,6 +1835,15 @@ function initSettingsSearch() {
         searchInput.value = '';
         searchInput.dispatchEvent(new Event('input'));
         searchInput.focus();
+    });
+
+    // Also handle Escape key to clear search
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.blur();
+        }
     });
 }
 

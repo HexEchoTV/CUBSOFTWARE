@@ -278,6 +278,11 @@ def contact():
     """Serve the contact page"""
     return render_template('contact.html')
 
+@app.route('/cubpresence-wiki')
+def cubpresence_wiki():
+    """Serve the CubPresence wiki page"""
+    return render_template('cubpresence-wiki.html')
+
 @app.route('/static/css/<path:filename>')
 def serve_css(filename):
     """Serve CSS files for main website"""

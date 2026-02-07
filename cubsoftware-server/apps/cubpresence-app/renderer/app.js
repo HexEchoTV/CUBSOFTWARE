@@ -71,6 +71,7 @@ function applySettingsToUI() {
     document.getElementById('settingShowNotifications').checked = settings.showNotifications;
     document.getElementById('settingSavePresence').checked = settings.savePresenceOnClose;
     document.getElementById('settingCheckUpdates').checked = settings.checkUpdatesOnStartup;
+    document.getElementById('settingAutoDownload').checked = settings.autoDownloadUpdates;
 }
 
 // Handle update status
@@ -128,6 +129,29 @@ function setupEventListeners() {
 
     // Update button
     updateBtn.addEventListener('click', updateActivity);
+
+    // Preset buttons
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const preset = btn.dataset.preset;
+            applyPreset(preset);
+        });
+    });
+
+    // Activity type selector
+    const activityType = document.getElementById('activityType');
+    if (activityType) {
+        activityType.addEventListener('change', updatePreview);
+    }
+
+    // Wiki link
+    const wikiLink = document.getElementById('wikiLink');
+    if (wikiLink) {
+        wikiLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.cubpresence.openExternal('https://cubsoftware.site/cubpresence-wiki');
+        });
+    }
 
     // Timestamp radio buttons
     document.querySelectorAll('input[name="timestampType"]').forEach(radio => {
@@ -223,6 +247,11 @@ function setupEventListeners() {
         saveSettings();
     });
 
+    document.getElementById('settingAutoDownload').addEventListener('change', (e) => {
+        settings.autoDownloadUpdates = e.target.checked;
+        saveSettings();
+    });
+
     // Check updates button
     document.getElementById('checkUpdatesBtn').addEventListener('click', () => {
         window.cubpresence.checkForUpdates();
@@ -302,9 +331,89 @@ async function updateActivity() {
     updateStatus('connected', 'Presence updated!');
 }
 
+// Apply preset
+function applyPreset(preset) {
+    const presets = {
+        gaming: {
+            details: 'In Game',
+            state: 'Playing',
+            activityType: '0',
+            timestampType: 'since_update'
+        },
+        streaming: {
+            details: 'Live Now',
+            state: 'Streaming',
+            activityType: '1',
+            timestampType: 'since_connection'
+        },
+        coding: {
+            details: 'Writing Code',
+            state: 'In IDE',
+            activityType: '0',
+            timestampType: 'since_app_start'
+        },
+        music: {
+            details: 'Listening to Music',
+            state: 'Vibing',
+            activityType: '2',
+            timestampType: 'none'
+        },
+        chilling: {
+            details: 'Taking a Break',
+            state: 'AFK',
+            activityType: '0',
+            timestampType: 'none'
+        },
+        clear: {
+            details: '',
+            state: '',
+            activityType: '0',
+            timestampType: 'none',
+            clearAll: true
+        }
+    };
+
+    const p = presets[preset];
+    if (!p) return;
+
+    // Apply preset values
+    document.getElementById('details').value = p.details || '';
+    document.getElementById('state').value = p.state || '';
+    document.getElementById('activityType').value = p.activityType || '0';
+
+    // Set timestamp type
+    const tsRadio = document.querySelector(`input[name="timestampType"][value="${p.timestampType}"]`);
+    if (tsRadio) {
+        tsRadio.checked = true;
+        document.querySelectorAll('.radio-option').forEach(opt => opt.classList.remove('active'));
+        tsRadio.closest('.radio-option').classList.add('active');
+        document.getElementById('customTimestamps').style.display =
+            p.timestampType === 'custom' ? 'block' : 'none';
+    }
+
+    // Clear all fields if clear preset
+    if (p.clearAll) {
+        document.getElementById('largeImageKey').value = '';
+        document.getElementById('largeImageText').value = '';
+        document.getElementById('smallImageKey').value = '';
+        document.getElementById('smallImageText').value = '';
+        document.getElementById('btn1Label').value = '';
+        document.getElementById('btn1Url').value = '';
+        document.getElementById('btn2Label').value = '';
+        document.getElementById('btn2Url').value = '';
+        document.getElementById('partySize').value = '';
+        document.getElementById('partyMax').value = '';
+        document.getElementById('startDateTime').value = '';
+        document.getElementById('endDateTime').value = '';
+    }
+
+    updatePreview();
+}
+
 // Build activity object from form
 function buildActivity() {
     const tsType = document.querySelector('input[name="timestampType"]:checked').value;
+    const activityType = parseInt(document.getElementById('activityType').value) || 0;
 
     // Parse custom datetime values
     let startTimestamp = null;
@@ -323,6 +432,7 @@ function buildActivity() {
     }
 
     return {
+        type: activityType,
         details: document.getElementById('details').value,
         state: document.getElementById('state').value,
         timestamps_type: tsType,
@@ -355,6 +465,11 @@ function populateFields(activity) {
     if (activity.button2_url) document.getElementById('btn2Url').value = activity.button2_url;
     if (activity.party_size) document.getElementById('partySize').value = activity.party_size;
     if (activity.party_max) document.getElementById('partyMax').value = activity.party_max;
+
+    // Set activity type
+    if (activity.type !== undefined) {
+        document.getElementById('activityType').value = activity.type.toString();
+    }
 
     // Set timestamp type
     if (activity.timestamps_type) {
@@ -426,6 +541,22 @@ function updatePreview() {
     const tsType = document.querySelector('input[name="timestampType"]:checked').value;
     const partySize = parseInt(document.getElementById('partySize').value) || 0;
     const partyMax = parseInt(document.getElementById('partyMax').value) || 0;
+    const activityType = document.getElementById('activityType').value;
+
+    // Activity type labels
+    const activityLabels = {
+        '0': 'Playing',
+        '1': 'Streaming',
+        '2': 'Listening to',
+        '3': 'Watching',
+        '5': 'Competing in'
+    };
+
+    // Update activity type in preview
+    const previewActivityType = document.getElementById('previewActivityType');
+    if (previewActivityType) {
+        previewActivityType.textContent = activityLabels[activityType] || 'Playing';
+    }
 
     // Details
     const previewDetails = document.getElementById('previewDetails');

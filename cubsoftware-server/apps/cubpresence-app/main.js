@@ -25,6 +25,7 @@ const defaultSettings = {
     startMinimized: false,
     autoConnect: false,
     checkUpdatesOnStartup: true,
+    autoDownloadUpdates: false,
     minimizeToTray: true,
     showNotifications: true,
     savePresenceOnClose: true,
@@ -93,7 +94,7 @@ function savePresence(clientId, activity) {
 }
 
 // Auto-updater configuration
-autoUpdater.autoDownload = false;
+autoUpdater.autoDownload = false; // We handle this manually based on settings
 autoUpdater.autoInstallOnAppQuit = true;
 
 // Auto-updater events
@@ -106,20 +107,27 @@ autoUpdater.on('update-available', (info) => {
     console.log('Update available:', info.version);
     sendToRenderer('update-status', { status: 'available', version: info.version });
 
-    // Show dialog asking to download
-    dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: 'Update Available',
-        message: `A new version (${info.version}) is available!`,
-        detail: 'Would you like to download and install it now?',
-        buttons: ['Download', 'Later'],
-        defaultId: 0
-    }).then(result => {
-        if (result.response === 0) {
-            autoUpdater.downloadUpdate();
-            sendToRenderer('update-status', { status: 'downloading', version: info.version });
-        }
-    });
+    // Check if auto-download is enabled
+    if (settings.autoDownloadUpdates) {
+        // Auto-download without prompting
+        autoUpdater.downloadUpdate();
+        sendToRenderer('update-status', { status: 'downloading', version: info.version });
+    } else {
+        // Ask user if they want to download
+        dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'Update Available',
+            message: `A new version (${info.version}) is available!`,
+            detail: 'Would you like to download and install it now?',
+            buttons: ['Download', 'Later'],
+            defaultId: 0
+        }).then(result => {
+            if (result.response === 0) {
+                autoUpdater.downloadUpdate();
+                sendToRenderer('update-status', { status: 'downloading', version: info.version });
+            }
+        });
+    }
 });
 
 autoUpdater.on('update-not-available', () => {
@@ -336,6 +344,11 @@ async function setActivity(activity) {
 
     try {
         const rpcActivity = {};
+
+        // Activity type (0=Playing, 1=Streaming, 2=Listening, 3=Watching, 5=Competing)
+        if (activity.type !== undefined) {
+            rpcActivity.type = activity.type;
+        }
 
         if (activity.details) rpcActivity.details = activity.details;
         if (activity.state) rpcActivity.state = activity.state;
