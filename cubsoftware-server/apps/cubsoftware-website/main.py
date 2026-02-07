@@ -3594,6 +3594,435 @@ def enforce_ip_bans():
 
     return None
 
+# ==================== BOT DASHBOARD - HIDDEN ADMIN PANEL ====================
+
+BOT_DASHBOARD_WHITELIST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'bot_dashboard_whitelist.json')
+BOT_DASHBOARD_DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'bot_dashboard_data.json')
+BOT_DASHBOARD_REDIRECT_URI = os.environ.get('BOT_DASHBOARD_REDIRECT_URI', 'https://cubsoftware.site/bot-dashboard/auth/callback')
+
+def load_bot_dashboard_whitelist():
+    """Load the whitelist of allowed Discord user IDs"""
+    if os.path.exists(BOT_DASHBOARD_WHITELIST_FILE):
+        try:
+            with open(BOT_DASHBOARD_WHITELIST_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    # Default whitelist with owner ID
+    return {'allowed_users': ['378501056008683530']}
+
+def save_bot_dashboard_whitelist(data):
+    """Save the whitelist"""
+    os.makedirs(os.path.dirname(BOT_DASHBOARD_WHITELIST_FILE), exist_ok=True)
+    with open(BOT_DASHBOARD_WHITELIST_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def load_bot_dashboard_data():
+    """Load saved bot configurations"""
+    if os.path.exists(BOT_DASHBOARD_DATA_FILE):
+        try:
+            with open(BOT_DASHBOARD_DATA_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            pass
+    return {'bots': {}}
+
+def save_bot_dashboard_data(data):
+    """Save bot configurations"""
+    os.makedirs(os.path.dirname(BOT_DASHBOARD_DATA_FILE), exist_ok=True)
+    with open(BOT_DASHBOARD_DATA_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def bot_dashboard_auth_required(f):
+    """Decorator to require bot dashboard authentication and whitelist"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = session.get('bot_dashboard_user')
+        if not user:
+            if request.is_json or request.path.startswith('/api/bot-dashboard/'):
+                return jsonify({'error': 'Authentication required'}), 401
+            return redirect('/bot-dashboard/auth/discord')
+
+        # Check whitelist
+        whitelist = load_bot_dashboard_whitelist()
+        if user['id'] not in whitelist.get('allowed_users', []):
+            if request.is_json or request.path.startswith('/api/bot-dashboard/'):
+                return jsonify({'error': 'Access denied - not whitelisted'}), 403
+            return render_template('bot-dashboard-denied.html', user=user), 403
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Bot Dashboard OAuth Routes
+@app.route('/bot-dashboard/auth/discord')
+def bot_dashboard_auth():
+    """Initiate Discord OAuth for Bot Dashboard"""
+    config = load_pm2_config()
+    params = {
+        'client_id': config.get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', '')),
+        'redirect_uri': BOT_DASHBOARD_REDIRECT_URI,
+        'response_type': 'code',
+        'scope': 'identify',
+        'state': secrets.token_urlsafe(16)
+    }
+    session['bot_dashboard_oauth_state'] = params['state']
+    discord_url = f"https://discord.com/api/oauth2/authorize?{urllib.parse.urlencode(params)}"
+    return redirect(discord_url)
+
+@app.route('/bot-dashboard/auth/callback')
+def bot_dashboard_callback():
+    """Discord OAuth callback for Bot Dashboard"""
+    error = request.args.get('error')
+    if error:
+        return redirect('/bot-dashboard?error=auth_failed')
+
+    code = request.args.get('code')
+    state = request.args.get('state')
+
+    # Verify state
+    if state != session.get('bot_dashboard_oauth_state'):
+        return redirect('/bot-dashboard?error=invalid_state')
+
+    # Exchange code for token
+    config = load_pm2_config()
+    try:
+        token_response = requests.post('https://discord.com/api/oauth2/token', data={
+            'client_id': config.get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', '')),
+            'client_secret': config.get('discord_client_secret', os.environ.get('DISCORD_CLIENT_SECRET', '')),
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': BOT_DASHBOARD_REDIRECT_URI
+        }, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+
+        if token_response.status_code != 200:
+            return redirect('/bot-dashboard?error=token_failed')
+
+        tokens = token_response.json()
+        access_token = tokens.get('access_token')
+
+        # Get user info
+        user_response = requests.get('https://discord.com/api/users/@me',
+            headers={'Authorization': f'Bearer {access_token}'})
+
+        if user_response.status_code != 200:
+            return redirect('/bot-dashboard?error=user_failed')
+
+        user_data = user_response.json()
+
+        # Build avatar URL
+        avatar_hash = user_data.get('avatar')
+        if avatar_hash:
+            avatar_url = f"https://cdn.discordapp.com/avatars/{user_data['id']}/{avatar_hash}.png?size=256"
+        else:
+            discriminator = int(user_data.get('discriminator', '0') or '0')
+            avatar_url = f"https://cdn.discordapp.com/embed/avatars/{discriminator % 5}.png"
+
+        # Store in session
+        session['bot_dashboard_user'] = {
+            'id': user_data['id'],
+            'username': user_data.get('global_name') or user_data.get('username'),
+            'avatar': avatar_url,
+            'authenticated_at': time.time()
+        }
+
+        return redirect('/bot-dashboard')
+
+    except Exception as e:
+        app.logger.error(f'Bot Dashboard OAuth error: {e}')
+        return redirect('/bot-dashboard?error=auth_error')
+
+@app.route('/bot-dashboard/auth/logout')
+def bot_dashboard_logout():
+    """Logout from Bot Dashboard"""
+    session.pop('bot_dashboard_user', None)
+    return redirect('/bot-dashboard')
+
+# Bot Dashboard Main Routes
+@app.route('/bot-dashboard')
+@app.route('/bot-dashboard/')
+@bot_dashboard_auth_required
+def bot_dashboard_home():
+    """Bot Dashboard - Main page"""
+    user = session.get('bot_dashboard_user')
+    data = load_bot_dashboard_data()
+    return render_template('bot-dashboard.html', user=user, bots=data.get('bots', {}))
+
+# Bot Dashboard API Routes
+@app.route('/api/bot-dashboard/bots', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_list_bots():
+    """List all configured bots"""
+    data = load_bot_dashboard_data()
+    # Don't expose full tokens, just masked versions
+    bots = {}
+    for bot_id, bot in data.get('bots', {}).items():
+        bots[bot_id] = {
+            'id': bot_id,
+            'name': bot.get('name', 'Unknown Bot'),
+            'token_masked': bot.get('token', '')[:10] + '...' if bot.get('token') else '',
+            'added_by': bot.get('added_by'),
+            'added_at': bot.get('added_at'),
+            'status': bot.get('status', 'unknown')
+        }
+    return jsonify({'bots': bots})
+
+@app.route('/api/bot-dashboard/bots', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_add_bot():
+    """Add a new bot"""
+    user = session.get('bot_dashboard_user')
+    req_data = request.get_json()
+
+    token = req_data.get('token', '').strip()
+    name = req_data.get('name', '').strip()
+
+    if not token:
+        return jsonify({'error': 'Bot token is required'}), 400
+
+    # Validate token by making a request to Discord API
+    try:
+        bot_response = requests.get('https://discord.com/api/users/@me',
+            headers={'Authorization': f'Bot {token}'})
+
+        if bot_response.status_code != 200:
+            return jsonify({'error': 'Invalid bot token'}), 400
+
+        bot_info = bot_response.json()
+        bot_id = bot_info['id']
+        bot_name = name or bot_info.get('username', 'Unknown Bot')
+
+        # Get bot avatar
+        avatar_hash = bot_info.get('avatar')
+        if avatar_hash:
+            bot_avatar = f"https://cdn.discordapp.com/avatars/{bot_id}/{avatar_hash}.png?size=256"
+        else:
+            bot_avatar = f"https://cdn.discordapp.com/embed/avatars/0.png"
+
+    except Exception as e:
+        return jsonify({'error': f'Failed to validate token: {str(e)}'}), 400
+
+    # Save the bot
+    data = load_bot_dashboard_data()
+    if 'bots' not in data:
+        data['bots'] = {}
+
+    data['bots'][bot_id] = {
+        'name': bot_name,
+        'token': token,
+        'avatar': bot_avatar,
+        'added_by': user['id'],
+        'added_at': time.time(),
+        'status': 'configured'
+    }
+
+    save_bot_dashboard_data(data)
+
+    return jsonify({
+        'success': True,
+        'bot': {
+            'id': bot_id,
+            'name': bot_name,
+            'avatar': bot_avatar
+        }
+    })
+
+@app.route('/api/bot-dashboard/bots/<bot_id>', methods=['DELETE'])
+@bot_dashboard_auth_required
+def bot_dashboard_remove_bot(bot_id):
+    """Remove a bot"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    del data['bots'][bot_id]
+    save_bot_dashboard_data(data)
+
+    return jsonify({'success': True})
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/info', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_bot_info(bot_id):
+    """Get detailed bot info from Discord API"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        # Get bot user info
+        bot_response = requests.get('https://discord.com/api/users/@me',
+            headers={'Authorization': f'Bot {token}'})
+
+        if bot_response.status_code != 200:
+            return jsonify({'error': 'Failed to get bot info', 'status': 'offline'})
+
+        bot_info = bot_response.json()
+
+        # Get guilds the bot is in
+        guilds_response = requests.get('https://discord.com/api/users/@me/guilds',
+            headers={'Authorization': f'Bot {token}'})
+
+        guilds = []
+        if guilds_response.status_code == 200:
+            guilds = guilds_response.json()
+
+        return jsonify({
+            'id': bot_info['id'],
+            'username': bot_info.get('username'),
+            'discriminator': bot_info.get('discriminator'),
+            'avatar': bot_info.get('avatar'),
+            'bot': bot_info.get('bot', True),
+            'guilds': len(guilds),
+            'guild_list': [{'id': g['id'], 'name': g['name'], 'icon': g.get('icon')} for g in guilds[:50]],
+            'status': 'online'
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'})
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_guild_info(bot_id, guild_id):
+    """Get guild info for a bot"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        # Get guild info
+        guild_response = requests.get(f'https://discord.com/api/guilds/{guild_id}',
+            headers={'Authorization': f'Bot {token}'})
+
+        if guild_response.status_code != 200:
+            return jsonify({'error': 'Failed to get guild info'}), guild_response.status_code
+
+        guild_info = guild_response.json()
+
+        # Get channels
+        channels_response = requests.get(f'https://discord.com/api/guilds/{guild_id}/channels',
+            headers={'Authorization': f'Bot {token}'})
+
+        channels = []
+        if channels_response.status_code == 200:
+            channels = channels_response.json()
+
+        return jsonify({
+            'id': guild_info['id'],
+            'name': guild_info['name'],
+            'icon': guild_info.get('icon'),
+            'owner_id': guild_info.get('owner_id'),
+            'member_count': guild_info.get('approximate_member_count'),
+            'channels': [{'id': c['id'], 'name': c['name'], 'type': c['type']} for c in channels]
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/send-message', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_send_message(bot_id):
+    """Send a message as the bot"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json()
+    channel_id = req_data.get('channel_id')
+    content = req_data.get('content')
+
+    if not channel_id or not content:
+        return jsonify({'error': 'channel_id and content are required'}), 400
+
+    try:
+        response = requests.post(
+            f'https://discord.com/api/channels/{channel_id}/messages',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json'
+            },
+            json={'content': content}
+        )
+
+        if response.status_code == 200:
+            return jsonify({'success': True, 'message': response.json()})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/whitelist', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_get_whitelist():
+    """Get the whitelist"""
+    user = session.get('bot_dashboard_user')
+    # Only owner can view whitelist
+    if user['id'] != '378501056008683530':
+        return jsonify({'error': 'Only owner can view whitelist'}), 403
+
+    whitelist = load_bot_dashboard_whitelist()
+    return jsonify(whitelist)
+
+@app.route('/api/bot-dashboard/whitelist/add', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_add_to_whitelist():
+    """Add a user to the whitelist"""
+    user = session.get('bot_dashboard_user')
+    # Only owner can modify whitelist
+    if user['id'] != '378501056008683530':
+        return jsonify({'error': 'Only owner can modify whitelist'}), 403
+
+    req_data = request.get_json()
+    user_id = req_data.get('user_id', '').strip()
+
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+
+    whitelist = load_bot_dashboard_whitelist()
+    if user_id not in whitelist['allowed_users']:
+        whitelist['allowed_users'].append(user_id)
+        save_bot_dashboard_whitelist(whitelist)
+
+    return jsonify({'success': True, 'whitelist': whitelist})
+
+@app.route('/api/bot-dashboard/whitelist/remove', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_remove_from_whitelist():
+    """Remove a user from the whitelist"""
+    user = session.get('bot_dashboard_user')
+    # Only owner can modify whitelist
+    if user['id'] != '378501056008683530':
+        return jsonify({'error': 'Only owner can modify whitelist'}), 403
+
+    req_data = request.get_json()
+    user_id = req_data.get('user_id', '').strip()
+
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+
+    # Can't remove owner
+    if user_id == '378501056008683530':
+        return jsonify({'error': 'Cannot remove owner from whitelist'}), 400
+
+    whitelist = load_bot_dashboard_whitelist()
+    if user_id in whitelist['allowed_users']:
+        whitelist['allowed_users'].remove(user_id)
+        save_bot_dashboard_whitelist(whitelist)
+
+    return jsonify({'success': True, 'whitelist': whitelist})
+
 # ==================== ERROR HANDLERS ====================
 
 @app.errorhandler(404)
