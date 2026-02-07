@@ -18,6 +18,7 @@ let lastUpdateTime = null;
 // Settings file path
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
 const presencePath = path.join(app.getPath('userData'), 'saved-presence.json');
+const profilesPath = path.join(app.getPath('userData'), 'profiles.json');
 
 // Default settings
 const defaultSettings = {
@@ -90,6 +91,28 @@ function savePresence(clientId, activity) {
         fs.writeFileSync(presencePath, JSON.stringify({ clientId, activity }, null, 2));
     } catch (e) {
         console.error('Failed to save presence:', e);
+    }
+}
+
+// Load profiles
+function loadProfiles() {
+    try {
+        if (fs.existsSync(profilesPath)) {
+            const data = fs.readFileSync(profilesPath, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (e) {
+        console.error('Failed to load profiles:', e);
+    }
+    return {};
+}
+
+// Save profiles
+function saveProfiles(profiles) {
+    try {
+        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
+    } catch (e) {
+        console.error('Failed to save profiles:', e);
     }
 }
 
@@ -478,6 +501,25 @@ ipcMain.handle('save-settings', (event, newSettings) => {
 
 ipcMain.handle('get-saved-presence', () => {
     return loadSavedPresence();
+});
+
+// Profile IPC handlers
+ipcMain.handle('get-profiles', () => {
+    return loadProfiles();
+});
+
+ipcMain.handle('save-profile', (event, { name, data }) => {
+    const profiles = loadProfiles();
+    profiles[name] = data;
+    saveProfiles(profiles);
+    return profiles;
+});
+
+ipcMain.handle('delete-profile', (event, name) => {
+    const profiles = loadProfiles();
+    delete profiles[name];
+    saveProfiles(profiles);
+    return profiles;
 });
 
 ipcMain.handle('get-timestamps', () => {

@@ -42,6 +42,32 @@
         <!-- Main Content -->
         <main class="main-content">
             <div class="config-panel">
+                <!-- Saved Profiles -->
+                <div class="section profiles-section">
+                    <h2>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Saved Profiles
+                    </h2>
+                    <div class="profiles-controls">
+                        <select id="profileSelect">
+                            <option value="">-- Select Profile --</option>
+                        </select>
+                        <button type="button" class="btn-icon" id="loadProfileBtn" title="Load Profile">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                        </button>
+                        <button type="button" class="btn-icon btn-danger-icon" id="deleteProfileBtn" title="Delete Profile">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                    <div class="save-profile-row">
+                        <input type="text" id="profileName" placeholder="Profile name...">
+                        <button type="button" class="btn-save" id="saveProfileBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Save Current
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Quick Presets -->
                 <div class="section presets-section">
                     <h2>

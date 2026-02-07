@@ -13,6 +13,11 @@ contextBridge.exposeInMainWorld('cubpresence', {
     getSavedPresence: () => ipcRenderer.invoke('get-saved-presence'),
     getTimestamps: () => ipcRenderer.invoke('get-timestamps'),
 
+    // Profiles
+    getProfiles: () => ipcRenderer.invoke('get-profiles'),
+    saveProfile: (name, data) => ipcRenderer.invoke('save-profile', { name, data }),
+    deleteProfile: (name) => ipcRenderer.invoke('delete-profile', name),
+
     // Updates
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
     getVersion: () => ipcRenderer.invoke('get-version'),

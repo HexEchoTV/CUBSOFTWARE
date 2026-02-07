@@ -2,6 +2,7 @@
 
 let isConnected = false;
 let settings = {};
+let profiles = {};
 
 // DOM Elements
 const statusDot = document.getElementById('statusDot');
@@ -19,6 +20,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load settings
     settings = await window.cubpresence.getSettings();
     applySettingsToUI();
+
+    // Load profiles
+    profiles = await window.cubpresence.getProfiles();
+    updateProfilesList();
 
     // Load saved presence
     const savedPresence = await window.cubpresence.getSavedPresence();
@@ -152,6 +157,11 @@ function setupEventListeners() {
             window.cubpresence.openExternal('https://cubsoftware.site/cubpresence-wiki');
         });
     }
+
+    // Profile buttons
+    document.getElementById('saveProfileBtn').addEventListener('click', saveCurrentProfile);
+    document.getElementById('loadProfileBtn').addEventListener('click', loadSelectedProfile);
+    document.getElementById('deleteProfileBtn').addEventListener('click', deleteSelectedProfile);
 
     // Timestamp radio buttons
     document.querySelectorAll('input[name="timestampType"]').forEach(radio => {
@@ -638,4 +648,81 @@ function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+// Update profiles dropdown
+function updateProfilesList() {
+    const select = document.getElementById('profileSelect');
+    select.innerHTML = '<option value="">-- Select Profile --</option>';
+
+    Object.keys(profiles).sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
+// Save current settings as a profile
+async function saveCurrentProfile() {
+    const nameInput = document.getElementById('profileName');
+    const name = nameInput.value.trim();
+
+    if (!name) {
+        alert('Please enter a profile name');
+        return;
+    }
+
+    const data = {
+        clientId: document.getElementById('clientId').value,
+        activity: buildActivity()
+    };
+
+    profiles = await window.cubpresence.saveProfile(name, data);
+    updateProfilesList();
+
+    // Select the saved profile
+    document.getElementById('profileSelect').value = name;
+    nameInput.value = '';
+}
+
+// Load selected profile
+function loadSelectedProfile() {
+    const select = document.getElementById('profileSelect');
+    const name = select.value;
+
+    if (!name || !profiles[name]) {
+        alert('Please select a profile to load');
+        return;
+    }
+
+    const data = profiles[name];
+
+    if (data.clientId) {
+        document.getElementById('clientId').value = data.clientId;
+    }
+
+    if (data.activity) {
+        populateFields(data.activity);
+    }
+
+    updatePreview();
+}
+
+// Delete selected profile
+async function deleteSelectedProfile() {
+    const select = document.getElementById('profileSelect');
+    const name = select.value;
+
+    if (!name) {
+        alert('Please select a profile to delete');
+        return;
+    }
+
+    if (!confirm(`Delete profile "${name}"?`)) {
+        return;
+    }
+
+    profiles = await window.cubpresence.deleteProfile(name);
+    updateProfilesList();
 }
