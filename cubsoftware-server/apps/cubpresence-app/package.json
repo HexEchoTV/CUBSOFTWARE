@@ -1,6 +1,6 @@
 {
   "name": "cubpresence",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Discord Custom Rich Presence - Set your Discord activity from a simple app",
   "main": "main.js",
   "author": "CUB SOFTWARE",
@@ -46,7 +46,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "include": "installer.nsh"
     },
     "publish": {
       "provider": "github",

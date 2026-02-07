@@ -294,10 +294,42 @@ a:hover {
     opacity: 1;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+    .beta-banner {
+        padding: 0.6rem 2.5rem 0.6rem 1rem;
+        position: relative;
+    }
+
+    .beta-banner-content {
+        justify-content: flex-start;
+        gap: 0.4rem;
+    }
+
     .beta-banner p {
         font-size: 0.75rem;
         white-space: normal;
+        line-height: 1.4;
+    }
+
+    .beta-banner .beta-icon {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+
+    .beta-banner-close {
+        position: absolute;
+        top: 50%;
+        right: 0.75rem;
+        transform: translateY(-50%);
+        margin-left: 0;
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .beta-banner p {
+        font-size: 0.7rem;
     }
 
     .beta-banner .beta-icon {
