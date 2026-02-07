@@ -1472,6 +1472,7 @@
         const USER_ID = "{{ cubreactive_user.id if cubreactive_user else '' }}";
         const USER_AVATAR = "{{ cubreactive_user.avatar if cubreactive_user else '' }}";
         const USER_CONFIG = {{ user_config | tojson if user_config else '{}' | safe }};
+        const WS_URL = "{{ ws_url if ws_url else '' }}";
     </script>
     <script src="/static/js/cubreactive.js"></script>
 </body>

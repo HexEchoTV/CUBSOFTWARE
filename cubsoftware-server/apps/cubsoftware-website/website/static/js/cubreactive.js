@@ -2004,17 +2004,27 @@ let voiceWs = null;
 let voiceMembers = new Map();
 
 function initVoiceConnection() {
-    const userId = document.body.dataset.userId;
-    if (!userId) return;
+    // Get user ID from body data attribute or global constant
+    const userId = document.body.dataset.userId || (typeof USER_ID !== 'undefined' ? USER_ID : null);
+    if (!userId) {
+        console.log('[CubReactive] No user ID available for voice connection');
+        return;
+    }
 
-    const wsUrl = window.location.protocol === 'https:'
-        ? `wss://${window.location.hostname}:3848`
-        : `ws://${window.location.hostname}:3848`;
+    // Use the WS_URL from template, or fallback to direct port
+    const wsUrl = (typeof WS_URL !== 'undefined' && WS_URL)
+        ? WS_URL
+        : (window.location.protocol === 'https:'
+            ? `wss://${window.location.hostname}:3848`
+            : `ws://${window.location.hostname}:3848`);
+
+    console.log('[CubReactive] Connecting to WebSocket:', wsUrl);
 
     try {
         voiceWs = new WebSocket(wsUrl);
     } catch (e) {
-        console.log('Voice WebSocket not available');
+        console.log('[CubReactive] Voice WebSocket not available:', e);
+        updateVoiceConnectionStatus('disconnected');
         return;
     }
 

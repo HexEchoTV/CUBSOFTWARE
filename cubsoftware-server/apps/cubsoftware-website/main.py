@@ -1232,7 +1232,8 @@ def cubreactive_home():
     return render_template('cubreactive.html',
         cubreactive_user=cubreactive_user,
         user_config=user_config,
-        discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', ''))
+        discord_client_id=load_pm2_config().get('discord_client_id', os.environ.get('DISCORD_CLIENT_ID', '')),
+        ws_url=CUBREACTIVE_WS_URL
     )
 
 @app.route('/apps/cubreactive/overlay/group/<user_id>')
