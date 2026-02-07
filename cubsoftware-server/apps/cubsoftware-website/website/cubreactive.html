@@ -421,15 +421,6 @@
                             <input type="hidden" id="setting-shape" value="{{ user_config.settings.avatar_shape if user_config and user_config.settings.avatar_shape else 'rounded' }}">
                         </div>
 
-                        <!-- Avatar Size -->
-                        <div class="settings-group">
-                            <h3>Avatar Size</h3>
-                            <div class="slider-setting">
-                                <input type="range" id="setting-size" min="80" max="300" value="{{ user_config.settings.avatar_size if user_config and user_config.settings.avatar_size else 180 }}">
-                                <span class="slider-value" id="size-value">{{ user_config.settings.avatar_size if user_config and user_config.settings.avatar_size else 180 }}px</span>
-                            </div>
-                        </div>
-
                         <!-- Avatar Filters -->
                         <div class="settings-group">
                             <h3>Avatar Filters</h3>
@@ -1398,6 +1389,32 @@
                                 </button>
                             </div>
                             <p class="source-hint">Recommended browser source size: 1920x1080</p>
+                        </div>
+
+                        <!-- Individual Sources Section -->
+                        <div class="source-card individual-sources-card">
+                            <div class="source-header">
+                                <h3>Individual Sources</h3>
+                                <span class="source-badge" id="individual-sources-badge">Not in voice</span>
+                            </div>
+                            <p>Get individual overlay URLs for each person in your voice channel. Updates in real-time.</p>
+
+                            <div class="voice-members-section">
+                                <div id="individual-sources-loading" class="voice-members-loading">
+                                    <div class="loading-spinner"></div>
+                                    <span>Connecting to voice...</span>
+                                </div>
+                                <div id="individual-sources-empty" class="voice-members-empty" style="display: none;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                        <line x1="12" y1="19" x2="12" y2="23"/>
+                                        <line x1="8" y1="23" x2="16" y2="23"/>
+                                    </svg>
+                                    <span>Join a voice channel to see members here</span>
+                                </div>
+                                <div id="individual-sources-list" class="voice-members-list" style="display: none;"></div>
+                            </div>
                         </div>
                     </div>
                     </div><!-- End tab-overlay -->

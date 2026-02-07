@@ -875,7 +875,7 @@ function updatePreview() {
     if (!wrapper || !avatar || !image) return;
 
     // Get current form values
-    const size = getVal('setting-size', 180);
+    const size = 180; // Fixed avatar size
     const shape = getVal('setting-shape', 'rounded');
     const borderEnabled = getVal('setting-border', false);
     const borderColor = getVal('setting-border-color', '#5865f2');
@@ -1454,7 +1454,6 @@ function applyTheme(themeName) {
     });
     setVal('setting-shape', theme.avatar_shape);
 
-    setVal('setting-size', theme.avatar_size);
     setVal('setting-border', theme.border_enabled);
     if (theme.border_color) setVal('setting-border-color', theme.border_color);
     if (theme.border_width) setVal('setting-border-width', theme.border_width);
@@ -1505,7 +1504,6 @@ async function saveSettings() {
         animation_speed: getVal('setting-animation-speed', 100),
         idle_animation_style: getVal('setting-idle-animation', 'none'),
         avatar_shape: getVal('setting-shape', 'rounded'),
-        avatar_size: getVal('setting-size', 180),
         border_enabled: getVal('setting-border', false),
         border_color: getVal('setting-border-color', '#5865f2'),
         border_width: getVal('setting-border-width', 3),
@@ -1877,7 +1875,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initButtonGroupWithPreview('.shape-btn', 'setting-shape', 'shape');
 
     // Initialize sliders with preview update
-    initSliderWithPreview('setting-size', 'size-value');
     initSliderWithPreview('setting-border-width', 'border-width-value');
     initSliderWithPreview('setting-name-size', 'name-size-value');
     initSliderWithPreview('setting-spacing', 'spacing-value');
@@ -2096,22 +2093,43 @@ function handleVoiceMessage(data) {
 
 function updateVoiceConnectionStatus(status) {
     const statusEl = document.getElementById('voice-connection-status');
-    if (!statusEl) return;
+    const loadingEl = document.getElementById('individual-sources-loading');
+    const emptyEl = document.getElementById('individual-sources-empty');
+    const badgeEl = document.getElementById('individual-sources-badge');
 
+    if (statusEl) {
+        if (status === 'connected') {
+            statusEl.innerHTML = '<span class="dot connected"></span> Connected';
+            statusEl.className = 'voice-connection-status connected';
+        } else if (status === 'connecting') {
+            statusEl.innerHTML = '<span class="dot connecting"></span> Connecting...';
+            statusEl.className = 'voice-connection-status connecting';
+        } else {
+            statusEl.innerHTML = '<span class="dot"></span> Disconnected';
+            statusEl.className = 'voice-connection-status disconnected';
+        }
+    }
+
+    // Update individual sources section
     if (status === 'connected') {
-        statusEl.innerHTML = '<span class="dot connected"></span> Connected';
-        statusEl.className = 'voice-connection-status connected';
-    } else if (status === 'connecting') {
-        statusEl.innerHTML = '<span class="dot connecting"></span> Connecting...';
-        statusEl.className = 'voice-connection-status connecting';
-    } else {
-        statusEl.innerHTML = '<span class="dot"></span> Disconnected';
-        statusEl.className = 'voice-connection-status disconnected';
+        if (loadingEl) loadingEl.style.display = 'none';
+        // Will be updated by renderIndividualSources when members arrive
+    } else if (status === 'disconnected') {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'flex';
+        if (badgeEl) {
+            badgeEl.textContent = 'Disconnected';
+            badgeEl.className = 'source-badge disconnected';
+        }
     }
 }
 
 function renderVoiceMembers() {
     const container = document.getElementById('voice-members-list');
+
+    // Also render individual sources section
+    renderIndividualSources();
+
     if (!container) return;
 
     const filterList = getMemberFilterList();
@@ -2284,10 +2302,103 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+// Render individual sources section (Overlay tab)
+function renderIndividualSources() {
+    const loadingEl = document.getElementById('individual-sources-loading');
+    const emptyEl = document.getElementById('individual-sources-empty');
+    const listEl = document.getElementById('individual-sources-list');
+    const badgeEl = document.getElementById('individual-sources-badge');
+
+    if (!listEl) return;
+
+    // Hide loading
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (voiceMembers.size === 0) {
+        // Show empty state
+        if (emptyEl) emptyEl.style.display = 'flex';
+        if (listEl) listEl.style.display = 'none';
+        if (badgeEl) {
+            badgeEl.textContent = 'Not in voice';
+            badgeEl.className = 'source-badge';
+        }
+        return;
+    }
+
+    // Show list
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (listEl) listEl.style.display = 'flex';
+    if (badgeEl) {
+        badgeEl.textContent = `${voiceMembers.size} member${voiceMembers.size !== 1 ? 's' : ''}`;
+        badgeEl.className = 'source-badge connected';
+    }
+
+    // Build the member list
+    const baseUrl = window.location.origin;
+    listEl.innerHTML = '';
+
+    voiceMembers.forEach(member => {
+        const memberEl = document.createElement('div');
+        memberEl.className = 'voice-member';
+        memberEl.innerHTML = `
+            <img src="${member.avatar || '/static/images/default-avatar.png'}" alt="" class="member-avatar">
+            <div class="member-info">
+                <span class="member-name">${escapeHtml(member.username)}</span>
+                <span class="member-id">${member.id}</span>
+            </div>
+            <button type="button" class="btn-copy-url" data-url="${baseUrl}/apps/cubreactive/overlay/${member.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy URL
+            </button>
+        `;
+
+        // Add click handler for copy button
+        const copyBtn = memberEl.querySelector('.btn-copy-url');
+        copyBtn.addEventListener('click', async () => {
+            const url = copyBtn.dataset.url;
+            try {
+                await navigator.clipboard.writeText(url);
+                copyBtn.classList.add('copied');
+                copyBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Copied!
+                `;
+                showToast('URL copied to clipboard!');
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy URL
+                    `;
+                }, 2000);
+            } catch (e) {
+                // Fallback for older browsers
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast('URL copied to clipboard!');
+            }
+        });
+
+        listEl.appendChild(memberEl);
+    });
+}
+
 // Initialize voice connection when page loads
 document.addEventListener('DOMContentLoaded', () => {
     // Only init if we're on the logged-in dashboard
-    if (document.getElementById('voice-members-list')) {
+    if (document.getElementById('voice-members-list') || document.getElementById('individual-sources-list')) {
         setTimeout(initVoiceConnection, 1000);
     }
 });
@@ -2587,7 +2698,6 @@ function applySettingsToForm(settings) {
     };
 
     // Apply sliders
-    setSlider('setting-size', settings.size, 'size-value');
     setSlider('setting-border-width', settings.borderWidth, 'border-width-value');
     setSlider('setting-name-size', settings.nameSize, 'name-size-value');
     setSlider('setting-spacing', settings.spacing, 'spacing-value');

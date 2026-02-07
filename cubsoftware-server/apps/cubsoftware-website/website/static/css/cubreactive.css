@@ -1302,6 +1302,136 @@
     margin-bottom: 0;
 }
 
+/* Individual Sources Section */
+.individual-sources-card {
+    margin-top: 1.5rem;
+}
+
+.voice-members-section {
+    margin-top: 1rem;
+}
+
+.voice-members-loading,
+.voice-members-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    color: var(--text-muted);
+    background: var(--bg-primary);
+    border-radius: 8px;
+}
+
+.voice-members-loading .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--accent-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.voice-members-empty svg {
+    opacity: 0.5;
+}
+
+.voice-members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.voice-member {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.voice-member:hover {
+    border-color: var(--accent-blue);
+}
+
+.voice-member .member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.voice-member .member-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.voice-member .member-name {
+    display: block;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.voice-member .member-id {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.voice-member .btn-copy-url {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.voice-member .btn-copy-url:hover {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+}
+
+.voice-member .btn-copy-url svg {
+    width: 14px;
+    height: 14px;
+}
+
+.voice-member .btn-copy-url.copied {
+    background: #57f287;
+    border-color: #57f287;
+    color: white;
+}
+
+.source-badge.connected {
+    background: rgba(87, 242, 135, 0.2);
+    color: #57f287;
+}
+
+.source-badge.disconnected {
+    background: rgba(237, 66, 69, 0.2);
+    color: #ed4245;
+}
+
 /* Preview Section */
 .preview-section {
     background: var(--card-bg);

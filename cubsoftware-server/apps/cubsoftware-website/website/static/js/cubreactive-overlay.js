@@ -313,7 +313,6 @@ class CubReactiveOverlay {
             grayscale_deafened: true,
             animation_style: 'bounce',
             avatar_shape: 'rounded',
-            avatar_size: 180,
             border_enabled: false,
             glow_enabled: false,
             speaking_ring_enabled: true,
@@ -486,7 +485,7 @@ class CubReactiveOverlay {
         container.style.setProperty('--transition-duration', `${transitionDuration}ms`);
 
         // Calculate auto-resize scale factor based on number of participants
-        const baseAvatarSize = mainSettings.avatar_size || 180;
+        const baseAvatarSize = 180; // Fixed avatar size
         const spacing = mainSettings.spacing || 20;
         const participantCount = participantsToRender.length;
         const groupLayout = mainSettings.group_layout || 'horizontal';
@@ -497,6 +496,9 @@ class CubReactiveOverlay {
 
         // Calculate scale factor to fit all participants
         let scaleFactor = 1;
+        const mirrorEnabled = mainSettings.mirror_enabled || false;
+        const mirrorHeight = mirrorEnabled ? (baseAvatarSize * 0.5 + 5) : 0; // Mirror height + margin
+
         if (participantCount > 1) {
             if (groupLayout === 'horizontal' || position === 'top' || position === 'bottom') {
                 // Horizontal layout - check width
@@ -504,10 +506,17 @@ class CubReactiveOverlay {
                 if (totalWidth > viewportWidth) {
                     scaleFactor = viewportWidth / totalWidth;
                 }
+                // Also check height for horizontal layout with mirror
+                const nameHeight = mainSettings.show_name !== false ? 30 : 0;
+                const itemHeight = baseAvatarSize + nameHeight + mirrorHeight;
+                if (itemHeight > viewportHeight) {
+                    scaleFactor = Math.min(scaleFactor, viewportHeight / itemHeight);
+                }
             } else if (groupLayout === 'vertical' || position === 'left' || position === 'right') {
-                // Vertical layout - check height
-                const nameHeight = mainSettings.show_name !== false ? 30 : 0; // Approximate name height
-                const totalHeight = ((baseAvatarSize + nameHeight) * participantCount) + (spacing * (participantCount - 1));
+                // Vertical layout - check height (include mirror height)
+                const nameHeight = mainSettings.show_name !== false ? 30 : 0;
+                const itemHeight = baseAvatarSize + nameHeight + mirrorHeight;
+                const totalHeight = (itemHeight * participantCount) + (spacing * (participantCount - 1));
                 if (totalHeight > viewportHeight) {
                     scaleFactor = viewportHeight / totalHeight;
                 }
@@ -517,10 +526,20 @@ class CubReactiveOverlay {
                 const rows = Math.ceil(participantCount / cols);
                 const totalWidth = (baseAvatarSize * cols) + (spacing * (cols - 1));
                 const nameHeight = mainSettings.show_name !== false ? 30 : 0;
-                const totalHeight = ((baseAvatarSize + nameHeight) * rows) + (spacing * (rows - 1));
+                const itemHeight = baseAvatarSize + nameHeight + mirrorHeight;
+                const totalHeight = (itemHeight * rows) + (spacing * (rows - 1));
                 const widthScale = totalWidth > viewportWidth ? viewportWidth / totalWidth : 1;
                 const heightScale = totalHeight > viewportHeight ? viewportHeight / totalHeight : 1;
                 scaleFactor = Math.min(widthScale, heightScale);
+            }
+        }
+
+        // Also check single participant with mirror enabled
+        if (participantCount === 1 && mirrorEnabled) {
+            const nameHeight = mainSettings.show_name !== false ? 30 : 0;
+            const itemHeight = baseAvatarSize + nameHeight + mirrorHeight;
+            if (itemHeight > viewportHeight) {
+                scaleFactor = viewportHeight / itemHeight;
             }
         }
 
@@ -537,7 +556,7 @@ class CubReactiveOverlay {
             const imageUrl = this.getStateImage(participant);
 
             // Get all settings with defaults, apply scale factor to sizes
-            const avatarSize = Math.round((settings.avatar_size || 180) * scaleFactor);
+            const avatarSize = Math.round(180 * scaleFactor); // Fixed 180px avatar size
             const avatarShape = settings.avatar_shape || 'rounded';
             const borderEnabled = settings.border_enabled || false;
             const borderColor = settings.border_color || '#5865f2';
@@ -733,15 +752,20 @@ class CubReactiveOverlay {
                 if (idleAnimClass) wrapper.classList.add(idleAnimClass);
             }
 
-            // Update avatar styling - NO clip-path on avatar so frame/outline aren't clipped
+            // Update avatar styling
             const shapeStyles = this.getShapeStyles(avatarShape);
             avatar.style.width = `${avatarSize}px`;
             avatar.style.height = `${avatarSize}px`;
             avatar.style.borderRadius = shapeStyles.borderRadius;
             avatar.style.transition = `all ${transitionDuration}ms ease`;
-            avatar.style.clipPath = 'none';
             avatar.style.overflow = 'visible';
             avatar.style.border = borderEnabled ? `${borderWidth}px ${borderStyle} ${borderColor}` : '';
+            // Apply clip-path to avatar for proper border shape on non-rounded shapes
+            if (shapeStyles.clipPath) {
+                avatar.style.clipPath = shapeStyles.clipPath;
+            } else {
+                avatar.style.clipPath = 'none';
+            }
 
             // Apply clip-path only to img-wrapper for proper image clipping
             if (imgWrapper) {
@@ -930,6 +954,12 @@ class CubReactiveOverlay {
                     outlineEl.style.left = `-${outlineOffset}px`;
                     outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
                     outlineEl.style.borderRadius = shapeStyles.borderRadius;
+                    // Apply clip-path for shapes that use it (hexagon, heart, shield, etc.)
+                    if (shapeStyles.clipPath) {
+                        outlineEl.style.clipPath = shapeStyles.clipPath;
+                    } else {
+                        outlineEl.style.clipPath = 'none';
+                    }
                 } else {
                     outlineEl.style.display = 'none';
                 }
@@ -947,6 +977,12 @@ class CubReactiveOverlay {
                     frameEl.style.bottom = '-8px';
                     frameEl.style.left = '-8px';
                     frameEl.style.borderRadius = shapeStyles.borderRadius;
+                    // Apply clip-path for shapes that use it
+                    if (shapeStyles.clipPath) {
+                        frameEl.style.clipPath = shapeStyles.clipPath;
+                    } else {
+                        frameEl.style.clipPath = 'none';
+                    }
                 } else {
                     frameEl.style.display = 'none';
                 }
