@@ -238,21 +238,29 @@
                                     }
                                 }
 
-                                const version = data.tag_name?.replace('v', '') || '1.0.0';
+                                const version = data.tag_name?.replace('v', '') || '1.2.0';
                                 document.getElementById('versionDisplay').textContent = 'v' + version;
 
-                                if (exe) document.getElementById('downloadBtnWin').href = exe.browser_download_url;
-                                if (dmg) document.getElementById('downloadBtnMac').href = dmg.browser_download_url;
-                                if (appImage) document.getElementById('downloadBtnLinux').href = appImage.browser_download_url;
+                                // Set download links or link to releases page if not found
+                                const releasesUrl = 'https://github.com/HexEchoTV/CUBSOFTWARE/releases';
+                                document.getElementById('downloadBtnWin').href = exe ? exe.browser_download_url : releasesUrl;
+                                document.getElementById('downloadBtnMac').href = dmg ? dmg.browser_download_url : releasesUrl;
+                                document.getElementById('downloadBtnLinux').href = appImage ? appImage.browser_download_url : releasesUrl;
                             } catch (e) {
                                 console.log('Could not fetch release info:', e);
+                                // Fallback to releases page
+                                const releasesUrl = 'https://github.com/HexEchoTV/CUBSOFTWARE/releases';
+                                document.getElementById('downloadBtnWin').href = releasesUrl;
+                                document.getElementById('downloadBtnMac').href = releasesUrl;
+                                document.getElementById('downloadBtnLinux').href = releasesUrl;
+                                document.getElementById('versionDisplay').textContent = 'v1.2.0';
                             }
                         }
                         updateDownloadLinks();
                     </script>
 
                     <div class="download-info">
-                        <span id="versionDisplay">v1.0.0</span>
+                        <span id="versionDisplay">Loading...</span>
                         <span>•</span>
                         <span>~80 MB</span>
                     </div>
