@@ -11,7 +11,7 @@
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
-    "publish": "electron-builder --win --publish always"
+    "publish": "electron-builder --win --linux --mac --publish always"
   },
   "dependencies": {
     "discord-rpc": "^4.0.1",
