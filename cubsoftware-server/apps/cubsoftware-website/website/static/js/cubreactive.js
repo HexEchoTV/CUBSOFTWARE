@@ -913,20 +913,29 @@ function updatePreview() {
     avatar.style.width = size + 'px';
     avatar.style.height = size + 'px';
 
-    // Apply shape - only to img-wrapper, NOT to avatar (so frame/outline aren't clipped)
+    // Apply shape
     const shapeStyles = getShapeStyles(shape);
 
-    // Avatar gets border-radius only (no clip-path) so children aren't clipped
+    // Avatar gets both border-radius and clip-path (for proper border shape on hexagon, etc.)
     avatar.style.borderRadius = shapeStyles.borderRadius;
-    avatar.style.clipPath = 'none';
+    avatar.style.clipPath = shapeStyles.clipPath || 'none';
     avatar.style.overflow = 'visible';
 
-    // img-wrapper gets full shape for proper image clipping
+    // img-wrapper also gets the shape for proper image clipping
     const imgWrapper = document.getElementById('preview-img-wrapper');
     if (imgWrapper) {
+        imgWrapper.style.width = size + 'px';
+        imgWrapper.style.height = size + 'px';
         imgWrapper.style.borderRadius = shapeStyles.borderRadius;
         imgWrapper.style.clipPath = shapeStyles.clipPath || 'none';
         imgWrapper.style.overflow = 'hidden';
+    }
+
+    // Image should fill the wrapper
+    if (image) {
+        image.style.width = '100%';
+        image.style.height = '100%';
+        image.style.objectFit = 'cover';
     }
 
     // Apply border
@@ -1144,6 +1153,7 @@ function updatePreview() {
             outlineEl.style.left = `-${outlineOffset}px`;
             outlineEl.style.border = `${outlineWidth}px solid ${outlineColor}`;
             outlineEl.style.borderRadius = shapeStyles.borderRadius;
+            outlineEl.style.clipPath = shapeStyles.clipPath || 'none';
         } else {
             outlineEl.style.display = 'none';
         }
@@ -1164,6 +1174,7 @@ function updatePreview() {
             frameEl.style.bottom = '-8px';
             frameEl.style.left = '-8px';
             frameEl.style.borderRadius = shapeStyles.borderRadius;
+            frameEl.style.clipPath = shapeStyles.clipPath || 'none';
         } else {
             frameEl.style.display = 'none';
         }
@@ -1193,6 +1204,8 @@ function updatePreview() {
             mirrorEl.style.display = 'block';
             mirrorEl.style.backgroundImage = `url(${image.src})`;
             mirrorEl.style.opacity = mirrorOpacity / 100;
+            mirrorEl.style.borderRadius = shapeStyles.borderRadius;
+            mirrorEl.style.clipPath = shapeStyles.clipPath || 'none';
         } else {
             mirrorEl.style.display = 'none';
         }
