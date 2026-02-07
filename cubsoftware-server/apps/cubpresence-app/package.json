@@ -1,9 +1,13 @@
 {
   "name": "cubpresence",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Discord Custom Rich Presence - Set your Discord activity from a simple app",
   "main": "main.js",
-  "author": "CUB SOFTWARE",
+  "author": {
+    "name": "CUB SOFTWARE",
+    "email": "ellmersthorton@gmail.com"
+  },
+  "homepage": "https://cubsoftware.com/cubpresence",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
@@ -42,7 +46,8 @@
       "target": ["dmg"]
     },
     "linux": {
-      "target": ["AppImage", "deb"]
+      "target": ["AppImage"],
+      "category": "Utility"
     },
     "nsis": {
       "oneClick": false,
