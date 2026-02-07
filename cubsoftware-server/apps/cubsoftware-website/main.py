@@ -7,6 +7,7 @@ import importlib.util
 import json
 import hashlib
 import time
+from datetime import datetime, timedelta
 import secrets
 import subprocess
 import requests
@@ -4247,6 +4248,851 @@ def bot_dashboard_dm_conversation(bot_id, channel_id):
                           bot_id=bot_id,
                           bot_name=bot.get('name', 'Unknown Bot'),
                           channel_id=channel_id)
+
+# ==================== BOT DASHBOARD - EMBED BUILDER ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/send-embed', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_send_embed(bot_id):
+    """Send an embed message to a channel"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json()
+    channel_id = req_data.get('channel_id')
+    embed = req_data.get('embed', {})
+    content = req_data.get('content', '')
+
+    if not channel_id:
+        return jsonify({'error': 'channel_id is required'}), 400
+
+    try:
+        payload = {'embeds': [embed]}
+        if content:
+            payload['content'] = content
+
+        response = requests.post(
+            f'https://discord.com/api/channels/{channel_id}/messages',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json'
+            },
+            json=payload
+        )
+
+        if response.status_code == 200:
+            return jsonify({'success': True, 'message': response.json()})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - EDIT/DELETE MESSAGES ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/messages/<channel_id>/<message_id>', methods=['PATCH'])
+@bot_dashboard_auth_required
+def bot_dashboard_edit_message(bot_id, channel_id, message_id):
+    """Edit a message sent by the bot"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json()
+    content = req_data.get('content')
+    embed = req_data.get('embed')
+
+    payload = {}
+    if content is not None:
+        payload['content'] = content
+    if embed is not None:
+        payload['embeds'] = [embed] if embed else []
+
+    try:
+        response = requests.patch(
+            f'https://discord.com/api/channels/{channel_id}/messages/{message_id}',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json'
+            },
+            json=payload
+        )
+
+        if response.status_code == 200:
+            return jsonify({'success': True, 'message': response.json()})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/messages/<channel_id>/<message_id>', methods=['DELETE'])
+@bot_dashboard_auth_required
+def bot_dashboard_delete_message(bot_id, channel_id, message_id):
+    """Delete a message"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.delete(
+            f'https://discord.com/api/channels/{channel_id}/messages/{message_id}',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code == 204:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - USER LOOKUP ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/users/<user_id>', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_user_lookup(bot_id, user_id):
+    """Look up a user by ID"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.get(
+            f'https://discord.com/api/users/{user_id}',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code != 200:
+            return jsonify({'error': 'User not found'}), response.status_code
+
+        user = response.json()
+
+        avatar = None
+        if user.get('avatar'):
+            ext = 'gif' if user['avatar'].startswith('a_') else 'png'
+            avatar = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.{ext}?size=256"
+        else:
+            discriminator = int(user.get('discriminator', '0') or '0')
+            avatar = f"https://cdn.discordapp.com/embed/avatars/{discriminator % 5}.png"
+
+        banner = None
+        if user.get('banner'):
+            ext = 'gif' if user['banner'].startswith('a_') else 'png'
+            banner = f"https://cdn.discordapp.com/banners/{user['id']}/{user['banner']}.{ext}?size=512"
+
+        # Calculate account creation date from snowflake ID
+        snowflake = int(user['id'])
+        timestamp = ((snowflake >> 22) + 1420070400000) / 1000
+        created_at = datetime.fromtimestamp(timestamp).isoformat()
+
+        return jsonify({
+            'id': user['id'],
+            'username': user.get('username'),
+            'global_name': user.get('global_name'),
+            'discriminator': user.get('discriminator'),
+            'avatar': avatar,
+            'banner': banner,
+            'banner_color': user.get('banner_color'),
+            'accent_color': user.get('accent_color'),
+            'bot': user.get('bot', False),
+            'system': user.get('system', False),
+            'flags': user.get('public_flags', 0),
+            'created_at': created_at
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - ROLE MANAGEMENT ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/roles', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_get_roles(bot_id, guild_id):
+    """Get all roles in a guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.get(
+            f'https://discord.com/api/guilds/{guild_id}/roles',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get roles'}), response.status_code
+
+        roles = response.json()
+        # Sort by position (highest first)
+        roles.sort(key=lambda r: r.get('position', 0), reverse=True)
+
+        return jsonify({'roles': [{
+            'id': r['id'],
+            'name': r['name'],
+            'color': r.get('color', 0),
+            'position': r.get('position', 0),
+            'permissions': r.get('permissions'),
+            'mentionable': r.get('mentionable', False),
+            'hoist': r.get('hoist', False),
+            'managed': r.get('managed', False)
+        } for r in roles]})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/members/<member_id>/roles/<role_id>', methods=['PUT'])
+@bot_dashboard_auth_required
+def bot_dashboard_add_role(bot_id, guild_id, member_id, role_id):
+    """Add a role to a member"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.put(
+            f'https://discord.com/api/guilds/{guild_id}/members/{member_id}/roles/{role_id}',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code == 204:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/members/<member_id>/roles/<role_id>', methods=['DELETE'])
+@bot_dashboard_auth_required
+def bot_dashboard_remove_role(bot_id, guild_id, member_id, role_id):
+    """Remove a role from a member"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.delete(
+            f'https://discord.com/api/guilds/{guild_id}/members/{member_id}/roles/{role_id}',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code == 204:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - VOICE CHANNELS ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/voice-states', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_get_voice_states(bot_id, guild_id):
+    """Get voice channel states (who's in voice)"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        # Get all channels first
+        channels_response = requests.get(
+            f'https://discord.com/api/guilds/{guild_id}/channels',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if channels_response.status_code != 200:
+            return jsonify({'error': 'Failed to get channels'}), channels_response.status_code
+
+        channels = channels_response.json()
+        voice_channels = [c for c in channels if c['type'] == 2]  # Voice channels
+
+        # Get guild with voice states
+        guild_response = requests.get(
+            f'https://discord.com/api/guilds/{guild_id}?with_counts=true',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        # Note: Voice states require gateway connection, but we can get member info
+        # For REST API, we need to check each channel
+        result = []
+        for vc in voice_channels:
+            result.append({
+                'id': vc['id'],
+                'name': vc['name'],
+                'user_limit': vc.get('user_limit', 0),
+                'bitrate': vc.get('bitrate', 64000),
+                'position': vc.get('position', 0)
+            })
+
+        return jsonify({'voice_channels': result})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - MODERATION ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/members/<member_id>/kick', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_kick_member(bot_id, guild_id, member_id):
+    """Kick a member from the guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json() or {}
+    reason = req_data.get('reason', 'Kicked via Bot Dashboard')
+
+    try:
+        response = requests.delete(
+            f'https://discord.com/api/guilds/{guild_id}/members/{member_id}',
+            headers={
+                'Authorization': f'Bot {token}',
+                'X-Audit-Log-Reason': reason
+            }
+        )
+
+        if response.status_code == 204:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/bans/<user_id>', methods=['PUT'])
+@bot_dashboard_auth_required
+def bot_dashboard_ban_member(bot_id, guild_id, user_id):
+    """Ban a user from the guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json() or {}
+    reason = req_data.get('reason', 'Banned via Bot Dashboard')
+    delete_message_days = req_data.get('delete_message_days', 0)
+
+    try:
+        response = requests.put(
+            f'https://discord.com/api/guilds/{guild_id}/bans/{user_id}',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json',
+                'X-Audit-Log-Reason': reason
+            },
+            json={'delete_message_days': min(delete_message_days, 7)}
+        )
+
+        if response.status_code == 204:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/bans/<user_id>', methods=['DELETE'])
+@bot_dashboard_auth_required
+def bot_dashboard_unban_member(bot_id, guild_id, user_id):
+    """Unban a user from the guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.delete(
+            f'https://discord.com/api/guilds/{guild_id}/bans/{user_id}',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code == 204:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/members/<member_id>/timeout', methods=['PATCH'])
+@bot_dashboard_auth_required
+def bot_dashboard_timeout_member(bot_id, guild_id, member_id):
+    """Timeout a member"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json() or {}
+    duration_minutes = req_data.get('duration', 5)  # Default 5 minutes
+    reason = req_data.get('reason', 'Timed out via Bot Dashboard')
+
+    # Calculate timeout end time
+    if duration_minutes > 0:
+        timeout_until = (datetime.utcnow() + timedelta(minutes=duration_minutes)).isoformat() + 'Z'
+    else:
+        timeout_until = None  # Remove timeout
+
+    try:
+        response = requests.patch(
+            f'https://discord.com/api/guilds/{guild_id}/members/{member_id}',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json',
+                'X-Audit-Log-Reason': reason
+            },
+            json={'communication_disabled_until': timeout_until}
+        )
+
+        if response.status_code == 200:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - CREATE CHANNELS ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/channels', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_create_channel(bot_id, guild_id):
+    """Create a new channel in the guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json()
+    name = req_data.get('name')
+    channel_type = req_data.get('type', 0)  # 0 = text, 2 = voice, 4 = category
+    parent_id = req_data.get('parent_id')
+    topic = req_data.get('topic', '')
+
+    if not name:
+        return jsonify({'error': 'Channel name is required'}), 400
+
+    try:
+        payload = {
+            'name': name,
+            'type': channel_type
+        }
+        if parent_id:
+            payload['parent_id'] = parent_id
+        if topic and channel_type == 0:
+            payload['topic'] = topic
+
+        response = requests.post(
+            f'https://discord.com/api/guilds/{guild_id}/channels',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json'
+            },
+            json=payload
+        )
+
+        if response.status_code in [200, 201]:
+            return jsonify({'success': True, 'channel': response.json()})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/channels/<channel_id>', methods=['DELETE'])
+@bot_dashboard_auth_required
+def bot_dashboard_delete_channel(bot_id, channel_id):
+    """Delete a channel"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.delete(
+            f'https://discord.com/api/channels/{channel_id}',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code == 200:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - WEBHOOKS ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/webhooks', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_get_webhooks(bot_id, guild_id):
+    """Get all webhooks in a guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.get(
+            f'https://discord.com/api/guilds/{guild_id}/webhooks',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get webhooks'}), response.status_code
+
+        webhooks = response.json()
+
+        return jsonify({'webhooks': [{
+            'id': w['id'],
+            'name': w.get('name'),
+            'channel_id': w.get('channel_id'),
+            'token': w.get('token'),
+            'avatar': f"https://cdn.discordapp.com/avatars/{w['id']}/{w['avatar']}.png" if w.get('avatar') else None,
+            'url': f"https://discord.com/api/webhooks/{w['id']}/{w.get('token')}" if w.get('token') else None
+        } for w in webhooks]})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/channels/<channel_id>/webhooks', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_create_webhook(bot_id, channel_id):
+    """Create a webhook in a channel"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json()
+    name = req_data.get('name', 'Bot Dashboard Webhook')
+
+    try:
+        response = requests.post(
+            f'https://discord.com/api/channels/{channel_id}/webhooks',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json'
+            },
+            json={'name': name}
+        )
+
+        if response.status_code in [200, 201]:
+            webhook = response.json()
+            return jsonify({
+                'success': True,
+                'webhook': {
+                    'id': webhook['id'],
+                    'name': webhook.get('name'),
+                    'token': webhook.get('token'),
+                    'url': f"https://discord.com/api/webhooks/{webhook['id']}/{webhook.get('token')}"
+                }
+            })
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/webhooks/<webhook_id>/<webhook_token>', methods=['DELETE'])
+@bot_dashboard_auth_required
+def bot_dashboard_delete_webhook(webhook_id, webhook_token):
+    """Delete a webhook"""
+    try:
+        response = requests.delete(
+            f'https://discord.com/api/webhooks/{webhook_id}/{webhook_token}'
+        )
+
+        if response.status_code == 204:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/webhooks/<webhook_id>/<webhook_token>/send', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_send_webhook(webhook_id, webhook_token):
+    """Send a message via webhook"""
+    req_data = request.get_json()
+    content = req_data.get('content', '')
+    username = req_data.get('username')
+    avatar_url = req_data.get('avatar_url')
+    embeds = req_data.get('embeds', [])
+
+    try:
+        payload = {}
+        if content:
+            payload['content'] = content
+        if username:
+            payload['username'] = username
+        if avatar_url:
+            payload['avatar_url'] = avatar_url
+        if embeds:
+            payload['embeds'] = embeds
+
+        response = requests.post(
+            f'https://discord.com/api/webhooks/{webhook_id}/{webhook_token}',
+            headers={'Content-Type': 'application/json'},
+            json=payload
+        )
+
+        if response.status_code in [200, 204]:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - INVITES ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/invites', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_get_invites(bot_id, guild_id):
+    """Get all invites for a guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.get(
+            f'https://discord.com/api/guilds/{guild_id}/invites',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get invites'}), response.status_code
+
+        invites = response.json()
+
+        return jsonify({'invites': [{
+            'code': i['code'],
+            'url': f"https://discord.gg/{i['code']}",
+            'channel': {
+                'id': i['channel']['id'],
+                'name': i['channel'].get('name')
+            },
+            'inviter': {
+                'id': i['inviter']['id'],
+                'username': i['inviter'].get('username')
+            } if i.get('inviter') else None,
+            'uses': i.get('uses', 0),
+            'max_uses': i.get('max_uses', 0),
+            'max_age': i.get('max_age', 0),
+            'temporary': i.get('temporary', False),
+            'created_at': i.get('created_at')
+        } for i in invites]})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/channels/<channel_id>/invites', methods=['POST'])
+@bot_dashboard_auth_required
+def bot_dashboard_create_invite(bot_id, channel_id):
+    """Create an invite for a channel"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    req_data = request.get_json() or {}
+    max_age = req_data.get('max_age', 86400)  # 24 hours default
+    max_uses = req_data.get('max_uses', 0)  # 0 = unlimited
+    temporary = req_data.get('temporary', False)
+
+    try:
+        response = requests.post(
+            f'https://discord.com/api/channels/{channel_id}/invites',
+            headers={
+                'Authorization': f'Bot {token}',
+                'Content-Type': 'application/json'
+            },
+            json={
+                'max_age': max_age,
+                'max_uses': max_uses,
+                'temporary': temporary
+            }
+        )
+
+        if response.status_code == 200:
+            invite = response.json()
+            return jsonify({
+                'success': True,
+                'invite': {
+                    'code': invite['code'],
+                    'url': f"https://discord.gg/{invite['code']}"
+                }
+            })
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/invites/<invite_code>', methods=['DELETE'])
+@bot_dashboard_auth_required
+def bot_dashboard_delete_invite(bot_id, invite_code):
+    """Delete an invite"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    try:
+        response = requests.delete(
+            f'https://discord.com/api/invites/{invite_code}',
+            headers={'Authorization': f'Bot {token}'}
+        )
+
+        if response.status_code == 200:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': response.json()}), response.status_code
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== BOT DASHBOARD - AUDIT LOGS ====================
+
+@app.route('/api/bot-dashboard/bots/<bot_id>/guilds/<guild_id>/audit-logs', methods=['GET'])
+@bot_dashboard_auth_required
+def bot_dashboard_get_audit_logs(bot_id, guild_id):
+    """Get audit logs for a guild"""
+    data = load_bot_dashboard_data()
+
+    if bot_id not in data.get('bots', {}):
+        return jsonify({'error': 'Bot not found'}), 404
+
+    bot = data['bots'][bot_id]
+    token = bot.get('token')
+
+    limit = request.args.get('limit', 50, type=int)
+    action_type = request.args.get('action_type')
+
+    try:
+        url = f'https://discord.com/api/guilds/{guild_id}/audit-logs?limit={limit}'
+        if action_type:
+            url += f'&action_type={action_type}'
+
+        response = requests.get(url, headers={'Authorization': f'Bot {token}'})
+
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to get audit logs'}), response.status_code
+
+        audit_data = response.json()
+        entries = audit_data.get('audit_log_entries', [])
+        users = {u['id']: u for u in audit_data.get('users', [])}
+
+        # Action type mapping
+        action_types = {
+            1: 'Guild Update', 20: 'Channel Create', 21: 'Channel Update', 22: 'Channel Delete',
+            24: 'Member Kick', 25: 'Member Prune', 26: 'Member Ban Add', 27: 'Member Ban Remove',
+            28: 'Member Update', 29: 'Member Role Update', 30: 'Role Create', 31: 'Role Update',
+            32: 'Role Delete', 40: 'Invite Create', 41: 'Invite Update', 42: 'Invite Delete',
+            50: 'Webhook Create', 51: 'Webhook Update', 52: 'Webhook Delete',
+            72: 'Message Delete', 73: 'Message Bulk Delete', 74: 'Message Pin', 75: 'Message Unpin',
+            144: 'Member Timeout'
+        }
+
+        formatted_entries = []
+        for e in entries:
+            user = users.get(e.get('user_id'), {})
+            avatar = None
+            if user.get('avatar'):
+                avatar = f"https://cdn.discordapp.com/avatars/{user['id']}/{user['avatar']}.png"
+
+            formatted_entries.append({
+                'id': e['id'],
+                'action_type': e.get('action_type'),
+                'action_name': action_types.get(e.get('action_type'), f"Unknown ({e.get('action_type')})"),
+                'user': {
+                    'id': user.get('id'),
+                    'username': user.get('username'),
+                    'avatar': avatar
+                } if user else None,
+                'target_id': e.get('target_id'),
+                'reason': e.get('reason'),
+                'created_at': e.get('id')  # Snowflake contains timestamp
+            })
+
+        return jsonify({'entries': formatted_entries})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/bot-dashboard/whitelist', methods=['GET'])
 @bot_dashboard_auth_required
