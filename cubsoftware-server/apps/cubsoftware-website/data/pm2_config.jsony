@@ -1,0 +1,11 @@
+{
+  "discord_client_id": "1412661083759579303",
+<<<<<<< Updated upstream
+  "discord_client_secret": "57UhDXGZhiiUB0_i88lvRwCo0pQlLnN4",
+=======
+  "discord_client_secret": "57UhDXGZhiiUB0_i88lvRwCo0pQlLnN4",
+>>>>>>> Stashed changes
+  "discord_redirect_uri": "https://cubsoftware.site/apps/pm2-dashboard/callback",
+  "bot_api_key": "4721d1426dffb0ae472c98969636052c4a875cb1f6d1a9f32050800dc69188e1",
+  "note": "Get your Discord OAuth credentials from https://discord.com/developers/applications"
+}
