@@ -178,9 +178,23 @@ autoUpdater.on('update-downloaded', (info) => {
         detail: 'The update will be installed when you restart the app. Restart now?',
         buttons: ['Restart Now', 'Later'],
         defaultId: 0
-    }).then(result => {
+    }).then(async result => {
         if (result.response === 0) {
-            autoUpdater.quitAndInstall(false, true);
+            // Force quit and install
+            app.isQuitting = true;
+
+            // Disconnect RPC if connected
+            if (rpcClient) {
+                try {
+                    await rpcClient.destroy();
+                } catch (e) {}
+                rpcClient = null;
+            }
+
+            // Force quit and install (true = silent/force, true = run after)
+            setImmediate(() => {
+                autoUpdater.quitAndInstall(true, true);
+            });
         }
     });
 });
@@ -369,8 +383,11 @@ async function setActivity(activity) {
         const rpcActivity = {};
 
         // Activity type (0=Playing, 1=Streaming, 2=Listening, 3=Watching, 5=Competing)
-        if (activity.type !== undefined) {
-            rpcActivity.type = activity.type;
+        rpcActivity.type = activity.type || 0;
+
+        // Streaming requires a URL for the purple LIVE badge
+        if (activity.type === 1 && activity.stream_url) {
+            rpcActivity.url = activity.stream_url;
         }
 
         if (activity.details) rpcActivity.details = activity.details;
@@ -591,5 +608,13 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', async () => {
     app.isQuitting = true;
+
+    // Destroy tray to prevent app from staying alive
+    if (tray) {
+        tray.destroy();
+        tray = null;
+    }
+
+    // Disconnect RPC
     await disconnect();
 });

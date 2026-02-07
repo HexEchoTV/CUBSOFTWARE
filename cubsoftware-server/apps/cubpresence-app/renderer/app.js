@@ -3,6 +3,7 @@
 let isConnected = false;
 let settings = {};
 let profiles = {};
+let previewTimer = null;
 
 // DOM Elements
 const statusDot = document.getElementById('statusDot');
@@ -146,7 +147,14 @@ function setupEventListeners() {
     // Activity type selector
     const activityType = document.getElementById('activityType');
     if (activityType) {
-        activityType.addEventListener('change', updatePreview);
+        activityType.addEventListener('change', () => {
+            // Show/hide stream URL field
+            const streamUrlField = document.getElementById('streamUrlField');
+            if (streamUrlField) {
+                streamUrlField.style.display = activityType.value === '1' ? 'block' : 'none';
+            }
+            updatePreview();
+        });
     }
 
     // Wiki link
@@ -443,6 +451,7 @@ function buildActivity() {
 
     return {
         type: activityType,
+        stream_url: document.getElementById('streamUrl').value,
         details: document.getElementById('details').value,
         state: document.getElementById('state').value,
         timestamps_type: tsType,
@@ -479,6 +488,16 @@ function populateFields(activity) {
     // Set activity type
     if (activity.type !== undefined) {
         document.getElementById('activityType').value = activity.type.toString();
+        // Show stream URL field if streaming
+        const streamUrlField = document.getElementById('streamUrlField');
+        if (streamUrlField) {
+            streamUrlField.style.display = activity.type === 1 ? 'block' : 'none';
+        }
+    }
+
+    // Set stream URL
+    if (activity.stream_url) {
+        document.getElementById('streamUrl').value = activity.stream_url;
     }
 
     // Set timestamp type
@@ -584,21 +603,42 @@ function updatePreview() {
 
     // Timestamp
     const previewTs = document.getElementById('previewTimestamp');
-    const timestampLabels = {
-        'none': '',
-        'since_update': '00:01:23 elapsed',
-        'since_connection': '00:05:30 elapsed',
-        'since_app_start': '00:15:42 elapsed',
-        'local_time': formatLocalTime() + ' elapsed',
-        'custom': 'custom time',
-        'countdown': '01:00:00 left'
-    };
+    const previewTimeText = document.getElementById('previewTimeText');
+
+    // Clear existing timer
+    if (previewTimer) {
+        clearInterval(previewTimer);
+        previewTimer = null;
+    }
 
     if (tsType === 'none') {
         previewTs.style.display = 'none';
-    } else {
-        previewTs.textContent = timestampLabels[tsType] || '';
+    } else if (tsType === 'local_time') {
         previewTs.style.display = '';
+        // Update immediately and then every second
+        const updateLocalTime = () => {
+            if (previewTimeText) {
+                previewTimeText.textContent = formatLocalTime() + ' elapsed';
+            } else {
+                previewTs.textContent = formatLocalTime() + ' elapsed';
+            }
+        };
+        updateLocalTime();
+        previewTimer = setInterval(updateLocalTime, 1000);
+    } else {
+        previewTs.style.display = '';
+        const timestampLabels = {
+            'since_update': '00:01:23 elapsed',
+            'since_connection': '00:05:30 elapsed',
+            'since_app_start': '00:15:42 elapsed',
+            'custom': 'custom time',
+            'countdown': '01:00:00 left'
+        };
+        if (previewTimeText) {
+            previewTimeText.textContent = timestampLabels[tsType] || '';
+        } else {
+            previewTs.textContent = timestampLabels[tsType] || '';
+        }
     }
 
     // Large image
