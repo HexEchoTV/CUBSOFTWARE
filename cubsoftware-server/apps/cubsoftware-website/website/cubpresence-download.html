@@ -202,37 +202,47 @@
 
                     <div class="download-buttons">
                         <a href="#" class="download-btn" id="downloadBtnWin">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
                             Windows
                         </a>
                         <a href="#" class="download-btn download-btn-secondary" id="downloadBtnLinux">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.503 0c-.155 0-.311.001-.465.003-.653.014-1.307.07-1.954.18-.654.113-1.29.3-1.9.548a7.458 7.458 0 00-1.7.917c-.524.363-.998.783-1.415 1.252a7.629 7.629 0 00-1.065 1.535 7.725 7.725 0 00-.669 1.743c-.152.607-.233 1.232-.239 1.861a8.14 8.14 0 00.199 1.867c.14.611.352 1.199.631 1.754.279.556.623 1.071 1.025 1.539.402.468.859.885 1.362 1.241.503.356 1.048.649 1.627.86.579.211 1.185.352 1.804.42.62.069 1.251.063 1.876-.018.624-.081 1.24-.237 1.833-.464.593-.227 1.156-.522 1.676-.876.521-.355.996-.77 1.413-1.237a7.681 7.681 0 001.057-1.465c.285-.531.498-1.093.636-1.676.137-.584.199-1.186.183-1.788a8.038 8.038 0 00-.278-1.768 7.785 7.785 0 00-.716-1.627 7.582 7.582 0 00-1.105-1.387 7.476 7.476 0 00-1.423-1.067 7.397 7.397 0 00-1.647-.681 7.313 7.313 0 00-1.773-.246zM12 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm-3.5 5a1 1 0 110 2 1 1 0 010-2zm7 0a1 1 0 110 2 1 1 0 010-2zm-6.5 3.5c.5 1.5 1.5 2.5 3 2.5s2.5-1 3-2.5c-1 .5-2 .75-3 .75s-2-.25-3-.75z"/></svg>
                             Linux
                         </a>
                     </div>
                     <script>
                         async function updateDownloadLinks() {
                             try {
-                                let res = await fetch('https://api.github.com/repos/HexEchoTV/CUBSOFTWARE/releases/latest');
-                                let data = await res.json();
+                                // Fetch all releases to find the newest one with both files
+                                const res = await fetch('https://api.github.com/repos/HexEchoTV/CUBSOFTWARE/releases');
+                                const releases = await res.json();
 
-                                // Find assets
-                                let exe = data.assets?.find(a => a.name.endsWith('.exe') && !a.name.endsWith('.blockmap'));
-                                let appImage = data.assets?.find(a => a.name.endsWith('.AppImage'));
+                                let exe = null;
+                                let appImage = null;
+                                let version = '1.2.2';
 
-                                // If not all found in latest, check all releases
-                                if (!exe || !appImage) {
-                                    res = await fetch('https://api.github.com/repos/HexEchoTV/CUBSOFTWARE/releases');
-                                    const releases = await res.json();
-                                    for (const release of releases) {
-                                        if (!exe) exe = release.assets?.find(a => a.name.endsWith('.exe') && !a.name.endsWith('.blockmap'));
-                                        if (!appImage) appImage = release.assets?.find(a => a.name.endsWith('.AppImage'));
-                                        if (exe || appImage) data = release;
-                                        if (exe && appImage) break;
+                                // Find the newest release that has both exe and AppImage
+                                for (const release of releases) {
+                                    const releaseExe = release.assets?.find(a => a.name.endsWith('.exe') && !a.name.endsWith('.blockmap'));
+                                    const releaseAppImage = release.assets?.find(a => a.name.endsWith('.AppImage'));
+
+                                    if (releaseExe && releaseAppImage) {
+                                        exe = releaseExe;
+                                        appImage = releaseAppImage;
+                                        version = release.tag_name?.replace('v', '') || version;
+                                        break;
+                                    }
+
+                                    // Also grab individual files if not found yet
+                                    if (!exe && releaseExe) {
+                                        exe = releaseExe;
+                                        if (!version || version === '1.2.2') version = release.tag_name?.replace('v', '') || version;
+                                    }
+                                    if (!appImage && releaseAppImage) {
+                                        appImage = releaseAppImage;
                                     }
                                 }
 
-                                const version = data.tag_name?.replace('v', '') || '1.2.0';
                                 document.getElementById('versionDisplay').textContent = 'v' + version;
 
                                 // Set download links or link to releases page if not found
@@ -245,7 +255,7 @@
                                 const releasesUrl = 'https://github.com/HexEchoTV/CUBSOFTWARE/releases';
                                 document.getElementById('downloadBtnWin').href = releasesUrl;
                                 document.getElementById('downloadBtnLinux').href = releasesUrl;
-                                document.getElementById('versionDisplay').textContent = 'v1.2.0';
+                                document.getElementById('versionDisplay').textContent = 'v1.2.2';
                             }
                         }
                         updateDownloadLinks();
@@ -289,10 +299,6 @@
                         <div class="platform active">
                             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.311.001-.465.003-.653.014-1.307.07-1.954.18-.654.113-1.29.3-1.9.548-.608.246-1.177.555-1.7.917-.524.363-.998.783-1.415 1.252-.417.468-.774.984-1.065 1.535-.292.552-.517 1.136-.669 1.743-.152.607-.233 1.232-.239 1.861-.007.631.06 1.257.199 1.867.14.611.352 1.199.631 1.754.279.556.623 1.071 1.025 1.539.402.468.859.885 1.362 1.241a8.57 8.57 0 0 0 1.627.86c.579.242 1.185.413 1.804.51.62.098 1.251.122 1.876.073.624-.049 1.24-.173 1.833-.367.593-.193 1.156-.456 1.676-.778.521-.323.996-.707 1.413-1.14.417-.434.773-.916 1.057-1.433.285-.518.498-1.067.636-1.637.137-.571.199-1.16.183-1.749-.016-.59-.11-1.174-.278-1.737-.168-.564-.409-1.1-.716-1.599-.307-.5-.678-.957-1.105-1.363-.427-.406-.905-.757-1.423-1.047-.518-.29-1.07-.515-1.647-.668-.576-.153-1.173-.233-1.773-.24zm-.014 1.495h.065c.472.007.941.064 1.4.17.458.108.901.266 1.32.471.418.205.809.457 1.163.752.354.294.669.629.937.996.268.368.49.766.66 1.186.17.42.288.862.351 1.314.063.453.07.913.022 1.365-.048.453-.152.896-.308 1.319-.157.424-.365.824-.62 1.193-.255.368-.555.702-.894.993-.339.291-.715.537-1.118.733-.403.195-.83.339-1.271.427-.44.088-.893.12-1.343.095-.45-.025-.893-.107-1.32-.245-.426-.137-.83-.329-1.204-.569-.373-.24-.713-.527-1.012-.855-.298-.328-.553-.693-.757-1.086-.204-.393-.358-.812-.458-1.245-.1-.433-.146-.878-.135-1.323.01-.444.078-.885.2-1.311.122-.426.298-.833.524-1.212.225-.38.498-.728.812-1.038.314-.31.667-.579 1.05-.8.383-.222.793-.393 1.22-.51.427-.118.869-.18 1.312-.187z"/></svg>
                             <span>Linux</span>
-                        </div>
-                        <div class="platform">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                            <span>macOS (soon)</span>
                         </div>
                     </div>
                 </div>
