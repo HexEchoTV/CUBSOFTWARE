@@ -1,6 +1,6 @@
 {
   "name": "cubpresence",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Discord Custom Rich Presence - Set your Discord activity from a simple app",
   "main": "main.js",
   "author": "CUB SOFTWARE",
@@ -11,7 +11,7 @@
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
-    "publish": "electron-builder --win --linux --mac --publish always"
+    "publish": "electron-builder --win --linux --publish always"
   },
   "dependencies": {
     "discord-rpc": "^4.0.1",

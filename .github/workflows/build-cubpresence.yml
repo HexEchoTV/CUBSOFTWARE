@@ -18,19 +18,13 @@ on:
       - main
 
 jobs:
-  build-and-release:
+  build-windows:
     runs-on: windows-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -41,17 +35,98 @@ jobs:
         working-directory: cubsoftware-server/apps/cubpresence-app
         run: npm install
 
-      - name: Build and publish to GitHub Releases
+      - name: Build Windows
         working-directory: cubsoftware-server/apps/cubpresence-app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run publish
+        run: npm run build:win
 
-      - name: Upload artifacts (backup)
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: CubPresence-Windows
           path: |
             cubsoftware-server/apps/cubpresence-app/dist/*.exe
-            cubsoftware-server/apps/cubpresence-app/dist/latest.yml
+            !cubsoftware-server/apps/cubpresence-app/dist/*-unpacked
           retention-days: 30
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: cubsoftware-server/apps/cubpresence-app
+        run: npm install
+
+      - name: Build Linux
+        working-directory: cubsoftware-server/apps/cubpresence-app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:linux
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CubPresence-Linux
+          path: |
+            cubsoftware-server/apps/cubpresence-app/dist/*.AppImage
+          retention-days: 30
+
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./cubsoftware-server/apps/cubpresence-app/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CubPresence-Windows
+          path: dist
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CubPresence-Linux
+          path: dist
+
+      - name: List files
+        run: ls -la dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          body: |
+            ## CubPresence v${{ steps.version.outputs.version }}
+
+            ### Downloads
+            - **Windows**: CubPresence-Setup-${{ steps.version.outputs.version }}.exe
+            - **Linux**: CubPresence-${{ steps.version.outputs.version }}.AppImage
+          files: |
+            dist/*.exe
+            dist/*.AppImage
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
