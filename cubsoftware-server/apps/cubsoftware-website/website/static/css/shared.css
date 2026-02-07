@@ -654,6 +654,7 @@ a:hover {
     /* Mobile dropdown */
     .nav-dropdown {
         width: 100%;
+        text-align: center;
     }
 
     .nav-dropdown .dropdown-toggle {
@@ -700,6 +701,7 @@ a:hover {
 
     .dropdown-menu a {
         padding: 10px 24px;
+        text-align: center;
     }
 }
 
